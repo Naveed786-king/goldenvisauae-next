@@ -1,0 +1,16 @@
+{
+  "name": "Golden Visa UAE (live preview)",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:22",
+  "hostRequirements": { "cpus": 2, "memory": "4gb" },
+  "forwardPorts": [3000],
+  "portsAttributes": {
+    "3000": { "label": "Website", "onAutoForward": "silent", "visibility": "public" }
+  },
+  "containerEnv": {
+    "DATABASE_URL": "file:/workspaces/gvu-data/data.db",
+    "UPLOAD_DIR": "/workspaces/gvu-data/uploads"
+  },
+  "postCreateCommand": "mkdir -p /workspaces/gvu-data && npm install --no-audit --no-fund && npm run build",
+  "postStartCommand": "bash .devcontainer/start.sh",
+  "customizations": { "codespaces": { "openFiles": ["ADMIN-LOGIN.txt"] } }
+}

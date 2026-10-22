@@ -1,0 +1,470 @@
+{
+ "enabled": true,
+ "vat": 5,
+ "texts": {
+  "title": "Visa cost calculator",
+  "lead": "Instant estimate of government fees and our professional fees.",
+  "q1": "Select your visa category",
+  "q1sub": "All available categories and services.",
+  "q2": "Which medical fitness test do you prefer?",
+  "q2sub": "Required for all adult applicants (18+). Children do not need a medical.",
+  "medNormal": "Normal medical",
+  "medNormalSub": "Fitness report in 24 hours",
+  "medVip": "VIP medical",
+  "medVipSub": "Fitness report in 30 minutes",
+  "q3": "Do you want to add family members?",
+  "q3sub": "You can sponsor dependents (spouse, children, parents) on the same visa.",
+  "justMe": "No, just me",
+  "justMeSub": "Sponsor only",
+  "yesFamily": "Yes, add family",
+  "yesFamilySub": "Add adults and / or children",
+  "q4": "How many family members?",
+  "q4sub": "Add the number of adults and children.",
+  "adults": "Adults",
+  "adultsSub": "Aged 18 and above",
+  "children": "Children",
+  "childrenSub": "Below 18 — no medical",
+  "packages": "Choose your package (required)",
+  "addons": "Optional add-ons",
+  "required": "Required?",
+  "yes": "Yes",
+  "no": "No",
+  "item": "Item",
+  "govFee": "Govt.",
+  "proFee": "Ours",
+  "subtotal": "Subtotal",
+  "vatLabel": "VAT 5% on professional fees",
+  "totalLabel": "Estimated total",
+  "note": "Based on published authority fees and subject to change. Indicative, not a binding quote.",
+  "wa": "Start my application on WhatsApp",
+  "share": "Share this estimate via link",
+  "shared": "Link copied",
+  "save": "Email me this estimate",
+  "saved": "Saved — a consultant will contact you",
+  "reset": "Recalculate",
+  "close": "Close",
+  "next": "Continue",
+  "back": "Back",
+  "calc": "Calculate price",
+  "step": "Step",
+  "of": "of"
+ },
+ "groups": [
+  {
+   "id": "golden-10",
+   "label": "Golden Visa — 10 years",
+   "options": [
+    {
+     "id": "g10-new",
+     "label": "New 10-year Golden Visa — main applicant (DLD & admin, issuance, Emirates ID, medical)",
+     "gov": 9978,
+     "pro": 0,
+     "multi": true
+    },
+    {
+     "id": "g10-dep-adult",
+     "label": "Golden Visa dependant — adult 18+ (issuance, Emirates ID, medical)",
+     "gov": 4215,
+     "pro": 0,
+     "multi": true
+    },
+    {
+     "id": "g10-dep-child",
+     "label": "Golden Visa dependant — child under 18 (no medical)",
+     "gov": 3895,
+     "pro": 0,
+     "multi": true
+    },
+    {
+     "id": "g10-renew",
+     "label": "Renewal — 10-year Golden Visa",
+     "gov": 9034,
+     "pro": 0,
+     "multi": true
+    },
+    {
+     "id": "g10-cancel",
+     "label": "Cancellation — Golden Visa (5 or 10 years)",
+     "gov": 590,
+     "pro": 0,
+     "multi": true
+    }
+   ]
+  },
+  {
+   "id": "property-2",
+   "label": "Property Investor Visa — 2 years",
+   "options": [
+    {
+     "id": "p2-new-outside",
+     "label": "New 2-year investor visa — applicant outside UAE (PCC, DLD block, entry permit, stamping, Emirates ID, medical)",
+     "gov": 10350,
+     "pro": 0,
+     "multi": true
+    },
+    {
+     "id": "p2-renew",
+     "label": "Renewal — 2-year property investor visa",
+     "gov": 8500,
+     "pro": 0,
+     "multi": true
+    },
+    {
+     "id": "p2-cancel",
+     "label": "Cancellation — 2-year property investor visa",
+     "gov": 1239,
+     "pro": 0,
+     "multi": true
+    }
+   ]
+  },
+  {
+   "id": "investor-employment-2",
+   "label": "Investor & employment sponsor visas — 2 years",
+   "options": [
+    {
+     "id": "inv2-owner",
+     "label": "2-year investor visa — company / business owner",
+     "gov": 3773,
+     "pro": 0,
+     "multi": true
+    },
+    {
+     "id": "inv2-dep-adult-inside",
+     "label": "2-year dependant 18+ inside UAE — investor sponsor",
+     "gov": 2656,
+     "pro": 0,
+     "multi": true
+    },
+    {
+     "id": "inv2-dep-child-outside",
+     "label": "2-year dependant under 18 outside UAE — investor sponsor",
+     "gov": 1103,
+     "pro": 0,
+     "multi": true
+    },
+    {
+     "id": "emp2-sponsor",
+     "label": "2-year employment visa — employee sponsor",
+     "gov": 2978,
+     "pro": 0,
+     "multi": true
+    },
+    {
+     "id": "emp2-dep-adult-inside",
+     "label": "2-year dependant 18+ inside UAE — employment sponsor",
+     "gov": 2656,
+     "pro": 0,
+     "multi": true
+    },
+    {
+     "id": "emp2-dep-child-outside",
+     "label": "2-year dependant under 18 outside UAE — employment sponsor",
+     "gov": 1103,
+     "pro": 0,
+     "multi": true
+    },
+    {
+     "id": "nb-investor",
+     "label": "Newborn visa (2 years) — investor sponsor",
+     "gov": 2088,
+     "pro": 0,
+     "multi": true
+    },
+    {
+     "id": "nb-employment",
+     "label": "Newborn visa (2 years) — employment visa sponsor",
+     "gov": 2088,
+     "pro": 0,
+     "multi": true
+    },
+    {
+     "id": "nb-golden",
+     "label": "Newborn visa — Golden Visa holder sponsor",
+     "gov": 2989,
+     "pro": 0,
+     "multi": true
+    },
+    {
+     "id": "nb-retirement",
+     "label": "Newborn visa — retirement visa holder sponsor",
+     "gov": 3249,
+     "pro": 0,
+     "multi": true
+    }
+   ]
+  },
+  {
+   "id": "family",
+   "label": "Family & dependant visas — 2 years",
+   "options": [
+    {
+     "id": "dep-new-adult-outside",
+     "label": "New dependant visa — adult, applicant outside UAE",
+     "gov": 1376,
+     "pro": 0,
+     "multi": true
+    },
+    {
+     "id": "dep-new-adult-inside",
+     "label": "New dependant visa — adult, applicant inside UAE (change of status)",
+     "gov": 2656,
+     "pro": 0,
+     "multi": true
+    },
+    {
+     "id": "dep-new-child-outside",
+     "label": "New dependant visa — child under 18, outside UAE (no medical)",
+     "gov": 1103,
+     "pro": 0,
+     "multi": true
+    },
+    {
+     "id": "dep-new-child-inside",
+     "label": "New dependant visa — child under 18, inside UAE (change of status)",
+     "gov": 2383,
+     "pro": 0,
+     "multi": true
+    },
+    {
+     "id": "dep-renew-adult",
+     "label": "Renewal — dependant visa, adult",
+     "gov": 1037,
+     "pro": 0,
+     "multi": true
+    },
+    {
+     "id": "dep-renew-child",
+     "label": "Renewal — dependant visa, child under 18",
+     "gov": 764,
+     "pro": 0,
+     "multi": true
+    },
+    {
+     "id": "dep-cancel",
+     "label": "Dependant visa cancellation",
+     "gov": 506,
+     "pro": 0,
+     "multi": true
+    }
+   ]
+  },
+  {
+   "id": "parents",
+   "label": "Parents & parents-in-law",
+   "options": [
+    {
+     "id": "par-new-outside",
+     "label": "New parent visa — applicant outside UAE",
+     "gov": 1376,
+     "pro": 0,
+     "multi": true
+    },
+    {
+     "id": "par-new-inside",
+     "label": "New parent visa — applicant inside UAE (change of status)",
+     "gov": 2656,
+     "pro": 0,
+     "multi": true
+    },
+    {
+     "id": "par-golden-dep",
+     "label": "Parent as dependant of a Golden Visa holder",
+     "gov": 4215,
+     "pro": 0,
+     "multi": true
+    },
+    {
+     "id": "par-renew",
+     "label": "Renewal — parent visa",
+     "gov": 1037,
+     "pro": 0,
+     "multi": true
+    },
+    {
+     "id": "par-cancel",
+     "label": "Parent visa cancellation",
+     "gov": 506,
+     "pro": 0,
+     "multi": true
+    }
+   ]
+  },
+  {
+   "id": "retirement",
+   "label": "Retirement visa — 5 years",
+   "options": [
+    {
+     "id": "ret-new",
+     "label": "New 5-year retirement visa (issuance, Emirates ID, medical)",
+     "gov": 4715,
+     "pro": 0,
+     "multi": true
+    },
+    {
+     "id": "ret-dep",
+     "label": "Retirement visa dependant — spouse or child",
+     "gov": 4215,
+     "pro": 0,
+     "multi": true
+    },
+    {
+     "id": "ret-renew",
+     "label": "Renew 5-year retirement visa",
+     "gov": 4250,
+     "pro": 0,
+     "multi": true
+    },
+    {
+     "id": "ret-cancel",
+     "label": "Retirement visa cancellation",
+     "gov": 590,
+     "pro": 0,
+     "multi": true
+    }
+   ]
+  }
+ ],
+ "packages": [
+  {
+   "id": "vip",
+   "label": "24-hour VIP fast track (pick-up & drop-off included)",
+   "gov": 0,
+   "pro": 5000,
+   "multi": true
+  },
+  {
+   "id": "fast-2-3",
+   "label": "URGENT package — 2–3 days (pick-up & drop-off included)",
+   "gov": 0,
+   "pro": 3000,
+   "multi": true
+  },
+  {
+   "id": "normal-3-7",
+   "label": "3–7 days normal package",
+   "gov": 0,
+   "pro": 1500,
+   "multi": true
+  }
+ ],
+ "cancelPackages": [
+  {
+   "id": "cancel-same-day",
+   "label": "Same-day cancellation",
+   "gov": 0,
+   "pro": 1500,
+   "multi": true
+  },
+  {
+   "id": "cancel-2-day",
+   "label": "2-day cancellation",
+   "gov": 0,
+   "pro": 1000,
+   "multi": true
+  },
+  {
+   "id": "cancel-normal",
+   "label": "Normal 2–4 days cancellation",
+   "gov": 0,
+   "pro": 500,
+   "multi": true
+  }
+ ],
+ "familyStandard": [
+  {
+   "id": "fam-std-vip",
+   "label": "VIP fast track (pick-up & drop-off included)",
+   "gov": 0,
+   "pro": 1000,
+   "multi": true
+  },
+  {
+   "id": "fam-std-normal",
+   "label": "Normal package",
+   "gov": 0,
+   "pro": 500,
+   "multi": true
+  }
+ ],
+ "familyPremium": [
+  {
+   "id": "fam-prem-vip",
+   "label": "VIP fast track (pick-up & drop-off included)",
+   "gov": 0,
+   "pro": 2000,
+   "multi": true
+  },
+  {
+   "id": "fam-prem-normal",
+   "label": "Normal package",
+   "gov": 0,
+   "pro": 1000,
+   "multi": true
+  }
+ ],
+ "depCancel": [
+  {
+   "id": "dep-cancel-pkg-vip",
+   "label": "VIP fast track (pick-up & drop-off included)",
+   "gov": 0,
+   "pro": 200,
+   "multi": true
+  },
+  {
+   "id": "dep-cancel-pkg-normal",
+   "label": "Normal package",
+   "gov": 0,
+   "pro": 100,
+   "multi": true
+  }
+ ],
+ "addons": [
+  {
+   "id": "family-file",
+   "label": "Family file opening (one-time, first dependant only)",
+   "gov": 285,
+   "pro": 0,
+   "toggle": true
+  },
+  {
+   "id": "valuation",
+   "label": "DLD property valuation certificate",
+   "gov": 0,
+   "pro": 2000
+  }
+ ],
+ "deposit": {
+  "id": "security-deposit",
+  "label": "Refundable security deposit",
+  "gov": 3000,
+  "pro": 0,
+  "toggle": true
+ },
+ "vipMedical": {
+  "id": "vip-medical",
+  "label": "VIP medical fitness test",
+  "gov": 430,
+  "pro": 0,
+  "toggle": true,
+  "multi": true
+ },
+ "medical": [
+  {
+   "id": "medical-normal",
+   "label": "Normal medical",
+   "gov": 0,
+   "pro": 0,
+   "multi": true
+  },
+  {
+   "id": "medical-vip",
+   "label": "VIP medical",
+   "gov": 430,
+   "pro": 0,
+   "multi": true
+  }
+ ],
+ "familyFileLow": 285,
+ "familyFileHigh": 320
+}

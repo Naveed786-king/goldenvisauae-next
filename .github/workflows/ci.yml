@@ -1,0 +1,181 @@
+name: Build & test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      DATABASE_URL: file:./ci.db
+      JWT_SECRET: ci-secret-ci-secret-ci-secret-ci-secret-1234
+      NEXT_PUBLIC_SITE_URL: http://localhost:3000
+      ADMIN_EMAIL: admin@example.com
+      ADMIN_PASSWORD: CiPassword123
+      UPLOAD_DIR: uploads
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install
+        run: npm install --no-audit --no-fund
+      - name: Build
+        run: |
+          set -o pipefail
+          npm run build 2>&1 | tee build.log || {
+            msg=$(grep -v '^\s*$' build.log | tail -n 60 | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}')
+            echo "::error title=Build failed::$msg"
+            exit 1
+          }
+      - name: Start server
+        run: |
+          npm start > server.log 2>&1 &
+          for i in $(seq 1 60); do curl -sf http://localhost:3000/api/auth/me >/dev/null && break; sleep 2; done
+      - name: Smoke test
+        run: |
+          set -e
+          trap 'echo "::error title=Smoke test failed::see step output (last command: $BASH_COMMAND)"' ERR
+          check() { code=$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:3000$1"); echo "$1 -> $code"; [ "$code" = "$2" ]; }
+          check / 200
+          check /about 200
+          check /services 200
+          check /services/golden-visa 200
+          check /services/property-investor-visa 200
+          check /services/emirates-id 200
+          check /contact 200
+          check /faqs 200
+          check /check-visa-status 200
+          check /official-sources 200
+          check /blog 200
+          check /blog/uae-golden-visa-cost-price-breakdown-by-category 200
+          check /apply 200
+          check /login 200
+          check /admin/login 200
+          check /sitemap.xml 200
+          check /robots.txt 200
+          check /feed.xml 200
+          check /does-not-exist 404
+          curl -s http://localhost:3000/sitemap.xml | grep -q '/services/golden-visa' || { echo "::error title=Check failed::Service pages in sitemap"; exit 1; }; echo "Service pages in sitemap"
+          curl -s http://localhost:3000/sitemap.xml | grep -q 'hreflang="ar"' || { echo "::error title=Check failed::hreflang in sitemap"; exit 1; }; echo "hreflang in sitemap"
+          curl -sf -X POST http://localhost:3000/api/leads -H 'Content-Type: application/json' -d '{"name":"CI Test","phone":"+971500000000","service":"UAE Golden Visa"}'
+          echo
+          curl -sf -c cookies.txt -X POST http://localhost:3000/api/auth/login -H 'Content-Type: application/json' -d '{"email":"admin@example.com","password":"CiPassword123","admin":true}'
+          echo
+          curl -sf -b cookies.txt http://localhost:3000/api/admin/leads | grep -q "CI Test"
+          curl -sf -b cookies.txt "http://localhost:3000/api/admin/pages?take=200" | grep -q '"slug":"about"'
+          code=$(curl -s -o /dev/null -w "%{http_code}" -b cookies.txt http://localhost:3000/admin); echo "/admin -> $code"; [ "$code" = "200" ]
+          # --- design system, calculator & SEO ---
+          curl -s http://localhost:3000/ | grep -q 'aria-label="Cost calculator"' || { echo "::error title=Check failed::Cost calculator button"; exit 1; }; echo "Cost calculator button"
+          curl -s http://localhost:3000/ | grep -q 'glass-ui' || { echo "::error title=Check failed::Glass design active"; exit 1; }; echo "Glass design active"
+          curl -s http://localhost:3000/ | grep -q 'hdr-island{-webkit-backdrop-filter' || { echo "::error title=Check failed::Glass blur rules"; exit 1; }; echo "Glass blur rules present"
+          curl -s http://localhost:3000/ | grep -q 'class="mnav' || { echo "::error title=Check failed::Mobile nav bar"; exit 1; }; echo "Mobile nav bar"
+          curl -s http://localhost:3000/ | grep -q 'application/ld+json' || { echo "::error title=Check failed::Structured data"; exit 1; }; echo "Structured data"
+          for pth in /admin/design /admin/calculator /admin/offer /admin/pages /admin/languages; do code=$(curl -s -o /dev/null -w "%{http_code}" -b cookies.txt http://localhost:3000$pth); echo "$pth -> $code"; [ "$code" = "200" ]; done
+          curl -sf -b cookies.txt http://localhost:3000/api/admin/settings/fees | grep -q 'familyFileLow'
+          curl -sf -b cookies.txt http://localhost:3000/api/admin/settings/offer | grep -q 'title'
+          curl -sf -b cookies.txt http://localhost:3000/api/admin/settings/design | grep -q 'glass'
+          # save a section style and check the scoped CSS is rendered
+          node -e "
+            const j=(u,o={})=>fetch('http://localhost:3000'+u,{...o,headers:{'Content-Type':'application/json',cookie:require('fs').readFileSync('cookies.txt','utf8').split('\n').filter(l=>l.includes('rgv_session')).map(l=>'rgv_session='+l.split('\t').pop()).join('')}}).then(r=>r.json());
+            (async()=>{const list=await j('/api/admin/pages?take=200');const home=list.items.find(p=>p.slug==='home');const full=await j('/api/admin/pages/'+home.id);const page=full.item||full;
+            let blocks=typeof page.blocks==='string'?JSON.parse(page.blocks):page.blocks; blocks[1].data.style={bgType:'color',bgColor:'#123456',paddingTop:40};
+            const r=await j('/api/admin/pages/'+home.id,{method:'PUT',body:JSON.stringify({...page,blocks})}); if(r.error){console.log(r);process.exit(1)}})()"
+          curl -s http://localhost:3000/ | grep -q 'background:#123456' || { echo "::error title=Check failed::Section design CSS rendered"; exit 1; }; echo "Section design CSS rendered"
+          # --- languages ---
+          check /ar 200
+          check /ar/about 200
+          check /ru/services/golden-visa 200
+          check /zh/blog 200
+          curl -s http://localhost:3000/ar | grep -q 'dir="rtl"' || { echo "::error title=Check failed::Arabic page is right-to-left"; exit 1; }; echo "Arabic page is right-to-left"
+          curl -s http://localhost:3000/ar | grep -qi 'hreflang' || { echo "::error title=Check failed::hreflang tags present"; exit 1; }; echo "hreflang tags present"
+          curl -sf -b cookies.txt http://localhost:3000/api/admin/translations | grep -q '"locale":"ar"'
+          # built-in Arabic & Russian translations (prisma/translations) work WITHOUT any API key or internet
+          for i in $(seq 1 45); do n=$(curl -s http://localhost:3000/ru | node -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>console.log((d.match(/[\u0400-\u04FF]/g)||[]).length))"); [ "$n" -gt 300 ] && break; sleep 2; done
+          echo "Cyrillic letters on /ru: $n"
+          [ "$n" -gt 300 ] || { echo "::error title=Check failed::built-in Russian translation not shown"; exit 1; }
+          n=$(curl -s http://localhost:3000/ar/services/emirates-id | node -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>console.log((d.match(/[\u0600-\u06FF]/g)||[]).length))"); echo "Arabic letters on /ar/services/emirates-id: $n"; [ "$n" -gt 1000 ]
+          # free Google engine (default) translates the other languages
+          curl -sf -b cookies.txt -X PUT http://localhost:3000/api/admin/settings/translation -H 'Content-Type: application/json' -d '{"value":{"provider":"google","apiKey":"","model":"","autoTranslate":false,"enabled":["en","ar","ru","tr","zh","fr","de","es","ro","hi"],"showSwitcher":true}}'
+          echo
+          RES=$(curl -s -b cookies.txt -X POST http://localhost:3000/api/admin/translations -H 'Content-Type: application/json' -d '{"action":"test","locale":"de"}')
+          echo "Translation test: $RES"
+          echo "$RES" | grep -q '"result"'
+          echo "All smoke tests passed"
+      - name: Server log
+        if: always()
+        run: |
+          tail -n 120 server.log || true
+          if [ "${{ job.status }}" != "success" ] && [ -f server.log ]; then
+            msg=$(grep -v '^\s*$' server.log | tail -n 40 | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}')
+            echo "::warning title=Server log::$msg"
+          fi
+
+  # Same checks on PostgreSQL with files stored in the database (how it runs on Vercel)
+  postgres:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: gvu
+          POSTGRES_PASSWORD: gvu
+          POSTGRES_DB: gvu
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U gvu" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://gvu:gvu@localhost:5432/gvu
+      STORAGE: db
+      ADMIN_SETUP: web
+      DISABLE_AUTO_TRANSLATE: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install
+        run: npm install --no-audit --no-fund
+      - name: Build (like Vercel)
+        run: |
+          set -o pipefail
+          npm run vercel-build 2>&1 | tee build.log || {
+            msg=$(grep -v '^\s*$' build.log | tail -n 60 | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}')
+            echo "::error title=Postgres build failed::$msg"
+            exit 1
+          }
+      - name: Start server
+        run: |
+          npx next start > server.log 2>&1 &
+          for i in $(seq 1 60); do curl -sf http://localhost:3000/api/auth/me >/dev/null && break; sleep 2; done
+      - name: Smoke test
+        run: |
+          set -e
+          trap 'echo "::error title=Postgres smoke test failed::last command: $BASH_COMMAND"' ERR
+          check() { code=$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:3000$1"); echo "$1 -> $code"; [ "$code" = "$2" ]; }
+          check / 200
+          check /about 200
+          check /blog 200
+          check /ar 200
+          check /admin/login 200
+          curl -s http://localhost:3000/admin/login | grep -q "Create admin account" && echo "First-run admin setup shown"
+          curl -sf -c cookies.txt -X POST http://localhost:3000/api/auth/setup -H 'Content-Type: application/json' -d '{"name":"Owner","email":"owner@example.com","password":"OwnerPass123"}'
+          echo
+          code=$(curl -s -o /dev/null -w "%{http_code}" -X POST http://localhost:3000/api/auth/setup -H 'Content-Type: application/json' -d '{"name":"X","email":"x@example.com","password":"Another123"}'); echo "second setup -> $code"; [ "$code" = "403" ]
+          curl -sf -b cookies.txt "http://localhost:3000/api/admin/pages?take=200" | grep -q '"slug":"about"'
+          curl -sf -X POST http://localhost:3000/api/leads -H 'Content-Type: application/json' -d '{"name":"PG Test","phone":"+971500000000","service":"UAE Golden Visa"}'
+          curl -sf -b cookies.txt http://localhost:3000/api/admin/leads | grep -q "PG Test"
+          # upload an image (stored in the database) and read it back
+          printf '\x89PNG\r\n\x1a\n0000000000000' > test.png
+          URL=$(curl -sf -b cookies.txt -F "files=@test.png;type=image/png" http://localhost:3000/api/admin/upload | node -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>console.log(JSON.parse(d).items[0].url))")
+          echo "Uploaded: $URL"
+          check "$URL" 200
+          echo "All Postgres smoke tests passed"
+      - name: Server log
+        if: always()
+        run: tail -n 120 server.log || true

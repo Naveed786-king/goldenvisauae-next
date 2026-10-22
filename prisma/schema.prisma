@@ -1,0 +1,243 @@
+// Golden Visa UAE - database schema
+// Default provider is SQLite (a single file, no database server needed).
+// To use MySQL instead: change provider to "mysql" and set DATABASE_URL in .env
+// (see README -> "Using MySQL").
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String        @id @default(cuid())
+  name         String
+  email        String        @unique
+  phone        String?
+  nationality  String?
+  passwordHash String
+  role         String        @default("CUSTOMER") // ADMIN | EDITOR | CUSTOMER
+  active       Boolean       @default(true)
+  avatar       String?
+  resetToken   String?
+  resetExpires DateTime?
+  lastLoginAt  DateTime?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  applications Application[]
+  messages     Message[]
+  leads        Lead[]
+}
+
+model Setting {
+  key       String   @id
+  value     String // JSON
+  updatedAt DateTime @updatedAt
+}
+
+model Page {
+  id              String   @id @default(cuid())
+  slug            String   @unique
+  title           String
+  metaTitle       String?
+  metaDescription String?
+  ogImage         String?
+  blocks          String   @default("[]") // JSON array of blocks
+  status          String   @default("published") // published | draft
+  inMenu          Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Post {
+  id              String    @id @default(cuid())
+  slug            String    @unique
+  title           String
+  excerpt         String?
+  content         String    @default("")
+  cover           String?
+  category        String    @default("Golden Visa UAE")
+  tags            String?
+  author          String    @default("Admin")
+  status          String    @default("published")
+  metaTitle       String?
+  metaDescription String?
+  views           Int       @default(0)
+  publishedAt     DateTime  @default(now())
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model Service {
+  id          String   @id @default(cuid())
+  slug        String?
+  title       String
+  subtitle    String?
+  description String?
+  price       String?
+  icon        String?
+  image       String?
+  link        String?
+  category    String   @default("main") // main | additional
+  featured    Boolean  @default(false)
+  active      Boolean  @default(true)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Faq {
+  id        String   @id @default(cuid())
+  question  String
+  answer    String
+  group     String   @default("home")
+  order     Int      @default(0)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Testimonial {
+  id        String   @id @default(cuid())
+  name      String
+  role      String?
+  country   String?
+  rating    Int      @default(5)
+  text      String
+  avatar    String?
+  order     Int      @default(0)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Partner {
+  id        String   @id @default(cuid())
+  name      String
+  logo      String?
+  url       String?
+  order     Int      @default(0)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Lead {
+  id          String   @id @default(cuid())
+  name        String
+  email       String?
+  phone       String?
+  nationality String?
+  service     String?
+  message     String?
+  source      String?
+  status      String   @default("new") // new | contacted | qualified | converted | closed
+  notes       String?
+  seen        Boolean  @default(false)
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Application {
+  id            String     @id @default(cuid())
+  refNo         String     @unique
+  userId        String
+  user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  service       String
+  fullName      String
+  email         String?
+  phone         String?
+  nationality   String?
+  passportNo    String?
+  dateOfBirth   String?
+  propertyValue String?
+  familyMembers Int        @default(0)
+  notes         String?
+  status        String     @default("submitted")
+  progress      Int        @default(10)
+  adminNote     String?
+  seen          Boolean    @default(false)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  documents     Document[]
+  messages      Message[]
+}
+
+model Document {
+  id            String      @id @default(cuid())
+  applicationId String
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  name          String
+  path          String
+  mime          String?
+  size          Int         @default(0)
+  uploadedBy    String      @default("customer")
+  createdAt     DateTime    @default(now())
+}
+
+model Message {
+  id            String      @id @default(cuid())
+  applicationId String
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  senderId      String?
+  sender        User?       @relation(fields: [senderId], references: [id], onDelete: SetNull)
+  body          String
+  fromAdmin     Boolean     @default(false)
+  read          Boolean     @default(false)
+  createdAt     DateTime    @default(now())
+}
+
+model Media {
+  id        String   @id @default(cuid())
+  filename  String
+  url       String
+  mime      String?
+  size      Int      @default(0)
+  alt       String?
+  createdAt DateTime @default(now())
+}
+
+model Subscriber {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  createdAt DateTime @default(now())
+}
+
+// Translated copies of content (pages, posts, FAQs, services, settings, UI text)
+model Translation {
+  id         String   @id @default(cuid())
+  entity     String // page | post | faq | service | testimonial | settings | ui
+  entityId   String
+  locale     String
+  data       String // JSON
+  status     String   @default("auto") // auto | edited | outdated
+  sourceHash String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([entity, entityId, locale])
+  @@index([locale])
+}
+
+// Cache of translated sentences (re-used across pages to save time)
+model TranslationMemory {
+  id        String   @id @default(cuid())
+  key       String   @unique // locale + ":" + sha1(text)
+  text      String
+  createdAt DateTime @default(now())
+}
+
+// Uploaded files kept inside the database (used on hosts without a permanent disk, e.g. Vercel)
+model StoredFile {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  data      Bytes
+  mime      String?
+  size      Int      @default(0)
+  createdAt DateTime @default(now())
+}

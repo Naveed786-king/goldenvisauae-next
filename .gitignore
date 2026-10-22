@@ -1,0 +1,15 @@
+node_modules
+.next
+out
+.env
+.env.local
+*.db
+*.db-journal
+uploads/*
+!uploads/.gitkeep
+npm-debug.log*
+.DS_Store
+ADMIN-LOGIN.txt
+prisma/postgres/
+*.tsbuildinfo
+package-lock.json
