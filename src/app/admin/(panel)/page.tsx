@@ -31,16 +31,16 @@ export default async function Dashboard() {
   const max = Math.max(1, ...days.map((d) => d.count));
 
   const cards = [
-    { label: 'Total leads', value: leadCount, sub: `${newLeads} new`, icon: Inbox, href: '/admin/leads', color: 'from-blue-500 to-blue-600' },
-    { label: 'Applications', value: appCount, sub: `${activeApps} in progress`, icon: FolderKanban, href: '/admin/applications', color: 'from-amber-500 to-orange-500' },
-    { label: 'Customers', value: customers, sub: 'registered clients', icon: Users, href: '/admin/customers', color: 'from-emerald-500 to-teal-500' },
-    { label: 'Blog posts', value: posts, sub: 'published articles', icon: Newspaper, href: '/admin/posts', color: 'from-violet-500 to-purple-600' },
+    { label: 'Total leads', value: leadCount, sub: `${newLeads} new`, icon: Inbox, href: '/admin/leads', color: 'from-[#f3dfa6] to-[#c99a3c]' },
+    { label: 'Applications', value: appCount, sub: `${activeApps} in progress`, icon: FolderKanban, href: '/admin/applications', color: 'from-[#e9cf8a] to-[#b8862f]' },
+    { label: 'Customers', value: customers, sub: 'registered clients', icon: Users, href: '/admin/customers', color: 'from-[#f6e7bd] to-[#d4ab55]' },
+    { label: 'Blog posts', value: posts, sub: 'published articles', icon: Newspaper, href: '/admin/posts', color: 'from-[#ecd9a3] to-[#a87a26]' },
   ];
 
   return (
     <div className="space-y-6">
       <AutoRefresh seconds={30} />
-      <div className="relative overflow-hidden rounded-3xl bg-ink p-7 md:p-9 text-white">
+      <div className="ink-panel admin-hero relative overflow-hidden rounded-3xl p-7 md:p-9">
         <div className="absolute inset-0 bg-pattern opacity-[0.07]" />
         <div className="absolute -right-20 -top-20 h-72 w-72 rounded-full bg-gold/25 blur-3xl" />
         <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -52,21 +52,21 @@ export default async function Dashboard() {
           <div className="flex flex-wrap gap-2">
             <Link href="/admin/pages" className="inline-flex items-center gap-2 rounded-xl bg-white/10 px-4 py-2.5 text-sm font-bold hover:bg-white/20"><FileText className="h-4 w-4" /> Edit pages</Link>
             <Link href="/admin/header" className="inline-flex items-center gap-2 rounded-xl bg-white/10 px-4 py-2.5 text-sm font-bold hover:bg-white/20"><PanelTop className="h-4 w-4" /> Menu</Link>
-            <Link href="/admin/settings" className="inline-flex items-center gap-2 rounded-xl bg-gold px-4 py-2.5 text-sm font-bold text-ink hover:brightness-105"><Settings className="h-4 w-4" /> Settings</Link>
+            <Link href="/admin/settings" className="btn btn-gold btn-sm !rounded-xl !font-bold"><Settings className="h-4 w-4" /> Settings</Link>
           </div>
         </div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {cards.map((c) => (
-          <Link key={c.label} href={c.href} className="group rounded-2xl bg-white p-5 ring-1 ring-gray-200/70 transition hover:shadow-lg">
+          <Link key={c.label} href={c.href} className="admin-stat group rounded-2xl p-5">
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-xs font-bold uppercase tracking-wider text-gray-400">{c.label}</p>
-                <p className="mt-2 text-3xl font-extrabold text-gray-900">{c.value}</p>
+                <p className="mt-2 text-3xl font-extrabold text-gold-gradient">{c.value}</p>
                 <p className="mt-1 text-xs text-gray-500">{c.sub}</p>
               </div>
-              <span className={`grid h-11 w-11 place-items-center rounded-xl bg-gradient-to-br ${c.color} text-white shadow-lg`}>
+              <span className={`grid h-11 w-11 place-items-center rounded-xl bg-gradient-to-br ${c.color} text-[#2a1d05] shadow-lg shadow-[#c99a3c]/30 transition-transform duration-500 group-hover:rotate-[-8deg] group-hover:scale-110`}>
                 <c.icon className="h-5 w-5" />
               </span>
             </div>

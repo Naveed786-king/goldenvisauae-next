@@ -1,6 +1,6 @@
 import { MapPin, Phone, Mail } from 'lucide-react';
 import type { FooterSettings, SiteSettings } from '@/lib/defaults';
-import Logo from './Logo';
+import Logo, { Emblem } from './Logo';
 import SmartLink from '@/components/ui/SmartLink';
 import { SocialIcon } from '@/components/ui/Icon';
 import NewsletterForm from './NewsletterForm';
@@ -11,6 +11,7 @@ export default function Footer({ site, footer }: { site: SiteSettings; footer: F
   const socials = (['facebook', 'instagram', 'youtube', 'twitter', 'linkedin', 'tiktok'] as const).filter((k) => site.social[k]);
   return (
     <footer className="site-footer">
+      <Emblem className="ftr-mark" />
       <div className="container-x grid gap-12 py-14 md:grid-cols-2 lg:grid-cols-12 lg:py-16">
         <div className="min-w-0 lg:col-span-4">
           <Logo src={site.logo} name={site.name} tagline={site.tagline} size="lg" />
@@ -45,7 +46,7 @@ export default function Footer({ site, footer }: { site: SiteSettings; footer: F
           {socials.length > 0 && (
             <div className="mt-6 flex gap-2">
               {socials.map((k) => (
-                <a key={k} href={site.social[k]} target="_blank" rel="noopener noreferrer" aria-label={k} className="grid h-9 w-9 place-items-center rounded-full border border-black/10 text-[#3a3a3c] transition hover:border-gold hover:text-gold-deep">
+                <a key={k} href={site.social[k]} target="_blank" rel="noopener noreferrer" aria-label={k} className="ftr-social grid h-10 w-10 place-items-center rounded-full border border-black/10 text-[#3a3a3c]">
                   <SocialIcon name={k} />
                 </a>
               ))}
@@ -82,7 +83,7 @@ export default function Footer({ site, footer }: { site: SiteSettings; footer: F
         )}
       </div>
 
-      <div className="border-t border-black/[0.06]">
+      <div className="ftr-bottom">
         <div className="container-x py-6">
           {footer.disclaimer && <p className="text-xs leading-relaxed opacity-80">{footer.disclaimer}</p>}
           <div className="mt-4 flex flex-col gap-3 text-xs sm:flex-row sm:items-center sm:justify-between">

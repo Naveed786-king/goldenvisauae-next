@@ -139,13 +139,13 @@ export default function ApplyWizard() {
               <h2 className="font-display text-3xl font-semibold">{t('Which visa or service do you need?')}</h2>
               <div className="mt-6 grid gap-4 sm:grid-cols-2">
                 {FEATURED.map((f) => (
-                  <button key={f.v} onClick={() => setService(f.v)} className={cn('group flex items-center gap-4 rounded-2xl p-5 text-left ring-1 transition-all', service === f.v ? 'bg-ink text-white ring-ink shadow-xl' : 'ring-ink/10 hover:ring-gold')}>
+                  <button key={f.v} onClick={() => setService(f.v)} className={cn('group flex items-center gap-4 rounded-2xl p-5 text-left ring-1 transition-all', service === f.v ? 'chip-active ring-gold shadow-xl' : 'ring-ink/10 hover:ring-gold')}>
                     <span className={cn('grid h-12 w-12 shrink-0 place-items-center rounded-xl', service === f.v ? 'bg-gold text-ink' : 'bg-gold/15 text-gold-deep')}>
                       <f.icon className="h-6 w-6" />
                     </span>
                     <span>
                       <span className="block font-bold">{t(f.v)}</span>
-                      <span className={cn('block text-xs mt-0.5', service === f.v ? 'text-white/60' : 'text-ink/50')}>{t(f.d)}</span>
+                      <span className={cn('block text-xs mt-0.5', service === f.v ? 'text-[#3b2a08]/70' : 'text-ink/50')}>{t(f.d)}</span>
                     </span>
                   </button>
                 ))}
@@ -186,7 +186,7 @@ export default function ApplyWizard() {
               </div>
 
               {!me ? (
-                <div className="mt-6 rounded-3xl bg-ink p-5 text-white md:p-6">
+                <div className="ink-panel mt-6 rounded-3xl p-5 md:p-6">
                   <p className="flex items-center gap-2 font-bold">
                     <Lock className="h-4 w-4 text-gold" /> {t('Create your password')}
                   </p>

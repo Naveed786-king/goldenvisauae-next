@@ -59,7 +59,7 @@ export default function LanguageSwitcher({ variant = 'header' }: { variant?: 'he
     return (
       <div className="grid grid-cols-2 gap-2">
         {langs.map((l) => (
-          <button key={l.code} onClick={() => go(l.code)} className={cn('flex min-w-0 items-center gap-2 rounded-2xl px-3 py-3 text-start text-sm transition', l.code === locale ? 'bg-[#0b0b0c] font-medium text-white' : 'bg-[#f5f5f7] text-[#1d1d1f] active:scale-[.98]')}>
+          <button key={l.code} onClick={() => go(l.code)} className={cn('flex min-w-0 items-center gap-2 rounded-2xl px-3 py-3 text-start text-sm transition', l.code === locale ? 'chip-active font-medium' : 'bg-[#f5f5f7] text-[#1d1d1f] active:scale-[.98]')}>
             <span className="text-base leading-none">{l.flag}</span>
             <span className="truncate">{l.native}</span>
           </button>

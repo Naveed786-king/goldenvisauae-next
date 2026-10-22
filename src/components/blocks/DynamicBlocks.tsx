@@ -12,6 +12,7 @@ import { FaqFilter } from './CompanyInteractive';
 import PostCard from './PostCard';
 import LoadMorePosts from './LoadMorePosts';
 import LeadForm from './LeadForm';
+import Slider3D from '@/components/ui/Slider3D';
 
 type P = { data: any; site: SiteSettings };
 const D = (x: any) => withDirham(x);
@@ -105,11 +106,11 @@ export async function Services({ data }: P) {
                     <h2 className="font-display text-xl font-semibold">{t(cat)}</h2>
                     <span className="hairline flex-1" />
                   </div>
-                  <ul className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  <Slider3D as="ul" className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3" autoplay={false}>
                     {list.map((s: any) => (
                       <li key={s.id}>{card(s)}</li>
                     ))}
-                  </ul>
+                  </Slider3D>
                 </section>
               );
             })}
@@ -124,13 +125,13 @@ export async function Services({ data }: P) {
             )}
           </div>
         ) : (
-          <ul className={cn('grid', titled && 'mt-12', layout === 'compact' ? 'gap-3 sm:grid-cols-2 lg:grid-cols-4' : 'gap-5 sm:grid-cols-2 lg:grid-cols-3')} data-rv-stagger="">
+          <Slider3D as="ul" className={cn('grid', titled && 'mt-12', layout === 'compact' ? 'gap-3 sm:grid-cols-2 lg:grid-cols-4' : 'gap-5 sm:grid-cols-2 lg:grid-cols-3')}>
             {items.map((s: any) => (
               <li key={s.id} className="reveal">
                 {card(s, layout === 'compact')}
               </li>
             ))}
-          </ul>
+          </Slider3D>
         )}
         {!titled && hasLink(data.cta) && (
           <div className="mt-10 flex justify-center">
@@ -182,13 +183,20 @@ export async function Blog({ data }: P) {
           <Head label={data.label} heading={data.heading} accent={data.accent} lead={data.lead} align={hasLink(data.cta) ? 'left' : 'center'} />
           {hasLink(data.cta) && <Btn link={data.cta} variant="outline" arrow className="reveal" />}
         </div>
-        <div className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-3" data-rv-stagger="">
-          {items.map((p: any, i: number) => (
+        {(() => {
+          const cards = items.map((p: any, i: number) => (
             <div key={p.id} className="reveal">
               <PostCard post={JSON.parse(JSON.stringify(p))} priority={i === 0} />
             </div>
-          ))}
-        </div>
+          ));
+          return data.paged ? (
+            <div className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-3" data-rv-stagger="">
+              {cards}
+            </div>
+          ) : (
+            <Slider3D className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-3">{cards}</Slider3D>
+          );
+        })()}
         {data.paged && <LoadMorePosts start={items.length} total={total} />}
       </div>
     </Section>
@@ -509,15 +517,15 @@ export function CalculatorBlock({ data }: P) {
               <CalcButton label={data.button || 'Calculate'} className="btn btn-dark btn-lg" />
             </div>
           </div>
-          <div className="card3d-wrap hidden sm:block">
+          <div className="card3d-wrap">
             <div className="tilt mx-auto w-full max-w-[300px] rounded-[28px]" data-tilt="14">
-              <div className="rounded-[28px] bg-[#0b0b0c] p-5 shadow-[0_40px_80px_-30px_rgba(0,0,0,.55)]" style={{ transform: 'rotateX(8deg) rotateY(-12deg)' }}>
-                <div className="rounded-2xl bg-white/5 px-4 py-5 text-end font-display text-3xl font-semibold text-white">
+              <div className="ink-panel calc-device !rounded-[28px] p-5" style={{ transform: 'rotateX(8deg) rotateY(-12deg)' }}>
+                <div className="calc-screen rounded-2xl bg-white/5 px-4 py-5 text-end font-display text-3xl font-semibold text-white">
                   <span className="accent">AED</span> 11,553
                 </div>
                 <div className="mt-4 grid grid-cols-4 gap-2">
                   {['7', '8', '9', '÷', '4', '5', '6', '×', '1', '2', '3', '−', '0', '.', '=', '+'].map((k, i) => (
-                    <span key={i} className={cn('grid h-11 place-items-center rounded-xl text-sm font-medium', k === '=' ? 'text-[#1a1406]' : 'bg-white/[0.07] text-white/80')} style={k === '=' ? { background: 'var(--gold-grad)' } : undefined}>
+                    <span key={i} className={cn('calc-key grid h-11 place-items-center rounded-xl text-sm font-medium', k === '=' ? 'text-[#1a1406]' : 'bg-white/[0.07] text-white/80')} style={{ ...(k === '=' ? { background: 'var(--gold-grad)' } : {}), ['--k' as any]: `${(i * 7) % 16}` }}>
                       {k}
                     </span>
                   ))}

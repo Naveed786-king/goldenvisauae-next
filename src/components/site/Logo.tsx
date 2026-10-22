@@ -21,8 +21,8 @@ export default function Logo({ src, name, tagline, className, size = 'md' }: { s
 export function TextMark({ name, tagline, size = 'md' }: { name: string; tagline?: string; size?: 'md' | 'lg' }) {
   return (
     <span className="flex min-w-0 items-center gap-2.5">
-      <span className={cn('relative grid shrink-0 place-items-center rounded-[12px] text-[#2a1d05] shadow-[inset_0_1px_0_rgba(255,255,255,.6),0_8px_18px_-10px_rgba(150,110,30,.9)] transition-transform duration-500 group-hover:rotate-[8deg]', size === 'lg' ? 'h-11 w-11' : 'h-9 w-9')} style={{ background: 'var(--gold-grad)' }}>
-        <Emblem className={size === 'lg' ? 'h-7 w-7' : 'h-6 w-6'} />
+      <span className={cn('logo-badge relative grid shrink-0 place-items-center rounded-[12px] text-[#2a1d05]', size === 'lg' ? 'h-11 w-11' : 'h-9 w-9')} style={{ background: 'var(--gold-grad)' }}>
+        <Emblem className={cn('logo-emblem', size === 'lg' ? 'h-7 w-7' : 'h-6 w-6')} />
       </span>
       <span className="min-w-0 leading-none">
         <span className={cn('block truncate font-display font-semibold tracking-[-0.02em] text-[#0b0b0c]', size === 'lg' ? 'text-[1.15rem]' : 'text-[1.02rem]')}>{name}</span>

@@ -69,7 +69,7 @@ export default async function AccountPage() {
         )}
       </div>
 
-      <div className="rounded-[2rem] bg-ink p-8 text-white flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+      <div className="ink-panel rounded-[2rem] p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
         <div>
           <h3 className="font-display text-2xl font-semibold !text-white">Need help with your application?</h3>
           <p className="text-sm text-white/60 mt-1">Call {site.phoneDisplay} or message us on WhatsApp — {site.hours}.</p>

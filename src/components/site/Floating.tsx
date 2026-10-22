@@ -23,14 +23,19 @@ export default function Floating({ site }: { site: SiteSettings }) {
     const onScroll = () => setShow(window.scrollY > 600);
     onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
+    // a short greeting on larger screens only (on phones it would cover the page)
+    let hide = 0;
     const tm = setTimeout(() => {
       try {
-        if (!sessionStorage.getItem('wa-bubble')) setBubble(true);
+        if (window.matchMedia('(max-width: 767px)').matches || sessionStorage.getItem('wa-bubble')) return;
+        setBubble(true);
+        hide = window.setTimeout(() => setBubble(false), 8000);
       } catch {}
     }, 9000);
     return () => {
       window.removeEventListener('scroll', onScroll);
       clearTimeout(tm);
+      clearTimeout(hide);
     };
   }, []);
 

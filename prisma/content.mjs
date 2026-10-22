@@ -80,6 +80,67 @@ export const allPages = [
    },
    {
     "id": "home-4",
+    "type": "journey",
+    "data": {
+     "label": "How it works",
+     "heading": "Watch your Golden Visa",
+     "accent": "come together.",
+     "lead": "From the first WhatsApp message to the gold card in your hand — this is exactly how we run your file.",
+     "seconds": 3.8,
+     "cta": {
+      "label": "Start on WhatsApp",
+      "href": "whatsapp"
+     },
+     "cta2": {
+      "label": "Calculate my cost",
+      "href": "/services/golden-visa-cost"
+     },
+     "steps": [
+      {
+       "scene": "chat",
+       "icon": "chat",
+       "title": "Free eligibility check",
+       "body": "Message us on WhatsApp. A consultant confirms your category and sends a written opinion.",
+       "a": "Hi! Do I qualify for the Golden Visa?",
+       "b": "Yes — property route. Free assessment sent."
+      },
+      {
+       "scene": "docs",
+       "icon": "file",
+       "title": "Documents checked",
+       "body": "Send scans from your phone. We check every page before anything is filed.",
+       "items": "Passport\nTitle deed\nPhoto\nEmirates ID"
+      },
+      {
+       "scene": "scan",
+       "icon": "fingerprint",
+       "title": "Medical & biometrics",
+       "body": "We book the VIP medical and Emirates ID fingerprints — one short visit.",
+       "a": "Medical — fit",
+       "b": "Biometrics — done"
+      },
+      {
+       "scene": "stamp",
+       "icon": "stamp",
+       "title": "Approved",
+       "body": "We file with the authority and track every stage until approval.",
+       "a": "Residency application",
+       "b": "APPROVED"
+      },
+      {
+       "scene": "card",
+       "icon": "crown",
+       "title": "Golden Visa issued",
+       "body": "Your 10-year residency and Emirates ID are delivered to your door.",
+       "a": "Golden Visa",
+       "b": "United Arab Emirates"
+      }
+     ],
+     "theme": "sand"
+    }
+   },
+   {
+    "id": "home-5",
     "type": "cards",
     "data": {
      "label": "The programme",
@@ -109,7 +170,7 @@ export const allPages = [
     }
    },
    {
-    "id": "home-5",
+    "id": "home-6",
     "type": "cards",
     "data": {
      "heading": "The core objectives of the Golden Visa",
@@ -139,7 +200,7 @@ export const allPages = [
     }
    },
    {
-    "id": "home-6",
+    "id": "home-7",
     "type": "cards",
     "data": {
      "label": "Why the Golden Visa",
@@ -198,7 +259,7 @@ export const allPages = [
     }
    },
    {
-    "id": "home-7",
+    "id": "home-8",
     "type": "cards",
     "data": {
      "label": "Who qualifies",
@@ -254,7 +315,7 @@ export const allPages = [
     }
    },
    {
-    "id": "home-8",
+    "id": "home-9",
     "type": "cards",
     "data": {
      "label": "How it works",
@@ -294,7 +355,7 @@ export const allPages = [
     }
    },
    {
-    "id": "home-9",
+    "id": "home-10",
     "type": "feature",
     "data": {
      "badge": "24-hour fast track",
@@ -334,7 +395,7 @@ export const allPages = [
     }
    },
    {
-    "id": "home-10",
+    "id": "home-11",
     "type": "table",
     "data": {
      "label": "Comparison",
@@ -362,7 +423,7 @@ export const allPages = [
     }
    },
    {
-    "id": "home-11",
+    "id": "home-12",
     "type": "costs",
     "data": {
      "label": "Timing & cost",
@@ -406,7 +467,7 @@ export const allPages = [
     }
    },
    {
-    "id": "home-12",
+    "id": "home-13",
     "type": "calculator",
     "data": {
      "label": "Instant estimate",
@@ -419,7 +480,7 @@ export const allPages = [
     }
    },
    {
-    "id": "home-13",
+    "id": "home-14",
     "type": "cards",
     "data": {
      "label": "Avoidable mistakes",
@@ -460,7 +521,7 @@ export const allPages = [
     }
    },
    {
-    "id": "home-14",
+    "id": "home-15",
     "type": "split",
     "data": {
      "label": "Our promise",
@@ -483,7 +544,7 @@ export const allPages = [
     }
    },
    {
-    "id": "home-15",
+    "id": "home-16",
     "type": "cards",
     "data": {
      "label": "Services",
@@ -525,7 +586,7 @@ export const allPages = [
     }
    },
    {
-    "id": "home-16",
+    "id": "home-17",
     "type": "services",
     "data": {
      "layout": "compact",
@@ -542,7 +603,7 @@ export const allPages = [
     }
    },
    {
-    "id": "home-17",
+    "id": "home-18",
     "type": "testimonials",
     "data": {
      "label": "Real people, real results",
@@ -553,7 +614,7 @@ export const allPages = [
     }
    },
    {
-    "id": "home-18",
+    "id": "home-19",
     "type": "faq",
     "data": {
      "label": "FAQ",
@@ -570,7 +631,7 @@ export const allPages = [
     }
    },
    {
-    "id": "home-19",
+    "id": "home-20",
     "type": "blog",
     "data": {
      "label": "Insights",
@@ -584,7 +645,7 @@ export const allPages = [
     }
    },
    {
-    "id": "home-20",
+    "id": "home-21",
     "type": "callback",
     "data": {
      "label": "Talk to us",
@@ -597,7 +658,7 @@ export const allPages = [
     }
    },
    {
-    "id": "home-21",
+    "id": "home-22",
     "type": "cta",
     "data": {
      "heading": "Find out if you qualify —",

@@ -73,6 +73,60 @@ export default function DesignEffects() {
     };
   }, [pathname]);
 
+  // Phones: cards tilt in 3D under the finger (scrolling is never blocked)
+  useEffect(() => {
+    if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    let el: HTMLElement | null = null;
+    let raf = 0;
+    let pt: { x: number; y: number } | null = null;
+    const paint = () => {
+      raf = 0;
+      if (!el || !pt) return;
+      const r = el.getBoundingClientRect();
+      const x = Math.min(1, Math.max(0, (pt.x - r.left) / r.width));
+      const y = Math.min(1, Math.max(0, (pt.y - r.top) / r.height));
+      const max = Number(el.dataset.tilt || 7) * 1.3;
+      el.style.setProperty('--tx', `${((x - 0.5) * max).toFixed(2)}deg`);
+      el.style.setProperty('--ty', `${((0.5 - y) * max).toFixed(2)}deg`);
+      el.style.setProperty('--mx', `${(x * 100).toFixed(1)}%`);
+      el.style.setProperty('--my', `${(y * 100).toFixed(1)}%`);
+      el.classList.add('is-touched');
+    };
+    const reset = () => {
+      if (!el) return;
+      const t = el;
+      t.style.removeProperty('--tx');
+      t.style.removeProperty('--ty');
+      window.setTimeout(() => t.classList.remove('is-touched'), 350);
+      el = null;
+    };
+    const onStart = (e: TouchEvent) => {
+      const t = (e.target as HTMLElement | null)?.closest?.('.tilt') as HTMLElement | null;
+      if (el && el !== t) reset();
+      el = t;
+      if (!el) return;
+      pt = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      if (!raf) raf = requestAnimationFrame(paint);
+    };
+    const onMove = (e: TouchEvent) => {
+      if (!el) return;
+      pt = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      if (!raf) raf = requestAnimationFrame(paint);
+    };
+    document.addEventListener('touchstart', onStart, { passive: true });
+    document.addEventListener('touchmove', onMove, { passive: true });
+    document.addEventListener('touchend', reset, { passive: true });
+    document.addEventListener('touchcancel', reset, { passive: true });
+    return () => {
+      document.removeEventListener('touchstart', onStart);
+      document.removeEventListener('touchmove', onMove);
+      document.removeEventListener('touchend', reset);
+      document.removeEventListener('touchcancel', reset);
+      cancelAnimationFrame(raf);
+    };
+  }, []);
+
   // 3D tilt: one listener for the whole page (cheap), only with a mouse / trackpad
   useEffect(() => {
     if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;

@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils';
 import { Emblem } from '@/components/site/Logo';
 import { Btn, Head, Section, hasLink, lines, WhatsAppIcon } from './parts';
 import { DaysSince, OpenNow, Tabs3D } from './CompanyInteractive';
+import VisaJourney from './VisaJourney';
 
 type P = { data: any; site: SiteSettings };
 const D = (x: any) => withDirham(x);
@@ -451,6 +452,28 @@ export async function Office({ data, site }: P) {
                 {it.body && <p className="muted mt-2 text-sm leading-relaxed">{D(it.body)}</p>}
               </div>
             ))}
+          </div>
+        )}
+      </div>
+    </Section>
+  );
+}
+
+/* ================================================================== visa journey film */
+export function Journey({ data }: P) {
+  const steps = (data.steps || []).filter((s: any) => s?.title);
+  if (!steps.length) return null;
+  return (
+    <Section data={data}>
+      <div className="container-x">
+        <Head label={data.label} heading={data.heading} accent={data.accent} lead={data.lead} />
+        <div className="reveal mt-12">
+          <VisaJourney steps={steps} seconds={Number(data.seconds) || 3.8} />
+        </div>
+        {(hasLink(data.cta) || hasLink(data.cta2)) && (
+          <div className="btn-row reveal mt-10 flex flex-wrap justify-center gap-3">
+            <Btn link={data.cta} variant="dark" arrow />
+            <Btn link={data.cta2} variant="outline" />
           </div>
         )}
       </div>

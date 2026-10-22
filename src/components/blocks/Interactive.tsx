@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { Plus, Calculator, CircleCheck, LoaderCircle, Send, Lock, RotateCcw, Star, Quote } from 'lucide-react';
 import { useLocale, useSite, useT } from '@/components/site/SiteProvider';
@@ -7,6 +7,7 @@ import { localizePath } from '@/lib/i18n/config';
 import { withDirham } from '@/components/ui/Dirham';
 import { cn } from '@/lib/utils';
 import { WhatsAppIcon } from './parts';
+import Slider3D from '@/components/ui/Slider3D';
 
 export const CALC_EVENT = 'open-cost-calculator';
 export const openCalculator = () => window.dispatchEvent(new CustomEvent(CALC_EVENT));
@@ -300,10 +301,12 @@ export function VisaStatusForm({ d }: { d: any }) {
 export function ReviewGrid({ items, limit }: { items: { id: string; name: string; role?: string | null; country?: string | null; text: string; rating: number }[]; limit: number }) {
   const t = useT();
   const [all, setAll] = useState(false);
-  const shown = all ? items : items.slice(0, Math.max(1, limit || 6));
+  const [phone, setPhone] = useState(false);
+  useEffect(() => setPhone(window.matchMedia('(max-width: 767px)').matches), []);
+  const shown = all || phone ? items : items.slice(0, Math.max(1, limit || 6));
   return (
     <>
-      <div className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+      <Slider3D className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-3" label={t('Client reviews')}>
         {shown.map((r, i) => (
           <figure key={r.id} className="card card-lift tilt flex h-full flex-col p-7" data-tilt="5" style={{ animation: i >= limit ? 'pop .45s cubic-bezier(.2,.8,.2,1) both' : undefined }}>
             <div className="flex items-center justify-between">
@@ -321,9 +324,9 @@ export function ReviewGrid({ items, limit }: { items: { id: string; name: string
             </figcaption>
           </figure>
         ))}
-      </div>
+      </Slider3D>
       {items.length > shown.length && (
-        <div className="mt-8 text-center">
+        <div className="mt-8 hidden text-center md:block">
           <button type="button" onClick={() => setAll(true)} className={cn('btn btn-outline')}>
             {t('Show more reviews')}
           </button>

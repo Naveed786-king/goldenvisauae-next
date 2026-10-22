@@ -150,7 +150,7 @@ export default function CostCalculator({ fees }: { fees: FeeSettings }) {
 
   if (!open || fees.enabled === false || !option) return null;
   const nextLabel = stepIndex === steps.length - 2 ? L.calc : L.next;
-  const choice = (active: boolean) => cn('rounded-2xl border px-4 py-3 text-start transition-all active:scale-[.99]', active ? 'border-[#0b0b0c] bg-[#0b0b0c] text-white shadow-[0_14px_30px_-16px_rgba(0,0,0,.6)]' : 'border-black/[0.08] bg-white hover:border-black/20');
+  const choice = (active: boolean) => cn('rounded-2xl border px-4 py-3 text-start transition-all active:scale-[.99]', active ? 'chip-active calc-opt' : 'calc-opt border-black/[0.08] bg-white');
 
   return (
     <div className="fixed inset-0 z-[90] flex items-end justify-center sm:items-center sm:p-4" role="dialog" aria-modal="true" aria-label={L.title}>
@@ -226,10 +226,10 @@ export default function CostCalculator({ fees }: { fees: FeeSettings }) {
                   const IconC = i === 0 ? Stethoscope : Zap;
                   return (
                     <button key={o.id} type="button" role="radio" aria-checked={active} onClick={() => setMedicalId(o.id)} className={cn(choice(active), 'grid gap-2 p-5')}>
-                      <IconC className={cn('h-6 w-6', active ? 'text-gold-light' : 'text-gold-deep')} />
+                      <IconC className={cn('h-6 w-6', active ? 'text-[#3b2a08]' : 'text-gold-deep')} />
                       <span className="font-display text-base font-semibold">{i === 0 ? L.medNormal : L.medVip}</span>
-                      <span className={cn('text-xs', active ? 'text-white/70' : 'muted')}>{i === 0 ? L.medNormalSub : L.medVipSub}</span>
-                      <span className={cn('text-sm font-semibold', active ? 'text-gold-light' : 'text-gold-deep')}>
+                      <span className={cn('text-xs', active ? 'text-[#3b2a08]/70' : 'muted')}>{i === 0 ? L.medNormalSub : L.medVipSub}</span>
+                      <span className={cn('text-sm font-semibold', active ? 'text-[#3b2a08]' : 'text-gold-deep')}>
                         {o.gov > 0 ? '+ ' : ''}
                         <Dh amount={o.gov} />
                       </span>
@@ -264,9 +264,9 @@ export default function CostCalculator({ fees }: { fees: FeeSettings }) {
                       }}
                       className={cn(choice(active), 'grid gap-2 p-5')}
                     >
-                      <I className={cn('h-6 w-6', active ? 'text-gold-light' : 'text-gold-deep')} />
+                      <I className={cn('h-6 w-6', active ? 'text-[#3b2a08]' : 'text-gold-deep')} />
                       <span className="font-display text-base font-semibold">{t}</span>
-                      <span className={cn('text-xs', active ? 'text-white/70' : 'muted')}>{s}</span>
+                      <span className={cn('text-xs', active ? 'text-[#3b2a08]/70' : 'muted')}>{s}</span>
                     </button>
                   );
                 })}
@@ -324,7 +324,7 @@ export default function CostCalculator({ fees }: { fees: FeeSettings }) {
                                 { v: 1, label: L.yes },
                                 { v: 0, label: L.no },
                               ].map(({ v, label }) => (
-                                <button key={v} type="button" role="radio" aria-checked={(n > 0 ? 1 : 0) === v} onClick={() => setAddons((p) => ({ ...p, [a.id]: v }))} className={cn('rounded-full px-3 py-1 text-xs font-medium transition', (n > 0 ? 1 : 0) === v ? 'bg-[#0b0b0c] text-white' : 'text-[#6e6e73]')}>
+                                <button key={v} type="button" role="radio" aria-checked={(n > 0 ? 1 : 0) === v} onClick={() => setAddons((p) => ({ ...p, [a.id]: v }))} className={cn('rounded-full px-3 py-1 text-xs font-medium transition', (n > 0 ? 1 : 0) === v ? 'chip-active' : 'text-[#6e6e73]')}>
                                   {label}
                                 </button>
                               ))}
@@ -377,7 +377,7 @@ export default function CostCalculator({ fees }: { fees: FeeSettings }) {
                       <Dh amount={vat} />
                     </span>
                   </div>
-                  <div className="flex items-center justify-between gap-3 bg-[#0b0b0c] px-4 py-4 text-white">
+                  <div className="calc-total flex items-center justify-between gap-3 px-4 py-4">
                     <span className="font-display text-base font-semibold">{L.totalLabel}</span>
                     <span className="accent font-display text-2xl font-semibold sm:text-3xl">
                       <Dh amount={total} />

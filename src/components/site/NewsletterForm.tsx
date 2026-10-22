@@ -24,7 +24,7 @@ export default function NewsletterForm() {
         {t('Email address')}
       </label>
       <input id="nl-email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder={state === 'done' ? t('Subscribed — thank you!') : t('you@company.com')} className="min-w-0 flex-1 bg-transparent px-3 text-[16px] text-[#1d1d1f] outline-none placeholder:text-[#aeaeb2] sm:text-sm" />
-      <button disabled={state === 'loading'} className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#0b0b0c] text-white transition hover:bg-[#222]" aria-label={t('Subscribe')}>
+      <button disabled={state === 'loading'} className="grid h-10 w-10 shrink-0 place-items-center rounded-xl btn-dark text-white transition" aria-label={t('Subscribe')}>
         {state === 'loading' ? <LoaderCircle className="h-4 w-4 animate-spin" /> : state === 'done' ? <Check className="h-4 w-4" /> : <ArrowRight className="h-4 w-4" />}
       </button>
     </form>

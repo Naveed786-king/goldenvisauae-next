@@ -47,7 +47,7 @@ export function Toaster() {
             initial={{ opacity: 0, x: 40, scale: 0.95 }}
             animate={{ opacity: 1, x: 0, scale: 1 }}
             exit={{ opacity: 0, x: 40 }}
-            className={cn('flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold shadow-2xl min-w-[260px] max-w-sm', t.type === 'error' ? 'bg-red-600 text-white' : t.type === 'info' ? 'bg-ink text-white' : 'bg-emerald-600 text-white')}
+            className={cn('flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold shadow-2xl min-w-[260px] max-w-sm', t.type === 'error' ? 'bg-red-600 text-white' : t.type === 'info' ? 'bg-white text-gray-900 ring-1 ring-[#ecd9a3] shadow-[#c99a3c]/30' : 'bg-emerald-600 text-white')}
           >
             {t.type === 'error' ? <CircleAlert className="h-5 w-5 shrink-0" /> : <CircleCheck className="h-5 w-5 shrink-0" />}
             {t.msg}

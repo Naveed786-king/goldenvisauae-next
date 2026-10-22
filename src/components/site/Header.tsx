@@ -27,11 +27,21 @@ export default function Header({ site, header }: { site: SiteSettings; header: H
   const [me, setMe] = useState<Me>(null);
   const closeTimer = useRef<number | null>(null);
 
+  const [hidden, setHidden] = useState(false);
   useEffect(() => {
     let raf = 0;
+    let last = window.scrollY;
     const onScroll = () => {
       cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(() => setScrolled(window.scrollY > 16));
+      raf = requestAnimationFrame(() => {
+        const y = window.scrollY;
+        setScrolled(y > 16);
+        // hide while scrolling down a page, show again as soon as the visitor scrolls up
+        if (Math.abs(y - last) > 6) {
+          setHidden(y > 220 && y > last);
+          last = y;
+        }
+      });
     };
     onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
@@ -89,7 +99,7 @@ export default function Header({ site, header }: { site: SiteSettings; header: H
 
   return (
     <>
-      <header className="site-header" data-scrolled={scrolled ? '' : undefined}>
+      <header className="site-header" data-scrolled={scrolled ? '' : undefined} data-hidden={hidden && !open && drop === null ? '' : undefined}>
         {header.topbar.enabled && header.topbar.text && (
           <div className={cn('topbar transition-all duration-500', scrolled && 'pointer-events-none !my-0 !min-h-0 !py-0 h-0 opacity-0')}>
             <span className="dot-gold" />
@@ -102,6 +112,8 @@ export default function Header({ site, header }: { site: SiteSettings; header: H
           </div>
         )}
         <div className="hdr-island" onMouseLeave={leave}>
+          <span aria-hidden className="hdr-progress" />
+          <span aria-hidden className="hdr-sheen" />
           <Logo src={site.logo} name={site.name} tagline={site.tagline} />
 
           <nav className="site-nav ms-auto hidden items-center gap-0.5 lg:flex" aria-label="Main">
@@ -224,7 +236,7 @@ export default function Header({ site, header }: { site: SiteSettings; header: H
               <ul className="grid grid-cols-2 gap-2">
                 {header.menu.map((item, i) => (
                   <li key={i} style={{ animation: `pop .35s cubic-bezier(.2,.8,.2,1) ${i * 0.03}s both` }}>
-                    <SmartLink href={item.href} className={cn('flex min-h-[52px] items-center rounded-2xl px-4 text-[0.95rem] font-medium', isActive(item.href) ? 'bg-[#0b0b0c] text-white' : 'bg-[#f5f5f7] text-[#1d1d1f]')}>
+                    <SmartLink href={item.href} className={cn('flex min-h-[52px] items-center rounded-2xl px-4 text-[0.95rem] font-medium', isActive(item.href) ? 'chip-active' : 'bg-[#f5f5f7] text-[#1d1d1f]')}>
                       {item.label}
                     </SmartLink>
                   </li>

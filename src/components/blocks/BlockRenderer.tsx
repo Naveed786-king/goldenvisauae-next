@@ -3,7 +3,7 @@ import type { SiteSettings } from '@/lib/defaults';
 import { Hero, PageHeader, LandingHero } from './HeroBlocks';
 import { Stats, Cards, Split, Feature, Compare, Table, Costs, Routes, Quote, Cta, ServiceBody, Sources, RichText, Html } from './ContentBlocks';
 import { Partners, Services, Related, Blog, Testimonials, Faq, Contact, Callback, LeadFormBlock, VisaStatus, CalculatorBlock } from './DynamicBlocks';
-import { IntroHero, Founder, TabsBlock, License, Office } from './CompanyBlocks';
+import { IntroHero, Founder, TabsBlock, License, Office, Journey } from './CompanyBlocks';
 import { blockCss, blockFonts, googleFontsUrl } from '@/lib/design';
 import { getSetting } from '@/lib/settings';
 
@@ -41,6 +41,7 @@ const MAP: Record<string, (p: { data: any; site: SiteSettings }) => any> = {
   tabs: TabsBlock,
   license: License,
   office: Office,
+  journey: Journey,
 };
 
 export default async function BlockRenderer({ blocks, site }: { blocks: Block[]; site: SiteSettings }) {

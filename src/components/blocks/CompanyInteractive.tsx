@@ -133,7 +133,7 @@ export function Tabs3D({ items }: { items: { icon?: string; title: string; body:
               setI(k);
               setTurn((x) => x + 1);
             }}
-            className={cn('rounded-xl px-4 py-2 text-sm font-medium transition-colors duration-200', k === i ? 'bg-[#0b0b0c] text-white shadow-[0_8px_20px_-10px_rgba(0,0,0,.6)]' : 'text-[#6e6e73] hover:bg-black/[0.04] hover:text-black')}
+            className={cn('rounded-xl px-4 py-2 text-sm font-medium transition-colors duration-200', k === i ? 'chip-active' : 'text-[#6e6e73] hover:bg-black/[0.04] hover:text-black')}
           >
             {it.title}
           </button>
@@ -169,7 +169,7 @@ export function FaqFilter({ items, tags, allLabel }: { items: { q: string; a: st
               role="tab"
               aria-selected={tag === x}
               onClick={() => setTag(x)}
-              className={cn('rounded-full border px-4 py-1.5 text-sm font-medium transition-all duration-200', tag === x ? 'border-[#0b0b0c] bg-[#0b0b0c] text-white' : 'border-black/10 bg-white text-[#3a3a3c] hover:border-gold/60')}
+              className={cn('rounded-full border px-4 py-1.5 text-sm font-medium transition-all duration-200', tag === x ? 'chip-active' : 'border-black/10 bg-white text-[#3a3a3c] hover:border-gold/60')}
             >
               {x || allLabel || t('All')}
             </button>

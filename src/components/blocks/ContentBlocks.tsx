@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 import { Btn, Head, Section, gridCols, hasLink, lines, WhatsAppIcon } from './parts';
 import { CalcButton } from './Interactive';
 import { Emblem } from '@/components/site/Logo';
+import Slider3D from '@/components/ui/Slider3D';
 
 type P = { data: any; site: SiteSettings };
 const D = (x: any) => withDirham(x);
@@ -26,14 +27,14 @@ export function Stats({ data }: P) {
           <div className="min-w-0">
             <Head label={data.label} heading={data.heading} accent={data.accent} lead={data.lead} align="left" />
             {body.map((p, i) => (
-              <p key={i} className={cn('reveal text-[0.98rem] leading-relaxed', dark ? 'text-white/70' : 'text-[#3a3a3c]', i ? 'mt-3' : 'mt-6')}>
+              <p key={i} className={cn('reveal text-[0.98rem] leading-relaxed', 'text-[#3a3a3c]', i ? 'mt-3' : 'mt-6')}>
                 {D(p)}
               </p>
             ))}
             {(hasLink(data.cta) || hasLink(data.cta2)) && (
               <div className="btn-row reveal mt-8 flex flex-wrap gap-3">
                 <Btn link={data.cta} variant={dark ? 'gold' : 'dark'} arrow />
-                <Btn link={data.cta2} variant={dark ? 'ghost' : 'outline'} />
+                <Btn link={data.cta2} variant="outline" />
               </div>
             )}
           </div>
@@ -46,7 +47,7 @@ export function Stats({ data }: P) {
                     <Icon name={s.icon} className="h-[18px] w-[18px]" />
                   </span>
                 )}
-                <p className={cn('depth-z mt-4 font-display text-[clamp(2.1rem,1.5rem+2.2vw,3.4rem)] font-semibold leading-none tracking-[-0.04em]', dark ? 'text-white' : 'text-gold-gradient')}>
+                <p className={cn('depth-z mt-4 font-display text-[clamp(2.1rem,1.5rem+2.2vw,3.4rem)] font-semibold leading-none tracking-[-0.04em]', 'text-gold-gradient')}>
                   <Counter value={String(s.value || '')} />
                 </p>
                 <p className="muted mt-2 text-[0.85rem]">{s.label}</p>
@@ -67,7 +68,7 @@ export function Stats({ data }: P) {
                 <Icon name={s.icon} className="h-5 w-5" />
               </span>
             )}
-            <p className={cn('mt-4 font-display text-[clamp(1.9rem,1.4rem+1.6vw,2.8rem)] font-semibold tracking-[-0.03em]', dark ? 'text-white' : 'text-[#0b0b0c]')}>
+            <p className={cn('mt-4 font-display text-[clamp(1.9rem,1.4rem+1.6vw,2.8rem)] font-semibold tracking-[-0.03em]', dark ? 'text-gold-gradient' : 'text-[#0b0b0c]')}>
               <Counter value={String(s.value || '')} />
             </p>
             <p className="muted mt-1 text-[0.82rem]">{s.label}</p>
@@ -144,7 +145,7 @@ export function Cards({ data }: P) {
     );
   } else if (layout === 'images') {
     body = (
-      <div className={cn('mt-12 grid gap-5', cols)} data-rv-stagger="">
+      <Slider3D className={cn('mt-12 grid gap-5', cols)}>
         {items.map((it, i) => (
           <CardLink key={i} item={it} cls="reveal card card-lift tilt group block h-full overflow-hidden" >
             {it.image && (
@@ -163,7 +164,7 @@ export function Cards({ data }: P) {
             </span>
           </CardLink>
         ))}
-      </div>
+      </Slider3D>
     );
   } else if (layout === 'compact') {
     body = (
@@ -225,9 +226,10 @@ export function Cards({ data }: P) {
       </div>
     );
   } else {
-    // icons / numbered
+    // icons / numbered (a 3D swipe carousel on phones when there are 4+ cards)
+    const Wrap = items.length >= 4 && !data.mobileGrid ? Slider3D : 'div';
     body = (
-      <div className={cn('mt-12 grid gap-5', cols)} data-rv-stagger="">
+      <Wrap className={cn('mt-12 grid gap-5', cols)} {...(Wrap === 'div' ? { 'data-rv-stagger': '' } : {})}>
         {items.map((it, i) => (
           <CardLink key={i} item={it} cls="reveal card card-lift tilt group flex h-full flex-col p-7">
             <div className="flex items-center justify-between gap-3">
@@ -260,7 +262,7 @@ export function Cards({ data }: P) {
             )}
           </CardLink>
         ))}
-      </div>
+      </Wrap>
     );
   }
 
@@ -359,7 +361,7 @@ export function Feature({ data }: P) {
           <div className="reveal min-w-0">
             {data.badge && (
               <span className="pill">
-                <Icon name="zap" className="h-3.5 w-3.5 text-gold-light" />
+                <Icon name="zap" className="h-3.5 w-3.5 text-gold-deep" />
                 {data.badge}
               </span>
             )}
@@ -367,18 +369,18 @@ export function Feature({ data }: P) {
             {data.body && <p className="lead mt-5 max-w-2xl">{D(data.body)}</p>}
             <div className="btn-row mt-9 flex flex-wrap gap-3">
               <Btn link={data.primary} variant="gold" arrow />
-              <Btn link={data.secondary} variant="ghost" />
+              <Btn link={data.secondary} variant="outline" />
             </div>
           </div>
           <ul className="grid gap-3" data-rv-stagger="">
             {items.map((f, i) => (
-              <li key={i} className="reveal glass flex gap-4 rounded-2xl p-4">
+              <li key={i} className="reveal glass tilt flex gap-4 rounded-2xl p-4" data-tilt="8">
                 <span className="icon-chip !h-10 !w-10 !rounded-xl">
                   <Icon name={f.icon} className="h-5 w-5" />
                 </span>
                 <span className="min-w-0">
-                  <span className="block text-sm font-semibold text-white">{D(f.title)}</span>
-                  <span className="mt-1 block text-xs leading-relaxed text-white/60">{D(f.body)}</span>
+                  <span className="block text-sm font-semibold">{D(f.title)}</span>
+                  <span className="muted mt-1 block text-xs leading-relaxed">{D(f.body)}</span>
                 </span>
               </li>
             ))}
@@ -413,13 +415,13 @@ export function Compare({ data }: P) {
           </div>
           <div className="reveal ink-panel theme-dark p-7 sm:p-9" style={{ ['--rv-d' as any]: '.1s' }}>
             {data.rightEyebrow && <p className="eyebrow">{data.rightEyebrow}</p>}
-            <h3 className="mt-3 font-display text-xl font-semibold text-white">{D(data.rightTitle)}</h3>
-            {data.rightSub && <p className="mt-2 text-sm leading-relaxed text-white/65">{D(data.rightSub)}</p>}
+            <h3 className="mt-3 font-display text-xl font-semibold">{D(data.rightTitle)}</h3>
+            {data.rightSub && <p className="muted mt-2 text-sm leading-relaxed">{D(data.rightSub)}</p>}
             <ul className="mt-6 space-y-3">
               {R.map((p, i) => (
                 <li key={i} className="flex gap-3 text-sm leading-relaxed">
                   <Check className="check" />
-                  <span className="min-w-0 text-white/85">{D(p)}</span>
+                  <span className="min-w-0">{D(p)}</span>
                 </li>
               ))}
             </ul>
@@ -721,8 +723,8 @@ export function Cta({ data }: P) {
           </h2>
           {data.lead && <p className="lead mx-auto mt-5 max-w-2xl">{D(data.lead)}</p>}
           <div className="btn-row mt-9 flex flex-wrap justify-center gap-3">
-            <Btn link={data.primary} variant="gold" size="lg" arrow />
-            <Btn link={data.secondary} variant="ghost" size="lg" />
+            <Btn link={data.primary} variant="dark" size="lg" arrow />
+            <Btn link={data.secondary} variant="outline" size="lg" />
           </div>
         </div>
       </div>

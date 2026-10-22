@@ -165,13 +165,13 @@ export default function AdminShell({ user, siteName, children }: { user: { name:
   const isActive = (href: string) => (href === '/admin' ? pathname === '/admin' : pathname.startsWith(href));
 
   const sidebar = (
-    <div className="flex h-full flex-col bg-ink text-white">
+    <div className="admin-side flex h-full flex-col text-gray-900">
       <div className="flex items-center gap-3 px-5 py-5">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl text-[#2a1d05]" style={{ background: 'linear-gradient(135deg,#f3e2ae,#d9b45f 32%,#b8862f 62%,#e9cf8a)' }}><Emblem className="h-7 w-7" /></span>
         <div className="min-w-0">
           <p className="truncate text-sm font-extrabold">{siteName}</p>
-          <p className="text-[0.65rem] uppercase tracking-[0.2em] text-gold">Admin panel</p>
+          <p className="text-[0.65rem] uppercase tracking-[0.2em] text-gold-deep">Admin panel</p>
         </div>
       </div>
       <nav className="thin-scroll flex-1 overflow-y-auto px-3 pb-6">
@@ -180,14 +180,14 @@ export default function AdminShell({ user, siteName, children }: { user: { name:
           if (!items.length) return null;
           return (
             <div key={g.group} className="mt-4">
-              {g.group && <p className="mb-1.5 px-3 text-[0.62rem] font-extrabold uppercase tracking-[0.2em] text-white/35">{g.group}</p>}
+              {g.group && <p className="mb-1.5 px-3 text-[0.62rem] font-extrabold uppercase tracking-[0.2em] text-gray-400">{g.group}</p>}
               {items.map((i: any) => {
                 const n = badge(i.badge);
                 return (
-                  <Link key={i.href} href={i.href} className={cn('group flex items-center gap-3 rounded-xl px-3 py-2.5 text-[0.85rem] font-semibold transition', isActive(i.href) ? 'bg-gold text-ink' : 'text-white/70 hover:bg-white/5 hover:text-white')}>
+                  <Link key={i.href} href={i.href} className={cn('group flex items-center gap-3 rounded-xl px-3 py-2.5 text-[0.85rem] font-semibold transition', isActive(i.href) ? 'admin-nav-on' : 'admin-nav text-gray-600 hover:text-gray-900')}>
                     <i.icon className="h-[18px] w-[18px]" />
                     <span className="flex-1">{i.label}</span>
-                    {n > 0 && <span className={cn('rounded-full px-2 py-0.5 text-[0.65rem] font-extrabold', isActive(i.href) ? 'bg-ink text-gold' : 'bg-red-500 text-white')}>{n}</span>}
+                    {n > 0 && <span className={cn('rounded-full px-2 py-0.5 text-[0.65rem] font-extrabold', isActive(i.href) ? 'bg-white text-gold-deep' : 'bg-red-500 text-white')}>{n}</span>}
                   </Link>
                 );
               })}
@@ -195,14 +195,14 @@ export default function AdminShell({ user, siteName, children }: { user: { name:
           );
         })}
       </nav>
-      <div className="border-t border-white/10 p-4">
+      <div className="border-t border-[#efe4cb] p-4">
         <div className="flex items-center gap-3">
-          <span className="grid h-9 w-9 place-items-center rounded-full bg-white/10 text-sm font-bold">{user.name.charAt(0)}</span>
+          <span className="grid h-9 w-9 place-items-center rounded-full text-sm font-bold text-[#2a1d05]" style={{ background: 'var(--gold-grad)' }}>{user.name.charAt(0)}</span>
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-bold">{user.name}</p>
-            <p className="truncate text-[0.7rem] text-white/50">{user.role === 'ADMIN' ? 'Administrator' : 'Editor'}</p>
+            <p className="truncate text-[0.7rem] text-gray-500">{user.role === 'ADMIN' ? 'Administrator' : 'Editor'}</p>
           </div>
-          <button onClick={logout} className="rounded-lg p-2 text-white/50 hover:bg-white/10 hover:text-white" title="Logout">
+          <button onClick={logout} className="rounded-lg p-2 text-gray-400 hover:bg-[#fbf5e6] hover:text-gray-900" title="Logout">
             <LogOut className="h-4 w-4" />
           </button>
         </div>
@@ -211,7 +211,7 @@ export default function AdminShell({ user, siteName, children }: { user: { name:
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900">
+    <div className="admin-bg min-h-screen text-gray-900">
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 lg:block">{sidebar}</aside>
       <AnimatePresence>
         {mobile && (
@@ -225,7 +225,7 @@ export default function AdminShell({ user, siteName, children }: { user: { name:
       </AnimatePresence>
 
       <div className="lg:pl-64">
-        <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-gray-200 bg-white/90 px-4 backdrop-blur md:px-8">
+        <header className="admin-top backdrop-blur-xl sticky top-0 z-30 flex h-16 items-center gap-3 px-4 md:px-8">
           <button onClick={() => setMobile(true)} className="rounded-lg p-2 text-gray-600 hover:bg-gray-100 lg:hidden" aria-label="Menu">
             <Menu className="h-5 w-5" />
           </button>
