@@ -801,3 +801,29 @@ html[data-anim-ready] .blk[data-anim='blur']:not(.in) > :first-child { filter: b
   .ink-panel::before, .site-footer::before { animation-duration: 24s; filter: blur(24px); }
   .dot-gold { animation: none; }
 }
+
+/* ------------------------------------------------------------------ hero card "film" */
+.hs-turn { animation: hs-turn 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+@keyframes hs-turn { from { opacity: 0; transform: translateZ(40px) rotateX(-55deg) translateY(10px); filter: blur(4px); } to { opacity: 1; transform: translateZ(40px); filter: none; } }
+.hs-text p { animation: hs-up 0.55s var(--ease) both; }
+.hs-text p:nth-child(2) { animation-delay: 0.08s; }
+.hs-text p:nth-child(3) { animation-delay: 0.14s; }
+@keyframes hs-up { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+.hs-ico { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; color: #3b2a08; background: rgba(255, 255, 255, 0.45); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8), 0 6px 14px -8px rgba(90, 60, 10, 0.6); animation: hs-pop 0.5s cubic-bezier(0.2, 1.4, 0.4, 1) both 0.1s; }
+@keyframes hs-pop { from { transform: scale(0) rotate(-90deg); } to { transform: none; } }
+.hs-bar { position: absolute; inset-inline: 20px; bottom: 12px; display: flex; gap: 4px; transform: translateZ(30px); }
+.hs-bar span { position: relative; flex: 1; height: 3px; border-radius: 9px; background: rgba(59, 42, 8, 0.18); overflow: hidden; }
+.hs-bar span::after { content: ''; position: absolute; inset: 0; background: rgba(59, 42, 8, 0.7); transform: scaleX(0); transform-origin: left; }
+[dir='rtl'] .hs-bar span::after { transform-origin: right; }
+.hs-bar span.is-done::after { transform: scaleX(1); }
+.hs-bar span.is-now::after { animation: grow-x 2.6s linear forwards; }
+.hs-bar span.is-paused::after { animation-play-state: paused; }
+.hs-chip { transition: transform 0.4s var(--ease), box-shadow 0.4s ease, background 0.4s ease, border-color 0.4s ease; }
+.hs-chip.is-on { transform: scale(1.04); border-color: rgba(201, 162, 74, 0.6); background: linear-gradient(135deg, rgba(255, 249, 232, 0.95), rgba(246, 230, 186, 0.85)); box-shadow: 0 16px 34px -18px rgba(150, 110, 30, 0.75); }
+.hs-chip.is-on .dot-gold { transform: scale(1.6); box-shadow: 0 0 0 4px rgba(201, 162, 74, 0.25); }
+
+/* menus: frosted enough that the page behind never reads through */
+.glass-menu { background: linear-gradient(160deg, #ffffff, #fffaf0) !important; border-color: rgba(236, 217, 163, 0.55); box-shadow: 0 40px 90px -30px rgba(17, 17, 17, 0.35), 0 0 0 1px rgba(201, 162, 74, 0.14), inset 0 1px 0 #fff; }
+
+/* contact hero office card: crisp white glass over the photo */
+.office-card { background: linear-gradient(180deg, #ffffff, #fffaf2) !important; border: 1px solid rgba(255, 255, 255, 0.95) !important; box-shadow: 0 30px 60px -30px rgba(84, 60, 14, 0.55), 0 0 0 1px rgba(201, 162, 74, 0.18), inset 0 1px 0 #fff !important; }

@@ -5,7 +5,7 @@ import SmartLink from '@/components/ui/SmartLink';
 import { withDirham } from '@/components/ui/Dirham';
 import { getI18n } from '@/lib/i18n/server';
 import { Btn, lines, Section } from './parts';
-import { Emblem } from '@/components/site/Logo';
+import HeroShowcase from './HeroShowcase';
 
 /* ------------------------------------------------------------------ home hero (3D) */
 export async function Hero({ data, site }: { data: any; site: SiteSettings }) {
@@ -50,42 +50,7 @@ export async function Hero({ data, site }: { data: any; site: SiteSettings }) {
         )}
       </div>
 
-      <div className="container-x relative mt-12 grid items-center gap-5 sm:mt-16 lg:grid-cols-[1fr_minmax(0,420px)_1fr] lg:gap-8">
-        <ul className="order-2 grid grid-cols-1 gap-2.5 min-[420px]:grid-cols-2 lg:order-1 lg:grid-cols-1">
-          {left.map((t, i) => (
-            <li key={i} className="fx-up glass flex items-center gap-3 rounded-2xl px-4 py-3 text-[0.9rem] font-medium text-[#1d1d1f] lg:flex-row-reverse lg:text-end" style={{ ['--d' as any]: `${0.45 + i * 0.07}s` }}>
-              <span className="dot-gold" />
-              <span className="min-w-0 flex-1">{t}</span>
-            </li>
-          ))}
-        </ul>
-        <div className="card3d-wrap fx-pop order-1 lg:order-2" style={{ ['--d' as any]: '.3s' }}>
-          <div className="tilt relative rounded-[26px]" data-tilt="16">
-            <div className="card3d">
-              <div className="relative flex h-full flex-col justify-between p-5 text-start sm:p-6" style={{ transform: 'translateZ(40px)' }}>
-                <div className="flex items-start justify-between">
-                  <Emblem className="h-11 w-11 text-[#3b2a08]" />
-                  <span className="chip" />
-                </div>
-                <div>
-                  {data.cardEyebrow && <p className="text-[0.62rem] font-semibold uppercase tracking-[0.3em] text-[#3b2a08]/70">{data.cardEyebrow}</p>}
-                  {data.cardTitle && <p className="mt-1 text-[1.55rem] font-semibold uppercase leading-none tracking-[-0.01em] text-[#1a1406] sm:text-[1.8rem]">{data.cardTitle}</p>}
-                  {data.cardSub && <p className="mt-1.5 text-xs font-medium text-[#3b2a08]/75">{data.cardSub}</p>}
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="card3d-shadow" />
-        </div>
-        <ul className="order-3 grid grid-cols-1 gap-2.5 min-[420px]:grid-cols-2 lg:grid-cols-1">
-          {right.map((t, i) => (
-            <li key={i} className="fx-up glass flex items-center gap-3 rounded-2xl px-4 py-3 text-[0.9rem] font-medium text-[#1d1d1f]" style={{ ['--d' as any]: `${0.5 + i * 0.07}s` }}>
-              <span className="dot-gold" />
-              <span className="min-w-0 flex-1">{t}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
+      <HeroShowcase left={left} right={right} eyebrow={data.cardEyebrow} title={data.cardTitle} sub={data.cardSub} />
     </section>
   );
 }

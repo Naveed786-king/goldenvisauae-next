@@ -135,19 +135,19 @@ export async function IntroHero({ data, site }: P) {
                     </div>
                   </div>
                 )}
-                <span aria-hidden className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent" />
+                <span aria-hidden className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#3b2a08]/25 via-transparent to-[#fff7e3]/10" />
                 <span aria-hidden className="sheen pointer-events-none absolute inset-0" />
               </div>
 
               {office ? (
-                <div className="float3d glass relative mx-3 -mt-14 rounded-[24px] p-4 sm:absolute sm:inset-x-6 sm:-bottom-8 sm:mx-0 sm:mt-0 sm:p-5" style={{ ['--z' as any]: '70px' }}>
+                <div className="float3d glass office-card relative mx-3 -mt-14 rounded-[24px] p-4 sm:absolute sm:inset-x-6 sm:-bottom-10 sm:mx-0 sm:mt-0 sm:p-5" style={{ ['--z' as any]: '70px' }}>
                   <div className="flex items-start gap-3">
                     <span className="icon-chip !h-10 !w-10 !rounded-xl">
                       <MapPin className="h-[18px] w-[18px]" />
                     </span>
                     <div className="min-w-0 flex-1">
                       {data.officeTitle && <p className="font-display text-[0.98rem] font-semibold leading-snug">{data.officeTitle}</p>}
-                      <p className="muted mt-0.5 text-[0.8rem] leading-relaxed">{officeLines(data, site).join(' · ')}</p>
+                      <p className="mt-0.5 text-[0.8rem] leading-relaxed text-[#48484a]">{officeLines(data, site).join(' · ')}</p>
                     </div>
                   </div>
                   {hours.length > 0 && (
