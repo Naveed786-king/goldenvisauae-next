@@ -31,6 +31,74 @@ export const allPages = [
      "cardSub": "10 years · renewable",
      "image": "/images/hero-skyline.jpg",
      "particles": true,
+     "slides": [
+      {
+       "image": "/images/deck/skyline.webp",
+       "eyebrow": "UAE Golden Visa",
+       "title": "10 Years",
+       "sub": "Renewable residency",
+       "tag": "Self-sponsored · no employer",
+       "link": {
+        "label": "Check eligibility",
+        "href": "/services/golden-visa"
+       }
+      },
+      {
+       "image": "/images/deck/property.webp",
+       "eyebrow": "Property route",
+       "title": "24 Hours",
+       "sub": "VIP fast track",
+       "tag": "Property from AED 2M",
+       "link": {
+        "label": "Property visa",
+        "href": "/services/property-investor-visa"
+       }
+      },
+      {
+       "image": "/images/deck/family.webp",
+       "eyebrow": "Family visa",
+       "title": "All Family",
+       "sub": "Spouse, children & parents",
+       "tag": "Sponsored on your visa",
+       "link": {
+        "label": "Family visa",
+        "href": "/services/family-visa"
+       }
+      },
+      {
+       "image": "/images/deck/investor.webp",
+       "eyebrow": "Business setup",
+       "title": "100%",
+       "sub": "Foreign ownership",
+       "tag": "Mainland & free zone",
+       "link": {
+        "label": "Start a company",
+        "href": "/services/business-setup"
+       }
+      },
+      {
+       "image": "/images/deck/skyline-2.webp",
+       "eyebrow": "Emirates ID",
+       "title": "Same Day",
+       "sub": "Typing & biometrics booked",
+       "tag": "Urgent Fawri available",
+       "link": {
+        "label": "Emirates ID",
+        "href": "/services/emirates-id"
+       }
+      },
+      {
+       "image": "/images/deck/family-2.webp",
+       "eyebrow": "Free assessment",
+       "title": "Free",
+       "sub": "Written eligibility opinion",
+       "tag": "Reply within 24 hours",
+       "link": {
+        "label": "Apply now",
+        "href": "/apply"
+       }
+      }
+     ],
      "theme": "light"
     }
    },

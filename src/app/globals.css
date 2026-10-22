@@ -629,7 +629,7 @@ html[data-anim-ready] .blk[data-anim='blur']:not(.in) > :first-child { filter: b
   }
   .s3d[data-s3d]::-webkit-scrollbar { display: none; }
   .s3d[data-s3d] > * {
-    flex: 0 0 74vw; min-width: 0; scroll-snap-align: center;
+    flex: 0 0 74vw; min-width: 0; scroll-snap-align: center; scroll-snap-stop: always;
     transform: perspective(900px) rotateY(calc(var(--s3d, 0) * -32deg)) translateZ(calc(var(--s3d, 0) * var(--s3d, 0) * -60px)) scale(calc(1 - min(1, max(var(--s3d, 0), calc(var(--s3d, 0) * -1))) * 0.12)) !important;
     opacity: calc(1 - min(1, max(var(--s3d, 0), calc(var(--s3d, 0) * -1))) * 0.35) !important;
     transition: transform 0.12s linear, opacity 0.12s linear !important; will-change: transform;
@@ -827,3 +827,51 @@ html[data-anim-ready] .blk[data-anim='blur']:not(.in) > :first-child { filter: b
 
 /* contact hero office card: crisp white glass over the photo */
 .office-card { background: linear-gradient(180deg, #ffffff, #fffaf2) !important; border: 1px solid rgba(255, 255, 255, 0.95) !important; box-shadow: 0 30px 60px -30px rgba(84, 60, 14, 0.55), 0 0 0 1px rgba(201, 162, 74, 0.18), inset 0 1px 0 #fff !important; }
+
+/* ------------------------------------------------------------------ hero card deck (dealt like cards) */
+.deck-wrap { position: relative; width: 100%; max-width: 520px; margin-inline: auto; }
+.deck { position: relative; aspect-ratio: 1.3; perspective: 1400px; touch-action: pan-y; user-select: none; -webkit-user-select: none; }
+.deck-card {
+  position: absolute; inset: 0; overflow: hidden; border-radius: 26px; background: #f4efe2; cursor: grab;
+  box-shadow: 0 34px 60px -30px rgba(84, 60, 14, 0.55), 0 12px 24px -18px rgba(0, 0, 0, 0.35), inset 0 0 0 1px rgba(255, 255, 255, 0.55);
+  transition: transform 0.62s cubic-bezier(0.2, 0.85, 0.25, 1), opacity 0.45s ease, filter 0.45s ease;
+  will-change: transform; backface-visibility: hidden;
+}
+.deck-card:active { cursor: grabbing; }
+.deck-card.p0 { z-index: 4; transform: rotate(-3deg); animation: deck-sway 2.9s ease-in-out 0.62s both; }
+.deck-card.p1 { z-index: 3; transform: translate3d(5%, 3%, 0) rotate(5deg) scale(0.95); filter: brightness(0.97); }
+.deck-card.p2 { z-index: 2; transform: translate3d(-4%, 5%, 0) rotate(-8deg) scale(0.9); filter: brightness(0.93); }
+.deck-card.p3 { z-index: 1; transform: translate3d(0, 6%, 0) rotate(0deg) scale(0.86); opacity: 0; }
+.deck-card.is-leaving { z-index: 5; transform: translate3d(calc(var(--dir, -1) * 115%), -6%, 0) rotate(calc(var(--dir, -1) * 16deg)) scale(0.96); opacity: 0; transition: transform 0.52s cubic-bezier(0.55, 0, 0.6, 1), opacity 0.4s ease 0.12s; pointer-events: none; }
+@keyframes deck-sway { 0% { transform: rotate(-3deg); } 50% { transform: rotate(-1deg) translateY(-4px); } 100% { transform: rotate(-2.4deg); } }
+.deck-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; pointer-events: none; transform: scale(1.04); transition: transform 3s ease; }
+.deck-card.p0 .deck-img { transform: scale(1.12); }
+.deck-shade { position: absolute; inset: 0; background: linear-gradient(95deg, rgba(255, 252, 245, 0.96) 0%, rgba(255, 250, 240, 0.86) 34%, rgba(255, 248, 235, 0.25) 62%, transparent 80%); }
+[dir='rtl'] .deck-shade { background: linear-gradient(-95deg, rgba(255, 252, 245, 0.96) 0%, rgba(255, 250, 240, 0.86) 34%, rgba(255, 248, 235, 0.25) 62%, transparent 80%); }
+.deck-body { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; gap: 4px; padding: 7% 8%; max-width: 66%; text-align: start; }
+.deck-brand { display: inline-flex; align-items: center; gap: 6px; font-size: clamp(0.62rem, 0.55rem + 0.3vw, 0.74rem); font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: #6b5422; }
+.deck-title { font-family: var(--font-display); font-weight: 700; font-size: clamp(1.8rem, 1.1rem + 3vw, 3rem); white-space: nowrap; line-height: 0.95; letter-spacing: -0.04em; background: linear-gradient(135deg, #f3dfa6, #c99a3c 40%, #9c7426 70%, #e9cf8a); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 6px 10px rgba(120, 86, 25, 0.25)); margin-top: 4px; }
+.deck-sub { font-family: var(--font-display); font-size: clamp(1rem, 0.85rem + 0.7vw, 1.35rem); font-weight: 700; letter-spacing: -0.02em; line-height: 1.12; color: #111; }
+.deck-tag { font-size: clamp(0.66rem, 0.6rem + 0.25vw, 0.78rem); font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #6e6e73; }
+.deck-cta { margin-top: 10px; display: inline-flex; align-items: center; gap: 6px; padding: 7px 13px; border-radius: 999px; font-size: 0.78rem; font-weight: 600; color: #fff; background: linear-gradient(180deg, rgba(48, 44, 36, 0.95), rgba(12, 12, 13, 0.95)); box-shadow: 0 10px 20px -12px rgba(0, 0, 0, 0.6); }
+.deck-card.p0 .deck-brand, .deck-card.p0 .deck-title, .deck-card.p0 .deck-sub, .deck-card.p0 .deck-tag, .deck-card.p0 .deck-cta { animation: deck-in 0.6s var(--ease) both; }
+.deck-card.p0 .deck-title { animation-delay: 0.08s; }
+.deck-card.p0 .deck-sub { animation-delay: 0.16s; }
+.deck-card.p0 .deck-tag { animation-delay: 0.22s; }
+.deck-card.p0 .deck-cta { animation-delay: 0.28s; }
+@keyframes deck-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+.deck-gloss { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(115deg, transparent 40%, rgba(255, 255, 255, 0.35) 50%, transparent 60%); transform: translateX(-100%); }
+.deck-card.p0 .deck-gloss { animation: sheen-move 2.9s ease-in-out 0.4s both; }
+.deck-dots { display: flex; justify-content: center; gap: 6px; margin-top: 22px; }
+.deck-dots button { width: 7px; height: 7px; border-radius: 99px; background: rgba(17, 17, 17, 0.16); transition: width 0.4s var(--ease), background 0.4s ease; }
+.deck-dots button.is-on { width: 26px; background: var(--gold-grad); }
+@media (max-width: 767px) { .deck-wrap { max-width: 92vw; } .deck-body { max-width: 70%; padding: 7% 7%; } }
+@media (prefers-reduced-motion: reduce) { .deck-card, .deck-card * { animation: none !important; } }
+
+/* paused while off screen (set by DesignEffects) */
+[data-off], [data-off]::before, [data-off]::after, [data-off] *, [data-off] *::before, [data-off] *::after { animation-play-state: paused !important; }
+@media (hover: none), (max-width: 767px) {
+  .hdr-sheen { display: none; }
+  .mnav .mnav-cta i { animation: none; }
+  .animate-marquee { will-change: transform; }
+}

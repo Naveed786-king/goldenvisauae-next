@@ -73,6 +73,15 @@ export default function DesignEffects() {
     };
   }, [pathname]);
 
+  // Running decorations pause while their section is off screen (smoother scrolling, less battery)
+  useEffect(() => {
+    const els = Array.from(document.querySelectorAll<HTMLElement>('.hero-stage, .ink-panel, .site-footer, .animate-marquee, .vj-screen'));
+    if (!els.length || !('IntersectionObserver' in window)) return;
+    const io = new IntersectionObserver((entries) => entries.forEach((e) => ((e.target as HTMLElement).toggleAttribute('data-off', !e.isIntersecting))), { rootMargin: '80px 0px' });
+    els.forEach((el) => io.observe(el));
+    return () => io.disconnect();
+  }, [pathname]);
+
   // Phones: cards tilt in 3D under the finger (scrolling is never blocked)
   useEffect(() => {
     if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;

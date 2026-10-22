@@ -50,7 +50,7 @@ export async function Hero({ data, site }: { data: any; site: SiteSettings }) {
         )}
       </div>
 
-      <HeroShowcase left={left} right={right} eyebrow={data.cardEyebrow} title={data.cardTitle} sub={data.cardSub} />
+      <HeroShowcase left={left} right={right} eyebrow={data.cardEyebrow} title={data.cardTitle} sub={data.cardSub} slides={data.slides || []} />
     </section>
   );
 }

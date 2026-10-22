@@ -114,6 +114,17 @@ export const BLOCKS: BlockSchema[] = [
       { name: 'cardSub', label: 'Visa card — subtitle', type: 'text' },
       { name: 'image', label: 'Faint background photo (optional)', type: 'image' },
       { name: 'particles', label: 'Gold 3D particles', type: 'boolean' },
+      {
+        name: 'slides', label: 'Card deck slides (cards dealt one by one; empty = the gold visa card)', type: 'list', itemLabel: 'Card',
+        fields: [
+          { name: 'image', label: 'Photo', type: 'image' },
+          { name: 'eyebrow', label: 'Small heading', type: 'text' },
+          { name: 'title', label: 'Big gold words', type: 'text' },
+          { name: 'sub', label: 'Bold line', type: 'text' },
+          { name: 'tag', label: 'Small line', type: 'text' },
+          link('link', 'Button'),
+        ],
+      },
     ],
     defaults: { theme: 'light', title: 'Golden', titleAccent: 'Visa UAE', lead: 'Secure 10-year residency in the UAE.', particles: true, primary: { label: 'Contact an expert', href: 'whatsapp' } },
   },

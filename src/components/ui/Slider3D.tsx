@@ -6,7 +6,11 @@ import { cn } from '@/lib/utils';
 function centre(el: HTMLElement, k: HTMLElement) {
   const a = el.getBoundingClientRect();
   const b = k.getBoundingClientRect();
+  // snapping is paused while we glide, so a jump of several cards is not stopped at each one
+  el.style.scrollSnapType = 'none';
   el.scrollBy({ left: b.left + b.width / 2 - (a.left + a.width / 2), behavior: 'smooth' });
+  window.clearTimeout((el as any)._snapT);
+  (el as any)._snapT = window.setTimeout(() => el.style.removeProperty('scroll-snap-type'), 700);
 }
 
 /**
