@@ -8,6 +8,7 @@ import Floating from '@/components/site/Floating';
 import Preloader from '@/components/site/Preloader';
 import InjectScripts from '@/components/site/InjectScripts';
 import DesignEffects from '@/components/site/DesignEffects';
+import NavProgress from '@/components/site/NavProgress';
 import CostCalculator from '@/components/site/CostCalculator';
 import OfferPopup from '@/components/site/OfferPopup';
 import { designCss, designBodyClass, googleFontsUrl } from '@/lib/design';
@@ -24,6 +25,13 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
       {fonts && <link rel="stylesheet" href={fonts} precedence="default" />}
       <style dangerouslySetInnerHTML={{ __html: designCss(design) }} />
       <div className={designBodyClass(design)}>
+        <div className="page-bg" aria-hidden>
+          <i className="pb-a" />
+          <i className="pb-b" />
+          <i className="pb-c" />
+          <i className="pb-grid" />
+        </div>
+        <NavProgress />
         {site.showPreloader && !switching && <Preloader />}
         <Header site={site} header={header} />
         <main id="main">{children}</main>

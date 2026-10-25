@@ -1,6 +1,6 @@
 import { Check } from 'lucide-react';
 import T from '@/components/ui/T';
-import { Emblem } from '@/components/site/Logo';
+import { Coin } from '@/components/site/Logo';
 import Particles from '@/components/site/Particles';
 
 export default function AuthShell({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
@@ -12,9 +12,7 @@ export default function AuthShell({ title, subtitle, children }: { title: string
         <div className="ink-panel theme-dark relative hidden h-full min-h-[560px] p-12 lg:block">
           <Particles density={0.5} />
           <div className="relative">
-            <span className="grid h-16 w-16 place-items-center rounded-2xl text-[#2a1d05]" style={{ background: 'var(--gold-grad)' }}>
-              <Emblem className="h-10 w-10" />
-            </span>
+            <Coin eager className="h-[72px] w-[72px]" />
             <h2 className="mt-8 font-display text-4xl font-semibold leading-tight text-white">
               <T>Your Golden Visa journey, in one place.</T>
             </h2>

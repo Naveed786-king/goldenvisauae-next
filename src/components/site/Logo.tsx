@@ -5,12 +5,16 @@ import { cn } from '@/lib/utils';
  * Brand logo. Shows the logo uploaded in Admin → Site settings → Logo.
  * Until one is uploaded, a clean built-in mark is used (gold emblem + name).
  */
+export const BRAND_LOGO = '/brand/logo.webp';
+export const BRAND_COIN = '/brand/coin.webp';
+
 export default function Logo({ src, name, tagline, className, size = 'md' }: { src?: string; name: string; tagline?: string; className?: string; size?: 'md' | 'lg' }) {
+  src = src || BRAND_LOGO;
   return (
     <SmartLink href="/" className={cn('site-logo group flex min-w-0 shrink items-center', className)} ariaLabel={name}>
       {src ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={src} alt={name} style={{ height: size === 'lg' ? 'var(--ftr-logo-h, 40px)' : 'var(--logo-h, 36px)' }} className="w-auto max-w-[56vw] object-contain transition-transform duration-500 group-hover:scale-[1.02]" />
+        <img src={src} alt={name} width={src === BRAND_LOGO ? 1009 : undefined} height={src === BRAND_LOGO ? 132 : undefined} fetchPriority="high" decoding="async" style={{ height: size === 'lg' ? 'var(--ftr-logo-h, 46px)' : 'var(--logo-h, 40px)' }} className="logo-img w-auto max-w-[62vw] object-contain transition-transform duration-500 group-hover:scale-[1.02]" />
       ) : (
         <TextMark name={name} tagline={tagline} size={size} />
       )}
@@ -30,6 +34,12 @@ export function TextMark({ name, tagline, size = 'md' }: { name: string; tagline
       </span>
     </span>
   );
+}
+
+/** The round gold brand coin (from the brand pack) */
+export function Coin({ className, eager }: { className?: string; eager?: boolean }) {
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img src={BRAND_COIN} alt="" aria-hidden="true" width={256} height={256} loading={eager ? 'eager' : 'lazy'} decoding="async" draggable={false} className={cn('select-none object-contain drop-shadow-[0_6px_14px_rgba(120,80,10,.35)]', className)} />;
 }
 
 /** Eight-point star emblem (drawn in the current text colour) */

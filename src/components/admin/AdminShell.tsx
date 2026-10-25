@@ -1,5 +1,5 @@
 'use client';
-import { Emblem } from '@/components/site/Logo';
+import { Coin } from '@/components/site/Logo';
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -168,7 +168,7 @@ export default function AdminShell({ user, siteName, children }: { user: { name:
     <div className="admin-side flex h-full flex-col text-gray-900">
       <div className="flex items-center gap-3 px-5 py-5">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl text-[#2a1d05]" style={{ background: 'linear-gradient(135deg,#f3e2ae,#d9b45f 32%,#b8862f 62%,#e9cf8a)' }}><Emblem className="h-7 w-7" /></span>
+        <Coin eager className="h-11 w-11 shrink-0" />
         <div className="min-w-0">
           <p className="truncate text-sm font-extrabold">{siteName}</p>
           <p className="text-[0.65rem] uppercase tracking-[0.2em] text-gold-deep">Admin panel</p>

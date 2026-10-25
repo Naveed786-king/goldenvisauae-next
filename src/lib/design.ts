@@ -129,9 +129,9 @@ export function designCss(d: DesignSettings) {
   // Glass header: frosted but never see-through, whatever opacity is saved (floor 86%)
   root.push(`--hdr-glass:${h.style === 'solid' ? col(h.bg) || '#FFFFFF' : alpha(h.bg || '#FFFFFF', Math.max(55, num(h.opacity, 0, 100) ?? 72))}`);
   root.push(`--hdr-bg-solid:${col(h.bg) || '#FFFFFF'}`, `--hdr-blur:${num(h.blur, 0, 40) ?? 20}px`, `--hdr-text:${col(h.text) || '#1D1D1F'}`);
-  root.push(`--hdr-h:${num(h.height, 52, 140) ?? 64}px`, `--logo-h:${num(h.logoHeight, 20, 120) ?? 36}px`);
+  root.push(`--hdr-h:${num(h.height, 52, 140) ?? 64}px`, `--logo-h:${num(h.logoHeight, 20, 120) ?? 40}px`);
   root.push(`--top-bg:${col(h.topbarBg) || '#FFFFFF'}`, `--top-text:${col(h.topbarText) || '#3A3A3C'}`, `--menu-size:${num(h.menuSize, 11, 22) ?? 14.5}px`);
-  root.push(`--ftr-bg:${col(f.bg) || '#FAFAFA'}`, `--ftr-text:${col(f.text) || '#48484A'}`, `--ftr-head:${col(f.heading) || 'var(--brand-gold)'}`, `--ftr-logo-h:${num(f.logoHeight, 20, 140) ?? 40}px`);
+  root.push(`--ftr-bg:${col(f.bg) || '#FAFAFA'}`, `--ftr-text:${col(f.text) || '#48484A'}`, `--ftr-head:${col(f.heading) || 'var(--brand-gold)'}`, `--ftr-logo-h:${num(f.logoHeight, 20, 140) ?? 48}px`);
   out.push(`:root{${root.join(';')}}`);
   const bs = num(d.fonts.baseSize, 13, 20);
   if (bs && bs !== 16) out.push(`html{font-size:${bs}px}`);

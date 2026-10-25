@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Check, FileText, Fingerprint, Pause, Play, Stethoscope, Sparkles, ShieldCheck } from 'lucide-react';
 import { Icon } from '@/components/ui/Icon';
 import { useT } from '@/components/site/SiteProvider';
-import { Emblem } from '@/components/site/Logo';
+import { Coin, Emblem } from '@/components/site/Logo';
 import { cn } from '@/lib/utils';
 import { lines } from './parts';
 
@@ -19,9 +19,7 @@ function Scene({ step, index }: { step: JourneyStep; index: number }) {
       <div className="vj-scene vj-chat">
         <div className="vj-phone">
           <div className="vj-phone-top">
-            <span className="vj-avatar">
-              <Emblem className="h-4 w-4" />
-            </span>
+            <Coin className="h-9 w-9 shrink-0 !drop-shadow-none" />
             <span className="min-w-0">
               <b>Golden Visa UAE</b>
               <i>online</i>
@@ -92,9 +90,7 @@ function Scene({ step, index }: { step: JourneyStep; index: number }) {
       <div className="vj-scene vj-stamp">
         <div className="vj-form">
           <div className="vj-form-head">
-            <span className="vj-avatar !h-8 !w-8">
-              <Emblem className="h-4 w-4" />
-            </span>
+            <Coin className="h-8 w-8 shrink-0 !drop-shadow-none" />
             <span>
               <b>{step.a || 'Residency application'}</b>
               <i>GDRFA · ICP</i>

@@ -46,6 +46,7 @@ async function main() {
   await loadTranslationPacks();
 
   // 3) Content
+  await applyPageUpgrades();
   const pageCount = await prisma.page.count();
   if (pageCount > 0 && !force) {
     console.log('✔ Database already has content — skipping content seed (use "npm run seed:reset" to restore the original content).');
@@ -67,6 +68,8 @@ async function main() {
     });
   }
   console.log(`✔ ${C.allPages.length} pages`);
+  // fresh content already includes every page upgrade
+  for (const up of PAGE_UPGRADES) await prisma.setting.upsert({ where: { key: 'upgrade:' + up.id }, update: {}, create: { key: 'upgrade:' + up.id, value: new Date().toISOString() } });
 
   for (const p of C.posts) {
     await prisma.post.create({ data: { ...p, publishedAt: new Date(p.publishedAt), author: 'Golden Visa UAE', status: 'published' } });
@@ -85,6 +88,33 @@ async function main() {
   if ((await prisma.testimonial.count()) === 0) {
     for (const t of C.testimonialRecords) await prisma.testimonial.create({ data: t });
     console.log(`✔ ${C.testimonialRecords.length} client reviews`);
+  }
+}
+
+/* Rebuilt pages shipped with a new version: replaced once on existing websites
+   (the previous version is kept as a draft copy, so nothing an admin wrote is lost). */
+const PAGE_UPGRADES = [{ id: '2026-10-status-family', slugs: ['check-visa-status', 'services/family-visa'] }];
+async function applyPageUpgrades() {
+  if ((await prisma.page.count()) === 0) return;
+  for (const up of PAGE_UPGRADES) {
+    const key = 'upgrade:' + up.id;
+    if (await prisma.setting.findUnique({ where: { key } })) continue;
+    for (const slug of up.slugs) {
+      const fresh = C.allPages.find((p) => p.slug === slug);
+      if (!fresh) continue;
+      const old = await prisma.page.findUnique({ where: { slug } });
+      if (old) {
+        const backup = `${slug}-previous-${up.id}`.replace(/\//g, '-');
+        if (!(await prisma.page.findUnique({ where: { slug: backup } })))
+          await prisma.page.create({ data: { slug: backup, title: `${old.title} (previous version)`, metaTitle: old.metaTitle, metaDescription: old.metaDescription, blocks: old.blocks, status: 'draft' } });
+        await prisma.translation.deleteMany({ where: { entity: 'page', entityId: old.id } }).catch(() => {});
+        await prisma.page.update({ where: { slug }, data: { title: fresh.title, metaTitle: fresh.metaTitle, metaDescription: fresh.metaDescription, blocks: JSON.stringify(fresh.blocks), status: 'published' } });
+      } else {
+        await prisma.page.create({ data: { slug, title: fresh.title, metaTitle: fresh.metaTitle, metaDescription: fresh.metaDescription, blocks: JSON.stringify(fresh.blocks), status: 'published' } });
+      }
+    }
+    await prisma.setting.create({ data: { key, value: new Date().toISOString() } });
+    console.log(`✔ Updated pages: ${up.slugs.join(', ')}`);
   }
 }
 

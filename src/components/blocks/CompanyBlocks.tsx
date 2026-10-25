@@ -7,7 +7,7 @@ import { Icon, SocialIcon } from '@/components/ui/Icon';
 import { withDirham } from '@/components/ui/Dirham';
 import { getI18n } from '@/lib/i18n/server';
 import { cn } from '@/lib/utils';
-import { Emblem } from '@/components/site/Logo';
+import { Coin } from '@/components/site/Logo';
 import { Btn, Head, Section, hasLink, lines, WhatsAppIcon } from './parts';
 import { DaysSince, OpenNow, Tabs3D } from './CompanyInteractive';
 import VisaJourney from './VisaJourney';
@@ -129,8 +129,8 @@ export async function IntroHero({ data, site }: P) {
                 ) : (
                   <div className="relative grid aspect-[5/4] w-full place-items-center bg-[radial-gradient(120%_90%_at_30%_10%,#fff7e3,#efe2c2_55%,#e3cf9f)]">
                     <div className="coin3d" aria-hidden>
-                      <span className="coin3d-face">
-                        <Emblem className="h-[42%] w-[42%] text-[#3b2a08]" />
+                      <span className="coin3d-face coin3d-img">
+                        <Coin className="h-full w-full !drop-shadow-none" />
                       </span>
                     </div>
                   </div>

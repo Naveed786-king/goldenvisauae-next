@@ -1,5 +1,7 @@
 'use client';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useRef } from 'react';
 import { useSite, useLocale } from '@/components/site/SiteProvider';
 import { localizePath } from '@/lib/i18n/config';
 import { resolveHref, isExternalHref } from './href';
@@ -16,6 +18,8 @@ type Props = {
 export default function SmartLink({ href, className, children, onClick, ariaLabel, title }: Props) {
   const site = useSite();
   const locale = useLocale();
+  const router = useRouter();
+  const warmed = useRef(false);
   const h = resolveHref(href, site);
   if (isExternalHref(h) || h.startsWith('mailto:') || h.startsWith('tel:') || h === '#') {
     const ext = isExternalHref(h);
@@ -25,8 +29,18 @@ export default function SmartLink({ href, className, children, onClick, ariaLabe
       </a>
     );
   }
+  const url = localizePath(h, locale);
+  // load the next page the moment the visitor shows intent (hover, touch, keyboard focus),
+  // so it opens instantly on click
+  const warm = () => {
+    if (warmed.current) return;
+    warmed.current = true;
+    try {
+      router.prefetch(url, { kind: 'full' } as any);
+    } catch {}
+  };
   return (
-    <Link href={localizePath(h, locale)} className={className} onClick={onClick} aria-label={ariaLabel} title={title}>
+    <Link href={url} className={className} onClick={onClick} aria-label={ariaLabel} title={title} onMouseEnter={warm} onTouchStart={warm} onFocus={warm}>
       {children}
     </Link>
   );

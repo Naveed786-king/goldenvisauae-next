@@ -2279,20 +2279,201 @@ export const allPages = [
  },
  {
   "slug": "check-visa-status",
-  "title": "Visa Validity Checker",
-  "metaTitle": "UAE Visa Validity Checker — Check Visa Status by Passport Number",
-  "metaDescription": "Free UAE visa validity checker. Check your visa status, file validity, grace period and overstay fines by passport number — GDRFA & ICP data, replied on WhatsApp.",
+  "title": "Visa Status Check",
+  "metaTitle": "UAE Visa Status Check by Passport Number — Free | Golden Visa UAE",
+  "metaDescription": "Check your UAE visa status, file validity, grace period and overstay fines by passport number. GDRFA Dubai and ICP portals explained — or ask us to check it for free.",
   "blocks": [
    {
-    "id": "check-visa-status-1",
-    "type": "pageHeader",
+    "id": "check-visa-status-v2-1",
+    "type": "serviceHero",
     "data": {
-     "eyebrow": "Free UAE visa status check",
-     "title": "UAE Visa Validity Checker",
-     "titleAccent": "",
-     "lead": "Check your file validity, grace period and overstay fines by passport number — free, in under 60 seconds.",
-     "crumb": "Visa Validity Checker",
+     "eyebrow": "Free visa status check",
+     "title": "UAE visa status check",
+     "titleAccent": "and file validity",
+     "lead": "Not sure if your visa is still active, cancelled or already expired? Answer three quick questions, use the official portals yourself, or send us your passport details and we check it for you — free, usually within the hour.",
+     "crumb": "Visa status check",
+     "bullets": [
+      {
+       "icon": "file-check",
+       "title": "File validity and expiry date"
+      },
+      {
+       "icon": "clock",
+       "title": "Days of grace period left"
+      },
+      {
+       "icon": "receipt",
+       "title": "Any overstay fines due"
+      },
+      {
+       "icon": "plane",
+       "title": "Travel or re-entry blocks"
+      }
+     ],
+     "primary": {
+      "label": "Ask us to check on WhatsApp",
+      "href": "whatsapp"
+     },
+     "secondary": {
+      "label": "Try the quick checker",
+      "href": "#checker"
+     },
+     "trust": "No UAE PASS login needed\nAnswer within the hour\nFree of charge",
+     "note": "Golden Visa UAE is a private consultancy, not a government authority. We do not connect to GDRFA or ICP systems — official results always come from the government portals.",
+     "factsEyebrow": "What a check tells you",
+     "factsTitle": "Your file at a glance",
+     "facts": [
+      {
+       "icon": "id",
+       "label": "File status",
+       "value": "Active · Cancelled · Expired"
+      },
+      {
+       "icon": "calendar",
+       "label": "Visa expiry date",
+       "value": "Exact date"
+      },
+      {
+       "icon": "timer",
+       "label": "Grace period",
+       "value": "30–180 days"
+      },
+      {
+       "icon": "receipt",
+       "label": "Overstay fines",
+       "value": "If any"
+      },
+      {
+       "icon": "landmark",
+       "label": "File held by",
+       "value": "GDRFA or ICP"
+      }
+     ],
+     "factsNote": "Checked on both GDRFA Dubai and ICP",
      "theme": "light"
+    }
+   },
+   {
+    "id": "check-visa-status-v2-2",
+    "type": "statusWizard",
+    "data": {
+     "anchor": "checker",
+     "label": "Visa validity checker",
+     "heading": "Where is your file held,",
+     "accent": "and how long do you have?",
+     "lead": "Three questions, no passport number needed. The checker does not read your record — it tells you which authority holds it, your likely grace period and the right next step.",
+     "progress": "Question {n} of {total}",
+     "q1": "Which emirate issued the visa?",
+     "q1help": "The emirate is printed on the visa page or the e-visa.",
+     "emirates": "Dubai\nAbu Dhabi\nSharjah\nAjman\nRas Al Khaimah\nFujairah\nUmm Al Quwain\nNot sure",
+     "q2": "What kind of visa is it?",
+     "q2help": "Pick the closest match.",
+     "visaTypes": "Employment or family residence visa\nProperty owner (investor) visa\nGolden or Green Visa, incl. sponsored family\nVisit or tourist visa",
+     "graces": "Usually 30 days\nUp to 90 days\nUp to 180 days\nUsually none — fines start the day after expiry",
+     "q3": "What is the status right now?",
+     "q3help": "Your best guess is fine.",
+     "statuses": "Still valid\nExpired less than 30 days ago\nExpired more than 30 days ago\nCancelled\nI don’t know",
+     "advices": "Nothing urgent. Note the expiry date and start the renewal about 30 days before — a renewal inside the UAE needs no new entry permit.\nYou are probably still inside the grace period. Renew or change status now, before fines start, and do not travel until the file is clear.\nFines have probably started. Get the exact amount confirmed before you go to the airport — fines can be settled in the same visit as the renewal or exit.\nThe grace period starts on the cancellation date. Change status or leave the UAE before it ends.\nCheck the official portal, or send us your passport details and we confirm the status, expiry date and any fines for you.",
+     "resultEyebrow": "Your result",
+     "resultTitle": "Here is what applies to you",
+     "authorityLabel": "File held by",
+     "graceLabel": "Grace period",
+     "nextLabel": "What to do next",
+     "unsureText": "GDRFA or ICP — we find it for you",
+     "gdrfaName": "GDRFA Dubai",
+     "gdrfaUrl": "https://gdrfad.gov.ae/en",
+     "gdrfaTel": "800 5111",
+     "icpName": "ICP Smart Services",
+     "icpUrl": "https://smartservices.icp.gov.ae",
+     "icpTel": "600 522222",
+     "portalButton": "Open {name}",
+     "waButton": "Ask us to check on WhatsApp",
+     "waIntro": "Hello, please check my UAE visa status.",
+     "back": "Back",
+     "restart": "Start again",
+     "note": "The checker does not read your record. It only shows where the file is held and the general rule for your visa type.",
+     "theme": "sand"
+    }
+   },
+   {
+    "id": "check-visa-status-v2-3",
+    "type": "portals",
+    "data": {
+     "anchor": "portals",
+     "label": "Official portals",
+     "heading": "Check it yourself —",
+     "accent": "free, in two minutes",
+     "lead": "The lookup is free on the government portals. Which one you use depends on the emirate that issued the visa.",
+     "items": [
+      {
+       "icon": "landmark",
+       "scope": "Dubai visas",
+       "title": "GDRFA Dubai — status enquiry",
+       "steps": "Open the GDRFA Dubai website and choose the visa or file status enquiry.\nSearch by file number, or by passport number with nationality and date of birth.\nComplete the captcha to see the status, expiry date and any fines.",
+       "link": {
+        "label": "Open GDRFA Dubai",
+        "href": "https://gdrfad.gov.ae/en"
+       },
+       "telLabel": "Call centre",
+       "tel": "800 5111"
+      },
+      {
+       "icon": "shield",
+       "scope": "Abu Dhabi, Sharjah, Ajman, RAK, Fujairah, UAQ",
+       "title": "ICP — File Validity",
+       "steps": "Open File Validity in ICP Smart Services — no login needed.\nChoose Residency or Visa, then search by passport information.\nComplete the captcha to see the validity and the expiry date.",
+       "link": {
+        "label": "Open ICP Smart Services",
+        "href": "https://smartservices.icp.gov.ae"
+       },
+       "telLabel": "Call centre",
+       "tel": "600 522222"
+      }
+     ],
+     "calloutTitle": "Seeing “No record found”?",
+     "calloutText": "Usually the passport was renewed, the details differ from the visa, or the search is on the wrong authority. Send us a photo of the visa page and we check it for you.",
+     "cta": {
+      "label": "Ask us to check",
+      "href": "whatsapp"
+     },
+     "theme": "light"
+    }
+   },
+   {
+    "id": "check-visa-status-v2-4",
+    "type": "cards",
+    "data": {
+     "label": "How it works",
+     "heading": "Three steps,",
+     "accent": "one plain answer",
+     "lead": "Prefer that we check it? Fill in the form below and send it from your own WhatsApp.",
+     "layout": "numbered",
+     "columns": "3",
+     "align": "center",
+     "mobileGrid": true,
+     "items": [
+      {
+       "icon": "clipboard",
+       "title": "Fill in your details",
+       "body": "Passport number, nationality, date of birth and passport expiry date."
+      },
+      {
+       "icon": "send",
+       "title": "Send them on WhatsApp",
+       "body": "The form builds the message; you send it yourself from your own phone."
+      },
+      {
+       "icon": "check",
+       "title": "Get a plain answer",
+       "body": "Validity, grace period left and any fines — usually within the hour."
+      }
+     ],
+     "panelText": "Why we ask for more than a passport number: the government portals match a file on passport number plus nationality and date of birth. Sending all three at once means a correct answer the first time.",
+     "cta": {
+      "label": "Start the check",
+      "href": "#check"
+     },
+     "theme": "sand"
     }
    },
    {
@@ -2302,7 +2483,7 @@ export const allPages = [
      "heading": "Check your UAE visa validity by",
      "accent": "passport number",
      "lead": "A quick, free visa validity check — file validity, grace period and any overstay fines, sent straight to you on WhatsApp. No login, no UAE Pass needed.",
-     "pills": "Real-time GDRFA & ICP data\nPrivate & secure\n100% free",
+     "pills": "GDRFA and ICP both checked\nPrivate and secure\n100% free",
      "bullets": "Visa file validity & expiry date\nGrace period remaining\nAny overstay fines owed\nEmirates ID and entry-permit status",
      "formHeading": "Visa Validity Checker",
      "formSub": "Takes under 60 seconds · reply on WhatsApp",
@@ -2318,225 +2499,220 @@ export const allPages = [
      "notesPh": "e.g. visa cancelled last month, I may have overstayed…",
      "submit": "Check my visa status on WhatsApp",
      "reset": "Clear form",
-     "footnote": "No login or UAE Pass needed · your details go straight to our consultant on WhatsApp — nothing is stored on this website.",
+     "footnote": "No login or UAE PASS needed. Your details go straight to our consultant on WhatsApp and are used only to check your visa.",
      "error": "Please add your passport number, nationality and date of birth.",
      "waIntro": "UAE VISA VALIDITY CHECK — goldenvisauae.ai",
-     "theme": "sand"
+     "theme": "sand",
+     "anchor": "check"
     }
    },
    {
-    "id": "check-visa-status-3",
-    "type": "cards",
+    "id": "check-visa-status-v2-5",
+    "type": "guide",
     "data": {
-     "label": "How it works",
-     "heading": "Your status, checked in",
-     "accent": "three steps",
-     "lead": "No government logins or UAE Pass needed. Fill the checker, send it on WhatsApp, and our typing experts pull your exact file validity from the official systems.",
-     "layout": "steps",
-     "columns": "3",
-     "align": "center",
-     "items": [
-      {
-       "title": "Enter your details",
-       "body": "Passport number, nationality, date of birth and passport expiry — exactly as they appear in your physical passport."
-      },
-      {
-       "title": "Send on WhatsApp",
-       "body": "Your details are packaged into a secure WhatsApp message to our expert team. Nothing is stored on public servers."
-      },
-      {
-       "title": "Get a clear result",
-       "body": "We query GDRFA or ICP and reply with your file validity, grace period and any overstay fines in plain language."
-      }
-     ],
-     "note": "Why a passport number alone isn’t enough: for privacy, UAE systems require secondary verification — that is why we also ask for your nationality and date of birth before running a Dubai visa check by passport number.",
-     "theme": "light"
-    }
-   },
-   {
-    "id": "check-visa-status-4",
-    "type": "cards",
-    "data": {
+     "anchor": "guide",
      "label": "Complete guide",
-     "heading": "How to check UAE visa status",
+     "heading": "How to check a UAE visa status",
      "accent": "online",
-     "lead": "Whether you are a first-time visitor or a long-term resident managing a family file, a regular status check protects you from overstay penalties, travel bans and last-minute renewal problems.",
-     "layout": "icons",
-     "columns": "2",
-     "align": "center",
+     "lead": "What a status check tells you, how grace periods and overstay fines work, and which authority holds your file.",
+     "tocLabel": "In this guide",
+     "cta": {
+      "label": "Ask us to check",
+      "href": "whatsapp"
+     },
      "items": [
       {
-       "icon": "shield",
-       "title": "Why a visa status check matters",
-       "body": "A status check is more than a date on a screen. It verifies your legal file validity in the UAE — entry permit, residency status, grace periods and any blocks or absconding cases registered against your name. In Dubai it confirms your GDRFA file is active, clear of fines and aligned with your physical passport."
+       "title": "What a status check tells you",
+       "body": "A status check confirms whether a residence or visit file is active, cancelled or expired, the exact expiry date and — on most portals — whether fines are due.\n\nIt also shows problems that are easy to miss: a cancellation done by an employer, an absconding report, or a block linked to unpaid fines.",
+       "list": "Active, cancelled or expired\nExact expiry or cancellation date\nOverstay fines, if any\nBlocks such as an absconding report"
       },
       {
-       "icon": "search",
-       "title": "UAE visa check by passport number",
-       "body": "Historically you needed a Unified Number (UID), a file number or a UAE Pass login. Today the most accessible route is a check by passport number, paired with nationality, date of birth and passport expiry. You only need the physical booklet in your hands."
+       "title": "Checking by passport number",
+       "body": "This is the easiest route: no file number and no UAE PASS login. Enter the passport number, nationality and date of birth exactly as they appear on the visa.\n\nIf the passport was renewed after the visa was issued, search with the old passport number — the file stays linked to it until the visa is transferred to the new passport."
       },
       {
-       "icon": "clock",
-       "title": "Validity check & grace periods",
-       "body": "Grace periods differ by cancellation type and visa category, and the rules change often. A validity check gives you the exact calendar date on which your legal stay ends — critical for visit and on-arrival visas, where entry dates are easily miscalculated."
+       "title": "Grace periods after expiry or cancellation",
+       "body": "After a residence visa expires or is cancelled, most people have a grace period to renew, change status or leave without fines. The length depends on the visa type.",
+       "table": "Visa type | Grace period\nMost residence visas (employment, family) | Usually 30 days\nProperty owners | Up to 90 days\nGolden and Green Visas, incl. sponsored family | Up to 180 days\nVisit and tourist visas | Usually none",
+       "callout": "Grace periods can change. Always confirm your last day on the official portal, or with us, before you plan travel."
       },
       {
-       "icon": "alert",
-       "title": "Fine check: protecting your finances",
-       "body": "The UAE charges a fixed fine for every day of overstay. Unpaid fines lead to an immigration block that can stop you exiting the airport or entering other GCC states. We verify your file discreetly and tell you the exact amount owed so you can settle, exit or renew smoothly."
+       "title": "Overstay fines",
+       "body": "Once the grace period ends, a fixed fine is charged for every day of overstay. Fines must be cleared before you can renew, change status or exit, and large unpaid fines can lead to a travel block.\n\nThe quickest fix: confirm the exact amount first, then settle it in the same visit as the renewal or the exit."
       },
       {
-       "icon": "id",
-       "title": "What “file validity” really means",
-       "body": "File validity is the overall status of your immigration record (your Unified Number). Even with an expired visa sticker, your file dictates active grace periods, fines and blocks — it is a deeper view than a simple visit-visa validity check."
+       "title": "Checking a Dubai visa with only a passport number",
+       "body": "GDRFA Dubai lets you search with passport number, nationality and date of birth — no file number needed. If the search fails, try the ICP portal as well: some files show there first."
       },
       {
-       "icon": "plane",
-       "title": "Before you renew or apply again",
-       "body": "Any new application — Golden Visa, property investor visa, family sponsorship or employment — starts with a clean file. Running the check first avoids rejected applications, wasted government fees and repeated medical bookings."
-      }
-     ],
-     "theme": "sand"
-    }
-   },
-   {
-    "id": "check-visa-status-5",
-    "type": "cards",
-    "data": {
-     "heading": "GDRFA or ICP —",
-     "accent": "where does your file sit?",
-     "lead": "Which authority holds your record depends on the emirate that issued your visa. We check the right one for you automatically.",
-     "layout": "icons",
-     "columns": "3",
-     "align": "center",
-     "items": [
-      {
-       "icon": "landmark",
-       "title": "GDRFA Dubai",
-       "meta": "Visas issued in Dubai",
-       "body": "The General Directorate of Residency and Foreigners Affairs manages every Dubai-issued entry permit and residency file. A Dubai visa status check queries this database.",
-       "link": {
-        "label": "GDRFA Dubai",
-        "href": "https://gdrfad.gov.ae/"
-       }
+       "title": "GDRFA or ICP — who holds the file?",
+       "body": "Visas issued in Dubai are held by GDRFA Dubai. Visas issued in Abu Dhabi, Sharjah, Ajman, Ras Al Khaimah, Fujairah and Umm Al Quwain are held by ICP. The issuing emirate is printed on the visa page."
       },
       {
-       "icon": "landmark",
-       "title": "ICP (Federal)",
-       "meta": "Abu Dhabi & Northern Emirates",
-       "body": "The Federal Authority for Identity, Citizenship, Customs & Port Security holds files for Abu Dhabi, Sharjah, Ajman, Umm Al Quwain, Ras Al Khaimah and Fujairah.",
-       "link": {
-        "label": "ICP (Federal)",
-        "href": "https://icp.gov.ae/en/"
-       }
+       "title": "Step by step on the ICP portal",
+       "ordered": true,
+       "list": "Open smartservices.icp.gov.ae\nChoose the public services and then File Validity\nSelect Residency or Visa\nSearch by passport information\nEnter the passport number and its expiry date\nChoose the nationality\nComplete the captcha\nRead the status and the expiry date"
+      },
+      {
+       "title": "The free “ask us to check” option",
+       "ordered": true,
+       "body": "Prefer not to use the portals? Send us your details on WhatsApp and a consultant checks both GDRFA and ICP for you.",
+       "list": "Send passport number, nationality and date of birth\nWe check both authorities and any fines\nYou get a plain answer, usually within the hour"
       }
      ],
      "theme": "light"
     }
    },
    {
-    "id": "check-visa-status-6",
-    "type": "cards",
+    "id": "check-visa-status-v2-6",
+    "type": "testimonials",
     "data": {
-     "heading": "Prefer to check it",
-     "accent": "yourself?",
-     "lead": "You can run a file-validity check directly on the official ICP Smart Services portal:",
-     "layout": "steps",
-     "columns": "3",
-     "align": "center",
-     "items": [
-      {
-       "title": "Open the official ICP Smart Services website (icp.gov.ae)."
-      },
-      {
-       "title": "Select “Public Services” from the top menu."
-      },
-      {
-       "title": "Choose the “File Validity” option."
-      },
-      {
-       "title": "Select the search method — for example, Passport Information."
-      },
-      {
-       "title": "Enter your passport number, nationality and date of birth (or file number)."
-      },
-      {
-       "title": "Submit to see your visa and file validity status."
-      }
-     ],
-     "note": "Government portals can be confusing and often time out. If you would rather not do it yourself, use the checker above — one of our executives runs the exact same query on your behalf, completely free of charge.",
+     "label": "Client reviews",
+     "heading": "Peace of mind,",
+     "accent": "from people we helped",
+     "limit": 6,
      "theme": "sand"
     }
    },
    {
-    "id": "check-visa-status-7",
+    "id": "check-visa-status-v2-7",
     "type": "faq",
     "data": {
-     "label": "Still wondering?",
-     "heading": "Frequently asked",
-     "accent": "questions",
-     "lead": "The questions our consultants receive most about UAE file validity, grace periods and overstay fines.",
+     "label": "Questions",
+     "heading": "Visa status questions,",
+     "accent": "answered",
      "layout": "split",
+     "lead": "Short answers to what people ask us every day.",
+     "cta": {
+      "label": "Ask on WhatsApp",
+      "href": "whatsapp"
+     },
      "items": [
       {
-       "q": "How can I check my UAE visa status by passport number?",
-       "a": "Use the free checker at the top of this page. Enter your passport number, nationality, date of birth and passport expiry. Our team securely queries the ICP or GDRFA records and sends your exact visa validity back on WhatsApp."
+       "q": "Can I check my UAE visa status with my passport number?",
+       "a": "Yes. Both GDRFA Dubai and ICP let you search by passport number together with your nationality and date of birth. No file number and no UAE PASS login are needed."
       },
       {
-       "q": "Is a Dubai visa check different from a general UAE visa check?",
-       "a": "Yes. A Dubai check queries the GDRFA database, which handles visas issued in Dubai only. A general UAE check queries the federal ICP database covering Abu Dhabi, Sharjah and the Northern Emirates. We check the correct portal for your file automatically."
+       "q": "Is checking a Dubai visa different from checking a UAE visa?",
+       "a": "Only in where you look. Visas issued in Dubai are checked on GDRFA Dubai; visas issued in the other six emirates are checked on ICP. The result shows the same things: status, expiry date and fines."
       },
       {
-       "q": "Can I do a Dubai visa check by passport number only?",
-       "a": "Not entirely. The passport number is the primary key, but privacy rules require secondary verification — your nationality and date of birth — to prove you are the authorised holder of the passport being queried."
+       "q": "Can I check a Dubai visa with just the passport number?",
+       "a": "You need the passport number plus nationality and date of birth. With those three details the GDRFA search works without a file number."
       },
       {
-       "q": "How do I check overstay fines?",
-       "a": "Send your details through the checker above and tell us you suspect an overstay. We pull the file and give you a full breakdown of any penalties owed, plus the fastest way to settle them."
+       "q": "How do I find out about overstay fines?",
+       "a": "The status result on GDRFA or ICP shows fines on most files. If it does not, send us your passport details and we confirm the exact amount before you travel."
       },
       {
-       "q": "What is “file validity” and why does it matter?",
-       "a": "File validity is the active status of your immigration record (your Unified Number / UID). Even if your visa sticker has expired, the file dictates whether you still have a grace period, owe fines or carry an absconding block."
+       "q": "What does “file validity” mean, and why does it matter?",
+       "a": "File validity is the date until which your residence or visit file is active. After it, the grace period starts — and once that ends, daily fines begin."
       },
       {
-       "q": "How accurate is the check?",
-       "a": "It is accurate as of the moment the query is run — the data comes directly from the official GDRFA and ICP systems, so you get the exact dates recognised by UAE border control."
+       "q": "How reliable is an online status check?",
+       "a": "The government portals show the official record and are reliable. Problems come from typing errors, a renewed passport or searching the wrong authority — which is why we check both."
       },
       {
-       "q": "How long is the grace period after my visa expires?",
-       "a": "It depends on the visa type and the latest Cabinet resolution — cancelled residency visas may carry 30, 60 or up to 180 days, while visit visas accrue fines almost immediately. Always confirm your exact deadline rather than guessing."
+       "q": "How many days of grace do I get once my visa ends?",
+       "a": "Usually 30 days for most residence visas, up to 90 days for property owners and up to 180 days for Golden and Green Visa holders. Visit visas usually have none."
       },
       {
-       "q": "Can I check an on-arrival or visit visa here?",
-       "a": "Yes. Visa-on-arrival entries create an active file in the system, so we can tell you exactly how many days of your 30 or 90-day allowance remain."
+       "q": "What does a “cancelled” status mean?",
+       "a": "The residence visa was ended, usually by the employer or sponsor. Your grace period starts on the cancellation date, so change status or leave before it ends."
       },
       {
-       "q": "Is my data safe?",
-       "a": "Your details are not stored on this website. They are formatted into a message you send yourself through WhatsApp’s end-to-end encrypted platform, directly to our licensed consultants."
+       "q": "What does an “absconding” status mean?",
+       "a": "An employer has reported that you left work without notice. It blocks new visas until it is resolved — speak to us or to MOHRE as soon as possible."
       },
       {
-       "q": "Do you charge for the check?",
-       "a": "No. The visa validity check is completely free, with no obligation to use any of our paid services afterwards."
+       "q": "What happens if I do not pay overstay fines?",
+       "a": "Fines keep growing every day and must be paid before you can renew, change status or leave. Large unpaid fines can lead to a travel block."
+      },
+      {
+       "q": "Can I check a visa on arrival here?",
+       "a": "Yes. Visit and tourist visas, including visas on arrival, show on the same portals with passport number, nationality and date of birth."
+      },
+      {
+       "q": "Is my data safe if I use the WhatsApp check?",
+       "a": "Your details go straight from your phone to our consultants and are used only to check your status. We never share them and you can ask us to delete them at any time."
       }
      ],
      "theme": "light"
     }
    },
    {
-    "id": "check-visa-status-8",
-    "type": "cta",
+    "id": "check-visa-status-v2-8",
+    "type": "related",
     "data": {
-     "heading": "Not sure where your visa stands?",
-     "lead": "Get your exact file validity, grace period and any fines in minutes — free, and straight to your WhatsApp.",
+     "heading": "Related services",
+     "slugs": "family-visa\ngolden-visa\nemirates-id\nmedical-emirates-id\namer-services\npro-services",
+     "theme": "sand"
+    }
+   },
+   {
+    "id": "check-visa-status-v2-9",
+    "type": "ctaSteps",
+    "data": {
+     "label": "Not sure where your visa stands?",
+     "heading": "Know your last day",
+     "accent": "before you fly",
+     "points": "Both authorities — we check GDRFA and ICP, whichever holds your file\nYour exact last day — the grace-period end date, in plain words\nFines before the airport — confirmed before you travel",
      "primary": {
       "label": "Check my visa status",
       "href": "whatsapp"
      },
      "secondary": {
-      "label": "Chat on WhatsApp",
-      "href": "phone"
+      "label": "Use the quick checker",
+      "href": "#checker"
      },
      "theme": "dark"
+    }
+   },
+   {
+    "id": "check-visa-status-v2-10",
+    "type": "sources",
+    "data": {
+     "label": "Official authorities",
+     "heading": "Government portals",
+     "lead": "Official sources for visa status, fines and residency rules.",
+     "items": [
+      {
+       "section": "Visa status",
+       "name": "General Directorate of Residency and Foreigners Affairs — Dubai",
+       "short": "GDRFA",
+       "desc": "Visa and file status for Dubai visas",
+       "url": "https://gdrfad.gov.ae/en"
+      },
+      {
+       "section": "Visa status",
+       "name": "Federal Authority for Identity, Citizenship, Customs and Port Security",
+       "short": "ICP",
+       "desc": "Residency for Abu Dhabi and the northern emirates",
+       "url": "https://icp.gov.ae"
+      },
+      {
+       "section": "Visa status",
+       "name": "ICP Smart Services",
+       "short": "ICP",
+       "desc": "File validity check by passport",
+       "url": "https://smartservices.icp.gov.ae"
+      },
+      {
+       "section": "Related",
+       "name": "Ministry of Foreign Affairs",
+       "short": "MOFA",
+       "desc": "Document attestation",
+       "url": "https://www.mofa.gov.ae"
+      },
+      {
+       "section": "Related",
+       "name": "The UAE government portal",
+       "short": "u.ae",
+       "desc": "Official guidance on visas and residency",
+       "url": "https://u.ae"
+      }
+     ],
+     "theme": "light"
     }
    }
   ]
@@ -3473,116 +3649,522 @@ export const allPages = [
  {
   "slug": "services/family-visa",
   "title": "Family & Dependant Visa",
-  "metaTitle": "UAE Family Visa | Sponsor Spouse, Children & Parents",
-  "metaDescription": "Family visa services in the UAE. Sponsor your spouse, children, parents and household staff with attested documents, medicals and Emirates ID handled end to end.",
+  "metaTitle": "UAE Family Visa — Sponsor Spouse, Children & Parents | Golden Visa UAE",
+  "metaDescription": "Sponsor your spouse, children, parents or newborn in the UAE. See the government fees instantly, tick off your documents and let us handle the entire family visa file.",
   "blocks": [
    {
     "id": "services-family-visa-1",
-    "type": "pageHeader",
+    "type": "serviceHero",
     "data": {
-     "eyebrow": "Residency",
-     "title": "Family & Dependant Visa",
-     "titleAccent": "",
-     "lead": "Sponsor a spouse, children, parents and domestic staff with one file.",
-     "crumb": "Family & Dependant Visa",
+     "eyebrow": "Family visa · UAE residence",
+     "title": "Bring your family to the UAE.",
+     "titleAccent": "We handle the entire file.",
+     "lead": "We prepare the sponsorship file, submit it to GDRFA (Dubai) or ICP (other emirates), book the medical and Emirates ID appointments and return the stamped visa. Every government fee is shown before you pay.",
+     "crumb": "Family visa",
      "parentLabel": "Services",
      "parentHref": "/services",
+     "bullets": [
+      {
+       "icon": "stamp",
+       "title": "Licensed Dubai consultancy"
+      },
+      {
+       "icon": "receipt",
+       "title": "Government fees at cost, with official receipts"
+      },
+      {
+       "icon": "truck",
+       "title": "Document pick-up and delivery in Dubai"
+      },
+      {
+       "icon": "clock",
+       "title": "5–10 working days for a new visa"
+      }
+     ],
+     "primary": {
+      "label": "Start on WhatsApp",
+      "href": "whatsapp"
+     },
+     "secondary": {
+      "label": "See the fees",
+      "href": "#fees"
+     },
+     "trust": "Spouse, children, parents and newborns\nInside or outside the UAE\nOnly one appointment for you",
+     "factsEyebrow": "At a glance",
+     "factsTitle": "Family visa in the UAE",
+     "facts": [
+      {
+       "icon": "timer",
+       "label": "New visa",
+       "value": "5–10 working days"
+      },
+      {
+       "icon": "calendar",
+       "label": "Renewal",
+       "value": "3–5 working days"
+      },
+      {
+       "icon": "wallet",
+       "label": "Minimum salary",
+       "value": "AED 4,000 a month"
+      },
+      {
+       "icon": "users",
+       "label": "Who you can sponsor",
+       "value": "Spouse · children · parents"
+      },
+      {
+       "icon": "shield",
+       "label": "Visa length",
+       "value": "Linked to your own visa"
+      }
+     ],
+     "factsNote": "Rules checked against GDRFA and ICP",
      "theme": "light"
     }
    },
    {
     "id": "services-family-visa-2",
-    "type": "serviceBody",
+    "type": "familyCalc",
     "data": {
-     "intro": "A residency is only as valuable as the life it supports. We handle dependant sponsorship as a single coordinated file so families arrive, enrol in school and access healthcare without avoidable delay.",
-     "highlights": [
+     "anchor": "fees",
+     "label": "Family visa fee finder",
+     "heading": "What does it cost",
+     "accent": "to sponsor your family?",
+     "lead": "Choose who you want to sponsor and where they are now. The government fees show straight away — no form, no email address.",
+     "badge": "Live government fees",
+     "whereLabel": "Family member is:",
+     "outsideLabel": "Outside the UAE",
+     "insideLabel": "Inside the UAE",
+     "fromLabel": "Government fees from",
+     "renewLabel": "Renewal from",
+     "members": [
       {
-       "label": "Spouse & children",
-       "value": "Any age"
+       "icon": "heart",
+       "title": "Spouse",
+       "sub": "Wife or husband",
+       "outside": 1376,
+       "inside": 2656,
+       "renew": 1037,
+       "note": "Entry permit or change of status, medical test, Emirates ID and visa issuance. Insurance and our service fee are quoted separately."
       },
       {
-       "label": "Parents",
-       "value": "Eligible"
+       "icon": "users",
+       "title": "Child",
+       "sub": "Sons up to 25, daughters until they marry",
+       "outside": 1103,
+       "inside": 2383,
+       "renew": 764,
+       "note": "Children under 18 need no medical test. Insurance and our service fee are quoted separately."
       },
       {
-       "label": "Domestic staff",
-       "value": "Up to 3"
+       "icon": "person",
+       "title": "Parents",
+       "sub": "Mother, father or parents-in-law",
+       "outside": 1376,
+       "inside": 2656,
+       "renew": 1037,
+       "note": "Parents need a higher income, suitable housing and health insurance — we check your case first."
       },
       {
-       "label": "Timeline",
-       "value": "10–15 days"
+       "icon": "baby",
+       "title": "Newborn",
+       "sub": "Baby born in the UAE",
+       "outside": 2088,
+       "inside": 2088,
+       "renew": 764,
+       "note": "Apply within 120 days of birth to avoid fines."
       }
      ],
-     "sections": [
+     "selectedLabel": "Estimated government fees",
+     "quoteButton": "Get my itemised quote",
+     "calcButton": "Full cost calculator",
+     "waIntro": "Hello, I would like an itemised family visa quote.",
+     "footnote": "Estimates from our current government fee sheet. Health insurance and our service fee are quoted separately on WhatsApp.",
+     "stats": [
       {
-       "heading": "Documents that hold up",
-       "body": "Most dependant rejections trace back to an unattested marriage or birth certificate. We manage attestation and legal translation before submission.",
-       "points": "Marriage and birth certificate attestation\nCertified Arabic legal translation\nTenancy contract and Ejari where required\nMedical fitness and Emirates ID scheduling"
+       "value": "5–10",
+       "label": "working days for a new visa"
       },
       {
-       "heading": "School and healthcare readiness",
-       "body": "We sequence issuance so that Emirates ID and health insurance are in place ahead of school enrolment deadlines.",
-       "points": ""
-      }
-     ],
-     "asideTitle": "Speak to a specialist",
-     "asideText": "A named consultant reviews your file and returns a written opinion within 24 hours.",
-     "asidePrimary": {
-      "label": "Start my application",
-      "href": "/apply"
-     },
-     "asideSecondary": {
-      "label": "WhatsApp a consultant",
-      "href": "whatsapp"
-     },
-     "asideLineLabel": "Direct line",
-     "theme": "light"
-    }
-   },
-   {
-    "id": "services-family-visa-3",
-    "type": "faq",
-    "data": {
-     "heading": "Frequently asked",
-     "layout": "split",
-     "items": [
-      {
-       "q": "Can I sponsor my parents?",
-       "a": "Yes, subject to income and dependency conditions, and generally alongside a valid residency of your own."
+       "value": "3–5",
+       "label": "working days for a renewal"
       },
       {
-       "q": "Do children over 18 qualify?",
-       "a": "Under a Golden Visa, children can be sponsored regardless of age."
+       "value": "AED 4,000",
+       "label": "minimum monthly salary for most sponsors"
+      },
+      {
+       "value": "1",
+       "label": "appointment you attend in person"
       }
      ],
      "theme": "sand"
     }
    },
    {
-    "id": "services-family-visa-4",
-    "type": "related",
+    "id": "services-family-visa-3",
+    "type": "detailTabs",
     "data": {
-     "heading": "Related services",
-     "slugs": "golden-visa\ndocument-attestation\nmedical-emirates-id",
+     "anchor": "who",
+     "label": "Who can you sponsor?",
+     "heading": "Who can you sponsor,",
+     "accent": "and what does each visa need?",
+     "items": [
+      {
+       "icon": "heart",
+       "title": "Spouse",
+       "meta": "From AED 1,376",
+       "body": "Husbands can sponsor their wife, and women can sponsor their husband when they meet the salary and job conditions.",
+       "points": "You hold a valid UAE residence visa\nMonthly salary of AED 4,000 — or AED 3,000 plus accommodation from your employer\nTenancy contract (Ejari) in your name\nHealth insurance for your spouse",
+       "extraTitle": "Key document",
+       "extra": "Marriage certificate attested in your home country, by the UAE embassy and by MOFA in the UAE — with a legal Arabic translation unless it is bilingual.\nFee basis: new visa, spouse arriving from abroad."
+      },
+      {
+       "icon": "users",
+       "title": "Children",
+       "meta": "From AED 1,103",
+       "body": "Sons can be sponsored up to the age of 25 and daughters until they marry. Children with a disability can be sponsored at any age.",
+       "points": "Same salary rule as for a spouse\nBirth certificate attested and translated\nPassport valid for at least six months\nNo medical test under 18",
+       "extraTitle": "Key document",
+       "extra": "Birth certificate showing both parents’ names, attested in the home country, by the UAE embassy and by MOFA.\nIn many cases a mother on her own residence visa can sponsor her children — ask us."
+      },
+      {
+       "icon": "person",
+       "title": "Parents",
+       "meta": "From AED 1,376",
+       "body": "Parents and parents-in-law can be sponsored on a renewable residence visa when you can show you support them.",
+       "points": "Higher income — usually about AED 20,000 a month\nA home with at least two bedrooms\nHealth insurance for each parent\nProof that your parents depend on you, in some cases",
+       "extraTitle": "Key document",
+       "extra": "Your attested birth certificate to prove the relationship — or your spouse’s, for parents-in-law."
+      },
+      {
+       "icon": "baby",
+       "title": "Newborn",
+       "meta": "From AED 2,088",
+       "body": "A baby born in the UAE needs a residence visa within 120 days of birth.",
+       "points": "Birth certificate from the hospital, translated\nThe baby’s passport\nBoth parents’ passports, visas and Emirates IDs\nHealth insurance for the baby",
+       "extraTitle": "Deadline",
+       "extra": "Apply within 120 days of birth — after that, daily fines start."
+      }
+     ],
+     "primaryLabel": "Estimate the fees",
+     "secondaryLabel": "Ask about this",
+     "askIntro": "Hello, I have a question about sponsoring my",
+     "calloutTitle": "Just under the salary limit, or a special case?",
+     "calloutText": "Some professions and free zones are assessed differently, and a mother on her own residence visa can often sponsor her children. Tell us your case and we tell you honestly what is possible.",
+     "cta": {
+      "label": "Check my case",
+      "href": "whatsapp"
+     },
+     "theme": "light"
+    }
+   },
+   {
+    "id": "services-family-visa-4",
+    "type": "processSplit",
+    "data": {
+     "anchor": "process",
+     "label": "How it works",
+     "heading": "You do two things.",
+     "accent": "We do everything else.",
+     "leftEyebrow": "You",
+     "leftTitle": "Send and attend",
+     "leftItems": [
+      {
+       "icon": "send",
+       "title": "Send photos of your documents",
+       "body": "On WhatsApp — we reply within the hour with your checklist and an itemised quote."
+      },
+      {
+       "icon": "doctor",
+       "title": "Attend one appointment",
+       "body": "The medical test and Emirates ID fingerprints, booked near you at a time that suits you."
+      }
+     ],
+     "rightEyebrow": "We handle",
+     "rightTitle": "The rest of the file",
+     "rightPoints": "Eligibility check before you pay\nAttestation and legal translation\nEntry permit or change of status\nMedical and health insurance booking\nResidence visa and Emirates ID applications\nDocument pick-up and return\nFamily file opening, if needed\nReminders before the visa expires",
+     "timelineTitle": "A typical new family visa",
+     "timeline": [
+      {
+       "meta": "Day 0",
+       "title": "Your quote",
+       "body": "Itemised fees sent on WhatsApp."
+      },
+      {
+       "meta": "Days 1–2",
+       "title": "Submission",
+       "body": "File submitted to GDRFA or ICP."
+      },
+      {
+       "meta": "Days 3–5",
+       "title": "One appointment",
+       "body": "Medical test and fingerprints near you."
+      },
+      {
+       "meta": "Days 5–10",
+       "title": "Visa issued",
+       "body": "Passport and Emirates ID returned to you."
+      },
+      {
+       "meta": "Renewals",
+       "title": "3–5 working days",
+       "body": "No new entry permit needed."
+      }
+     ],
      "theme": "light"
     }
    },
    {
     "id": "services-family-visa-5",
-    "type": "cta",
+    "type": "docChecklist",
     "data": {
-     "heading": "Find out if you qualify —",
-     "accent": "in one conversation",
-     "lead": "A senior consultant reviews your profile and returns a written eligibility opinion. No obligation, no cost.",
+     "anchor": "documents",
+     "label": "Documents checklist",
+     "heading": "Tick off what you have.",
+     "accent": "We follow up on the rest.",
+     "lead": "Choose who you are sponsoring, tick the documents you already have and send the list to us in one tap.",
+     "tabs": [
+      {
+       "title": "Spouse",
+       "items": "Your passport, residence visa and Emirates ID — copies are enough\nSpouse’s passport — valid for at least six months\nSpouse’s photo — white background\nMarriage certificate — attested at home, by the UAE embassy and by MOFA, with Arabic translation\nSalary certificate or labour contract — dated within the last month\nTenancy contract (Ejari) in your name\nHealth insurance for your spouse — we can arrange it\nSpouse’s current visa — only if already in the UAE"
+      },
+      {
+       "title": "Child",
+       "items": "Your passport, residence visa and Emirates ID\nChild’s passport — valid for at least six months\nChild’s photo — white background\nBirth certificate — attested and translated\nSalary certificate or labour contract\nTenancy contract (Ejari)\nHealth insurance for the child\nChild’s current visa — only if already in the UAE"
+      },
+      {
+       "title": "Parents",
+       "items": "Your passport, residence visa and Emirates ID\nParent’s passport and photo\nYour birth certificate — attested, to prove the relationship\nSalary certificate — showing the higher income\nTenancy contract for a home with at least two bedrooms\nHealth insurance for each parent"
+      },
+      {
+       "title": "Newborn",
+       "items": "Birth certificate from the hospital — with Arabic translation if needed\nBaby’s passport\nBaby’s photo — white background\nBoth parents’ passports, visas and Emirates IDs\nHealth insurance for the baby"
+      },
+      {
+       "title": "Renewal",
+       "items": "Family member’s passport — valid for six months or more\nCurrent visa and Emirates ID\nYour valid visa and Emirates ID\nSalary certificate and tenancy contract\nRenewed health insurance"
+      }
+     ],
+     "readyLabel": "{n} of {total} ready",
+     "button": "Send my list on WhatsApp",
+     "waIntro": "Hello, here is my family visa document list",
+     "note": "Originals are needed only for attestation and stamping — a courier collects and returns them.",
+     "theme": "sand"
+    }
+   },
+   {
+    "id": "services-family-visa-6",
+    "type": "stepGuides",
+    "data": {
+     "anchor": "guide",
+     "label": "Do it yourself",
+     "heading": "Prefer to do it yourself?",
+     "accent": "Here is the full process.",
+     "lead": "Both guides follow the official GDRFA and ICP process. If you get stuck at any step, message us and we take it from there.",
+     "items": [
+      {
+       "icon": "users",
+       "title": "New family visa",
+       "meta": "8 steps · 5–10 working days",
+       "body": "For a family member who is outside the UAE or on a visit visa.",
+       "steps": "Prepare and attest the documents (marriage or birth certificates)\nOpen a family file, if your emirate requires one\nApply for the entry permit through GDRFA, ICP or an Amer or Tasheel centre\nYour family member enters the UAE — or changes status inside the country\nBuy health insurance\nAttend the medical fitness test (18 and over)\nGive Emirates ID biometrics\nReceive the residence visa and Emirates ID"
+      },
+      {
+       "icon": "calendar",
+       "title": "Family visa renewal",
+       "meta": "5 steps · 3–5 working days",
+       "body": "For a family visa that expires soon — no new entry permit needed.",
+       "steps": "Renew your own visa first, if it expires earlier\nRenew the health insurance\nMedical test, if required\nSubmit the renewal and Emirates ID application\nReceive the renewed visa and Emirates ID"
+      }
+     ],
+     "openLabel": "Open the full guide ({n} steps)",
+     "closeLabel": "Show less",
+     "theme": "light"
+    }
+   },
+   {
+    "id": "services-family-visa-7",
+    "type": "stats",
+    "data": {
+     "variant": "light",
+     "label": "Good to know",
+     "heading": "Four deadlines",
+     "accent": "worth remembering",
+     "body": "Most family visa fines come from missed dates, not missing documents. Keep these four in mind — we send reminders for all of them.",
+     "cta": {
+      "label": "Ask us about your dates",
+      "href": "whatsapp"
+     },
+     "items": [
+      {
+       "icon": "timer",
+       "value": "60 days",
+       "label": "to use an entry permit and start the residence visa for family arriving from abroad"
+      },
+      {
+       "icon": "baby",
+       "value": "120 days",
+       "label": "from birth to get a newborn’s residence visa before fines start"
+      },
+      {
+       "icon": "calendar",
+       "value": "30 days",
+       "label": "grace period after a family visa expires — renew inside it"
+      },
+      {
+       "icon": "plane",
+       "value": "6 months",
+       "label": "outside the UAE before a standard residence visa is cancelled"
+      }
+     ],
+     "theme": "sand"
+    }
+   },
+   {
+    "id": "services-family-visa-8",
+    "type": "testimonials",
+    "data": {
+     "label": "Client reviews",
+     "heading": "Trusted by families",
+     "accent": "across the UAE",
+     "limit": 6,
+     "theme": "light"
+    }
+   },
+   {
+    "id": "services-family-visa-9",
+    "type": "table",
+    "data": {
+     "label": "Common issues",
+     "heading": "Why family visa applications get rejected —",
+     "accent": "and how we fix it",
+     "headers": "What goes wrong\nHow we fix it",
+     "rows": [
+      {
+       "cells": "Form errors\nEvery application is checked against your documents before it is submitted."
+      },
+      {
+       "cells": "Incomplete documents\nYou get a personal checklist and we chase anything missing."
+      },
+      {
+       "cells": "Employer delays\nWe work with your HR team, or use the salary certificate route."
+      },
+      {
+       "cells": "Medical test results\nWe explain the result, arrange re-tests and handle any appeal."
+      },
+      {
+       "cells": "Long medical or Emirates ID waits\nWe book fast-track appointments where available."
+      },
+      {
+       "cells": "Passport valid for under six months\nWe tell you before submission — not after a rejection."
+      },
+      {
+       "cells": "Salary and contract mismatch\nWe match the salary certificate, contract and statements first."
+      },
+      {
+       "cells": "Certificates not attested\nWe handle attestation at home-country, embassy and MOFA level."
+      },
+      {
+       "cells": "Names spelled differently across documents\nWe correct them with a new translation or an affidavit."
+      },
+      {
+       "cells": "Applying for the wrong visa\nWe confirm the right category in writing before you pay."
+      }
+     ],
+     "cta": {
+      "label": "Talk to a consultant",
+      "href": "whatsapp"
+     },
+     "theme": "sand"
+    }
+   },
+   {
+    "id": "services-family-visa-10",
+    "type": "faq",
+    "data": {
+     "label": "Questions",
+     "heading": "Family visa questions",
+     "accent": "we answer every day",
+     "layout": "split",
+     "cta": {
+      "label": "Ask your question",
+      "href": "whatsapp"
+     },
+     "helpTitle": "Call or message us",
+     "helpText": "Monday – Saturday, 9:00 am – 6:00 pm (Dubai time)",
+     "items": [
+      {
+       "q": "What salary do I need to sponsor my wife or husband?",
+       "a": "Usually AED 4,000 a month, or AED 3,000 when your employer provides accommodation. The figure comes from your labour contract or salary certificate. Parents are assessed at a higher income — usually about AED 20,000 — with extra housing and insurance rules."
+      },
+      {
+       "q": "My family member is already in Dubai on a visit visa. Do they need to leave?",
+       "a": "No. In most cases we change their status inside the UAE, so they can stay while the residence visa is processed. The government fee is higher than for an applicant outside the UAE."
+      },
+      {
+       "q": "Which certificates need attestation, and can you handle it?",
+       "a": "Marriage certificates for a spouse and birth certificates for children or parents. They must be attested in the home country, by the UAE embassy and by MOFA in the UAE, with a legal Arabic translation. We handle all of it."
+      },
+      {
+       "q": "How long does a family visa take with you?",
+       "a": "A new family visa usually takes 5–10 working days once the documents are ready. A renewal takes 3–5 working days."
+      },
+      {
+       "q": "Can a woman sponsor her husband and children?",
+       "a": "Yes, when she meets the salary and job conditions. A mother on her own residence visa can often sponsor her children too. Tell us your case and we confirm what applies."
+      },
+      {
+       "q": "What is a family file, and do I need one?",
+       "a": "Some emirates ask the sponsor to open a family file before the first dependant visa. We check whether you need one and open it for you as part of the process."
+      },
+      {
+       "q": "Do I need to visit your office?",
+       "a": "No. Everything is done on WhatsApp and by courier. Your family member attends only the medical test and the Emirates ID fingerprints."
+      },
+      {
+       "q": "What do you charge on top of government fees?",
+       "a": "Government fees are paid at cost with official receipts. Our service fee is fixed and quoted in writing before you pay — no surprises later."
+      }
+     ],
+     "theme": "light"
+    }
+   },
+   {
+    "id": "services-family-visa-11",
+    "type": "related",
+    "data": {
+     "heading": "Related services",
+     "slugs": "newborn-visa\ngolden-visa\nproperty-investor-visa\ndocument-attestation\nlegal-translation\npro-services",
+     "theme": "sand"
+    }
+   },
+   {
+    "id": "services-family-visa-12",
+    "type": "ctaSteps",
+    "data": {
+     "label": "Fast start",
+     "heading": "Send your documents tonight.",
+     "accent": "We submit tomorrow.",
+     "points": "Tonight — send photos of your documents on WhatsApp\nWithin the hour — get your checklist and an itemised quote\nTomorrow — we submit your application",
      "primary": {
-      "label": "Apply Now",
-      "href": "/apply"
+      "label": "Chat on WhatsApp",
+      "href": "whatsapp"
      },
      "secondary": {
-      "label": "Book a free consultation",
-      "href": "/contact"
+      "label": "Check government fees",
+      "href": "#fees"
      },
      "theme": "dark"
+    }
+   },
+   {
+    "id": "services-family-visa-13",
+    "type": "partners",
+    "data": {
+     "heading": "We work directly with the official UAE authorities",
+     "theme": "light"
     }
    }
   ]

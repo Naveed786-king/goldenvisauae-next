@@ -14,6 +14,9 @@ export function lines(v?: string | string[] | null): string[] {
     .filter(Boolean);
 }
 
+/** Phone numbers, emails and links stay left-to-right inside Arabic pages */
+export const ltrDir = (v?: unknown) => (typeof v === 'string' && (/^[\s+\d().\/-]{6,}$/.test(v.trim()) || /@|^https?:\/\//.test(v.trim())) ? 'ltr' : undefined);
+
 export type Theme = 'light' | 'sand' | 'dark';
 export const themeOf = (d: any, fallback: Theme = 'light'): Theme => (['light', 'sand', 'dark'].includes(d?.theme) ? d.theme : d?.theme === 'soft' ? 'sand' : fallback);
 

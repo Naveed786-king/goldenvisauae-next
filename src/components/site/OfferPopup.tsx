@@ -7,7 +7,7 @@ import SmartLink from '@/components/ui/SmartLink';
 import { Dirham } from '@/components/ui/Dirham';
 import { SocialIcon } from '@/components/ui/Icon';
 import { useSite } from './SiteProvider';
-import { Emblem } from './Logo';
+import { Coin } from './Logo';
 import { cn } from '@/lib/utils';
 
 /** "Limited time offer" pop-up — once per page per visit, never on admin / account / apply pages */
@@ -58,9 +58,7 @@ export default function OfferPopup({ offer }: { offer: OfferSettings }) {
           <X className="h-4 w-4" />
         </button>
         <div className="flex items-center gap-3 pe-10">
-          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl text-[#2a1d05]" style={{ background: 'var(--gold-grad)' }}>
-            <Emblem className="h-7 w-7" />
-          </span>
+          <Coin className="h-12 w-12 shrink-0" />
           <p className="eyebrow">{offer.eyebrow}</p>
         </div>
         <h2 className="mt-4 font-display text-[1.45rem] font-semibold leading-snug tracking-[-0.02em]">{offer.title}</h2>

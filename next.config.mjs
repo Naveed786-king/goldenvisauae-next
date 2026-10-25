@@ -26,6 +26,9 @@ const nextConfig = {
   serverExternalPackages: ['@prisma/client', 'bcryptjs', 'nodemailer'],
   experimental: {
     serverActions: { bodySizeLimit: '20mb' },
+    // pages already opened or loaded on hover are reused for a while: back/forward and repeat visits are instant
+    staleTimes: { dynamic: 45, static: 300 },
+    optimizePackageImports: ['lucide-react'],
   },
 };
 

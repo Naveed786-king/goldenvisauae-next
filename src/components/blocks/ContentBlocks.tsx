@@ -6,9 +6,9 @@ import SmartLink from '@/components/ui/SmartLink';
 import { withDirham, dirhamHtml } from '@/components/ui/Dirham';
 import { getI18n } from '@/lib/i18n/server';
 import { cn } from '@/lib/utils';
-import { Btn, Head, Section, gridCols, hasLink, lines, WhatsAppIcon } from './parts';
+import { Btn, Head, Section, gridCols, hasLink, lines, ltrDir, WhatsAppIcon } from './parts';
 import { CalcButton } from './Interactive';
-import { Emblem } from '@/components/site/Logo';
+import { Coin } from '@/components/site/Logo';
 import Slider3D from '@/components/ui/Slider3D';
 
 type P = { data: any; site: SiteSettings };
@@ -98,16 +98,16 @@ export function Cards({ data }: P) {
         <span aria-hidden className="rail absolute inset-x-[6%] top-[3.25rem] hidden h-[2px] rounded-full lg:block" />
         <span aria-hidden className="rail absolute bottom-8 start-[22px] top-8 w-[2px] rounded-full lg:hidden" style={{ backgroundSize: '100% 200%' }} />
         {items.map((it, i) => (
-          <li key={i} className="reveal relative ps-14 lg:ps-0">
+          <li key={i} className="reveal relative flex flex-col ps-14 lg:ps-0">
             <span className="absolute start-0 top-0 z-10 grid h-11 w-11 place-items-center rounded-2xl font-display text-sm font-semibold text-[#1a1406] shadow-[0_12px_30px_-12px_rgba(201,162,74,.9)] lg:static lg:mx-auto lg:mb-6 lg:mt-7 lg:h-12 lg:w-12 lg:rounded-full" style={{ background: 'var(--gold-grad)' }}>
               {String(i + 1).padStart(2, '0')}
             </span>
-            <div className="card card-lift tilt h-full p-5" data-tilt="8">
+            <div className="card card-lift tilt flex-1 p-5" data-tilt="8">
               <div className="flex items-center justify-between gap-3">
                 <span className="icon-chip !h-10 !w-10 !rounded-xl">
                   <Icon name={it.icon} className="h-[18px] w-[18px]" />
                 </span>
-                {it.meta && <span className="pill !px-2.5 !py-1 !text-[0.7rem]">{D(it.meta)}</span>}
+                {it.meta && <span dir={ltrDir(it.meta)} className="pill !px-2.5 !py-1 !text-[0.7rem]">{D(it.meta)}</span>}
               </div>
               <h3 className="mt-4 font-display text-[1.02rem] font-semibold leading-snug">{D(it.title)}</h3>
               {it.body && <p className="muted mt-2 text-sm leading-relaxed">{D(it.body)}</p>}
@@ -239,7 +239,7 @@ export function Cards({ data }: P) {
               {layout === 'numbered' ? (
                 <span className="font-display text-2xl font-semibold text-gold/40">{String(i + 1).padStart(2, '0')}</span>
               ) : it.meta ? (
-                <span className="pill !px-2.5 !py-1 !text-[0.72rem]">{D(it.meta)}</span>
+                <span dir={ltrDir(it.meta)} className="pill !px-2.5 !py-1 !text-[0.72rem]">{D(it.meta)}</span>
               ) : null}
             </div>
             <h3 className="mt-6 font-display text-[1.08rem] font-semibold leading-snug">{D(it.title)}</h3>
@@ -705,15 +705,15 @@ export function Cta({ data }: P) {
         <div className="pointer-events-none absolute -top-40 left-1/2 h-80 w-[44rem] -translate-x-1/2 rounded-full bg-gold/25 blur-[100px]" />
         <div className="cta-coin [perspective:900px]" aria-hidden>
           <div className="coin3d !w-full">
-            <span className="coin3d-face">
-              <Emblem className="h-[46%] w-[46%] text-[#3b2a08]" />
+            <span className="coin3d-face coin3d-img">
+              <Coin className="h-full w-full !drop-shadow-none" />
             </span>
           </div>
         </div>
         <div className="cta-coin left [perspective:900px]" aria-hidden>
           <div className="coin3d !w-full" style={{ animationDelay: '-4s' }}>
-            <span className="coin3d-face">
-              <Emblem className="h-[46%] w-[46%] text-[#3b2a08]" />
+            <span className="coin3d-face coin3d-img">
+              <Coin className="h-full w-full !drop-shadow-none" />
             </span>
           </div>
         </div>

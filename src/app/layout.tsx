@@ -24,7 +24,7 @@ export async function generateMetadata(): Promise<Metadata> {
     description: site.seo.description,
     keywords: site.seo.keywords,
     applicationName: site.name,
-    icons: site.favicon ? { icon: site.favicon, apple: site.favicon } : undefined,
+    icons: site.favicon ? { icon: site.favicon, apple: site.favicon } : { icon: [{ url: '/favicon.ico', sizes: 'any' }, { url: '/icon.png', type: 'image/png' }], apple: '/apple-touch-icon.png' },
     openGraph: {
       type: 'website',
       siteName: site.name,
