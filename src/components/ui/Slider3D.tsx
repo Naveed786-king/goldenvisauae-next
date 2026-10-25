@@ -6,11 +6,8 @@ import { cn } from '@/lib/utils';
 function centre(el: HTMLElement, k: HTMLElement) {
   const a = el.getBoundingClientRect();
   const b = k.getBoundingClientRect();
-  // snapping is paused while we glide, so a jump of several cards is not stopped at each one
-  el.style.scrollSnapType = 'none';
-  el.scrollBy({ left: b.left + b.width / 2 - (a.left + a.width / 2), behavior: 'smooth' });
-  window.clearTimeout((el as any)._snapT);
-  (el as any)._snapT = window.setTimeout(() => el.style.removeProperty('scroll-snap-type'), 700);
+  // snapping stays on: the browser always lands exactly on the card (iPhone Safari left cards half-way when snap was paused)
+  el.scrollBy({ left: Math.round(b.left + b.width / 2 - (a.left + a.width / 2)), behavior: 'smooth' });
 }
 
 /**
@@ -85,10 +82,10 @@ export default function Slider3D({
     };
     const io = new IntersectionObserver(
       ([e]) => {
-        visible = e.isIntersecting;
-        if (visible) onScroll();
+        visible = e.intersectionRatio > 0.55;
+        if (e.isIntersecting) onScroll();
       },
-      { threshold: [0, 0.5] },
+      { threshold: [0, 0.6] },
     );
     io.observe(el);
     if (!stopped)
@@ -98,7 +95,7 @@ export default function Slider3D({
         const cur = kids.findIndex((k) => Math.abs(parseFloat(k.style.getPropertyValue('--s3d') || '0')) < 0.5);
         const next = kids[(cur + 1) % kids.length];
         if (next) centre(el, next);
-      }, 4200);
+      }, 5200);
     el.addEventListener('pointerdown', stop, { once: true });
     el.addEventListener('touchstart', stop, { once: true, passive: true });
     return () => {

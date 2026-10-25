@@ -85,8 +85,8 @@ export default function Floating({ site }: { site: SiteSettings }) {
       )}
 
       {show && (
-        <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="glass fixed bottom-6 start-6 z-40 hidden h-11 w-11 place-items-center rounded-full text-[#1d1d1f] lg:grid" style={{ animation: 'pop .3s both' }} aria-label={t('Back to top')}>
-          <ArrowUp className="h-5 w-5" />
+        <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="to-top fixed bottom-[104px] start-4 z-40 grid h-12 w-12 place-items-center rounded-full lg:bottom-6 lg:start-6 lg:h-11 lg:w-11" style={{ animation: 'pop .3s both' }} aria-label={t('Back to top')}>
+          <ArrowUp className="h-5 w-5" strokeWidth={2.4} />
         </button>
       )}
 

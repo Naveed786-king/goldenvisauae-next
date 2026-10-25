@@ -59,7 +59,7 @@ export async function Hero({ data, site }: { data: any; site: SiteSettings }) {
 export async function PageHeader({ data }: { data: any; site: SiteSettings }) {
   const { t } = await getI18n();
   return (
-    <section id={data.anchor || undefined} className="hero-stage theme-light pb-12 pt-[7.25rem] sm:pb-16 sm:pt-[9rem]">
+    <section id={data.anchor || undefined} className="hero-stage theme-light pb-12 pt-[9.25rem] sm:pb-16 sm:pt-[9rem]">
       <div className="hero-aurora" />
       <div className="hero-grid" />
       <Particles density={0.35} />

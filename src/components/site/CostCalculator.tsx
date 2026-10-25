@@ -191,9 +191,9 @@ export default function CostCalculator({ fees }: { fees: FeeSettings }) {
           {current === 'category' && (
             <section className="grid gap-4">
               <Head title={L.q1} sub={L.q1sub} />
-              <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 sm:mx-0 sm:grid sm:grid-cols-3 sm:px-0">
+              <div className="grid grid-cols-2 gap-2 pt-0.5 sm:grid-cols-3">
                 {groups.map((g) => (
-                  <button key={g.id} type="button" onClick={() => { setGroupId(g.id); setOptionId(g.options[0]?.id || ''); }} className={cn(choice(g.id === group?.id), 'shrink-0 !py-2.5 text-sm font-medium sm:shrink')}>
+                  <button key={g.id} type="button" onClick={() => { setGroupId(g.id); setOptionId(g.options[0]?.id || ''); }} className={cn(choice(g.id === group?.id), '!px-3 !py-2.5 text-[0.82rem] font-medium leading-snug sm:!px-4 sm:text-sm')}>
                     {g.label}
                   </button>
                 ))}

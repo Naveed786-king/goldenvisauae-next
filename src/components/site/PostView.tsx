@@ -56,7 +56,7 @@ export default function PostView({ post, related, site, lang = 'en-GB', url }: {
   return (
     <article>
       <ViewPing id={post.id} />
-      <header className="hero-stage theme-light pb-10 pt-[7.25rem] sm:pt-[9rem]">
+      <header className="hero-stage theme-light pb-10 pt-[9.25rem] sm:pt-[9rem]">
         <div className="hero-aurora" />
         <div className="hero-grid" />
         <Particles density={0.3} />

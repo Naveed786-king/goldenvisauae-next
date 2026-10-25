@@ -255,9 +255,9 @@ export function DetailTabsView({ d }: { d: any }) {
   const points = lines(cur.points);
   return (
     <div>
-      <div role="tablist" className="dt-tabs no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 sm:mx-0 sm:flex-wrap sm:justify-center sm:px-0">
+      <div role="tablist" className="dt-tabs grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:justify-center">
         {items.map((it, k) => (
-          <button key={k} type="button" role="tab" aria-selected={k === i} onClick={() => setI(k)} className={cn('dt-tab flex shrink-0 items-center gap-2.5 rounded-2xl border px-4 py-2.5 text-start transition-all duration-200', k === i ? 'chip-active' : 'border-black/[0.08] bg-white hover:border-[#c9a24a]/70')}>
+          <button key={k} type="button" role="tab" aria-selected={k === i} onClick={() => setI(k)} className={cn('dt-tab flex min-w-0 items-center gap-2.5 rounded-2xl border px-4 py-2.5 text-start transition-all duration-200', k === i ? 'chip-active' : 'border-black/[0.08] bg-white hover:border-[#c9a24a]/70')}>
             <Icon name={it.icon || 'users'} className="h-4 w-4 shrink-0" />
             <span className="min-w-0">
               <span className="block text-sm font-semibold leading-tight">{it.title}</span>
@@ -341,9 +341,9 @@ export function DocChecklistView({ d }: { d: any }) {
   ].join('\n');
   return (
     <div className="card overflow-hidden">
-      <div role="tablist" className="no-scrollbar flex gap-1.5 overflow-x-auto border-b border-black/[0.06] p-2 sm:p-3">
+      <div role="tablist" className="flex flex-wrap gap-1.5 border-b border-black/[0.06] p-2 sm:p-3">
         {tabs.map((x, k) => (
-          <button key={k} type="button" role="tab" aria-selected={k === t} onClick={() => setT(k)} className={cn('shrink-0 rounded-xl px-4 py-2 text-sm font-medium transition-colors duration-200', k === t ? 'chip-active' : 'text-[#6e6e73] hover:bg-black/[0.04] hover:text-black')}>
+          <button key={k} type="button" role="tab" aria-selected={k === t} onClick={() => setT(k)} className={cn('rounded-xl px-3.5 py-2 text-sm font-medium transition-colors duration-200', k === t ? 'chip-active' : 'text-[#6e6e73] hover:bg-black/[0.04] hover:text-black')}>
             {x.title}
           </button>
         ))}

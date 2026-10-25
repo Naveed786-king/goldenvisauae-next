@@ -626,20 +626,25 @@ html[data-anim-ready] .blk[data-anim='blur']:not(.in) > :first-child { filter: b
 .ftr-social:hover svg { transform: rotateY(180deg); }
 .ftr-bottom { border-top: 1px solid rgba(201, 162, 74, 0.22); }
 
-/* ------------------------------------------------------------------ phones: 3D swipe carousels */
+/* ------------------------------------------------------------------ phones: clean centred swipe carousels */
 @media (max-width: 767px) {
   .s3d[data-s3d] {
-    display: flex !important; gap: 14px !important; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory;
-    margin-inline: -1rem; padding: 10px 13vw 22px !important; scrollbar-width: none; perspective: 1100px; -webkit-overflow-scrolling: touch;
+    display: flex !important; gap: 12px !important; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory;
+    margin-inline: -1rem; padding: 8px 8vw 20px !important; scroll-padding-inline: 8vw; scrollbar-width: none; -webkit-overflow-scrolling: touch;
   }
   .s3d[data-s3d]::-webkit-scrollbar { display: none; }
   .s3d[data-s3d] > * {
-    flex: 0 0 74vw; min-width: 0; scroll-snap-align: center; scroll-snap-stop: always;
-    transform: perspective(900px) rotateY(calc(var(--s3d, 0) * -32deg)) translateZ(calc(var(--s3d, 0) * var(--s3d, 0) * -60px)) scale(calc(1 - min(1, max(var(--s3d, 0), calc(var(--s3d, 0) * -1))) * 0.12)) !important;
-    opacity: calc(1 - min(1, max(var(--s3d, 0), calc(var(--s3d, 0) * -1))) * 0.35) !important;
-    transition: transform 0.12s linear, opacity 0.12s linear !important; will-change: transform;
+    flex: 0 0 84vw; max-width: 84vw; min-width: 0; scroll-snap-align: center; scroll-snap-stop: always;
+    transform: scale(calc(1 - min(1, max(var(--s3d, 0), calc(var(--s3d, 0) * -1))) * 0.07)) !important;
+    opacity: calc(1 - min(1, max(var(--s3d, 0), calc(var(--s3d, 0) * -1))) * 0.45) !important;
+    transition: transform 0.18s ease-out, opacity 0.18s ease-out !important;
   }
   .s3d[data-s3d] > * > * { height: 100%; }
+  /* no finger tilt inside sliders: cards stay flat and fully readable */
+  .s3d[data-s3d] .tilt, .s3d[data-s3d].tilt, .s3d[data-s3d] > .tilt { transform: none !important; }
+  .s3d[data-s3d] > .tilt { transform: scale(calc(1 - min(1, max(var(--s3d, 0), calc(var(--s3d, 0) * -1))) * 0.07)) !important; }
+  .s3d[data-s3d] .tilt::before { display: none; }
+  .s3d[data-s3d] .depth-z { transform: none !important; }
 }
 .s3d-dots { display: flex; justify-content: center; gap: 6px; margin-top: 2px; }
 .s3d-dots button { width: 7px; height: 7px; border-radius: 99px; background: rgba(17, 17, 17, 0.15); transition: width 0.35s var(--ease), background 0.35s ease; }
@@ -954,3 +959,8 @@ body { background: transparent; }
   .ps-timeline::before { content: ''; position: absolute; inset-inline: 4%; top: -14px; height: 2px; border-radius: 2px; background: linear-gradient(90deg, transparent, var(--brand-gold), var(--brand-gold-light), var(--brand-gold), transparent); background-size: 200% 100%; animation: flow 5s linear infinite; }
   .ps-dot { position: absolute; top: -20px; inset-inline-start: 1.25rem; width: 14px; height: 14px; border-radius: 50%; background: var(--gold-grad); box-shadow: 0 0 0 4px #fff, 0 6px 14px -4px rgba(150, 110, 30, 0.8); }
 }
+
+/* back to top: clear gold button (phones sit above the bottom bar, opposite WhatsApp) */
+.to-top { color: #2a1d05; background: var(--gold-grad); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7), 0 0 0 4px rgba(255, 255, 255, 0.85), 0 14px 30px -10px rgba(150, 110, 30, 0.75); transition: transform 0.25s var(--ease); }
+.to-top:active { transform: scale(0.92); }
+@media (hover: hover) { .to-top:hover { transform: translateY(-3px); } }

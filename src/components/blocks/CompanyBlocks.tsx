@@ -47,7 +47,7 @@ export async function IntroHero({ data, site }: P) {
   const office = data.variant === 'office';
   const hours = lines(data.hoursLines);
   return (
-    <section id={data.anchor || undefined} className="hero-stage theme-light pb-14 pt-[7.25rem] sm:pb-20 sm:pt-[9rem]">
+    <section id={data.anchor || undefined} className="hero-stage theme-light pb-14 pt-[9.25rem] sm:pb-20 sm:pt-[9rem]">
       <div className="hero-aurora" />
       <div className="hero-grid" />
       <Particles density={0.45} focus="card" />
