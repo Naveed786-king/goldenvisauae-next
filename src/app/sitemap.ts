@@ -8,8 +8,22 @@ export const dynamic = 'force-dynamic';
 
 // Every page in every language, with hreflang links between the language versions.
 // Blog posts are listed only in the languages they are really translated into.
+// The full list (every page × every language) takes seconds to build, and crawlers ask for it often:
+// keep the built list for 10 minutes per site address. New posts appear within 10 minutes.
+const SITEMAP_TTL = 10 * 60_000;
+const memo = globalThis as unknown as { __sitemap?: Map<string, { at: number; data: MetadataRoute.Sitemap }> };
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = await requestBaseUrl();
+  const cache = (memo.__sitemap ??= new Map());
+  const hit = cache.get(base);
+  if (hit && Date.now() - hit.at < SITEMAP_TTL) return hit.data;
+  const data = await buildSitemap(base);
+  if (data.length > 1) cache.set(base, { at: Date.now(), data }); // never keep the error fallback
+  return data;
+}
+
+async function buildSitemap(base: string): Promise<MetadataRoute.Sitemap> {
   const abs = (u: string) => (/^https?:\/\//.test(u) ? u : base + (u.startsWith('/') ? u : '/' + u));
   try {
     const [pages, posts, langs] = await Promise.all([
