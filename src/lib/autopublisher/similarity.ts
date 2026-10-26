@@ -5,12 +5,25 @@ import { embed } from './ai';
 import { autoLog } from './log';
 import { containment, jaccard, normalize, shingles, stripHtml, terms, titleSimilarity, topicTerms } from './text';
 
-type PostSig = { t: string[]; sh: number[]; kw: string[]; emb?: number[]; v: number };
+type PostSig = { t: string[]; sh: number[]; kw: string[]; emb?: number[]; v: number; ch?: string };
 const SIG_VERSION = 2;
 const SAMPLE_MOD = 3; // keep ~1/3 of shingles
 
 export function postSig(title: string, html: string, focusKeyword = ''): PostSig {
-  return { t: topicTerms(title), sh: shingles(stripHtml(html), 4, SAMPLE_MOD, 1500), kw: focusKeyword ? topicTerms(focusKeyword) : [], v: SIG_VERSION };
+  return { t: topicTerms(title), sh: shingles(stripHtml(html), 4, SAMPLE_MOD, 1500), kw: focusKeyword ? topicTerms(focusKeyword) : [], v: SIG_VERSION, ch: contentHash(title, html) };
+}
+
+/** Short hash of title + text: a view counter or status change must not count as a new version */
+export function contentHash(title: string, html: string): string {
+  const str = `${title}\n${html}`;
+  let h1 = 0x811c9dc5,
+    h2 = 0;
+  for (let i = 0; i < str.length; i++) {
+    const c = str.charCodeAt(i);
+    h1 = Math.imul(h1 ^ c, 0x01000193) >>> 0;
+    h2 = (h2 * 31 + c) >>> 0;
+  }
+  return `${h1.toString(36)}${h2.toString(36)}${str.length.toString(36)}`;
 }
 
 export function cosine(a?: number[], b?: number[]): number {
@@ -40,11 +53,14 @@ export async function fingerprintPost(post: { id: string; title: string; content
 
 /** Background: fingerprints for posts that have none (or changed since). Returns how many were made. */
 export async function rebuildFingerprints(batch = 25, cfg?: AutoConfig, force = false): Promise<number> {
-  const fps = await prisma.autoFingerprint.findMany({ where: { kind: 'post' }, select: { refId: true, updatedAt: true } });
+  const fps = await prisma.autoFingerprint.findMany({ where: { kind: 'post' }, select: { refId: true, updatedAt: true, sig: true } });
   const at = new Map(fps.map((f) => [f.refId, f.updatedAt.getTime()]));
+  const hashOf = new Map(fps.map((f) => [f.refId, (f.sig.match(/"ch":"([^"]+)"/) || [])[1] || '']));
   const posts = await prisma.post.findMany({ select: { id: true, title: true, content: true, tags: true, updatedAt: true } });
-  const old = new Set((await prisma.autoFingerprint.findMany({ where: { kind: 'post', NOT: { sig: { contains: `"v":${SIG_VERSION}` } } }, select: { refId: true } })).map((f) => f.refId));
-  const todo = posts.filter((p) => force || !at.has(p.id) || old.has(p.id) || p.updatedAt.getTime() > (at.get(p.id) || 0)).slice(0, batch);
+  const old = new Set(fps.filter((f) => !f.sig.includes(`"v":${SIG_VERSION}`)).map((f) => f.refId));
+  // changed = newer AND different text (page views also bump updatedAt; those are not new versions)
+  const changed = (p: (typeof posts)[number]) => p.updatedAt.getTime() > (at.get(p.id) || 0) && hashOf.get(p.id) !== contentHash(p.title, p.content);
+  const todo = posts.filter((p) => force || !at.has(p.id) || old.has(p.id) || changed(p)).slice(0, batch);
   // focus keywords are only known for articles the publisher wrote
   const jobs = await prisma.autoJob.findMany({ where: { postId: { in: todo.map((p) => p.id) } }, select: { postId: true, focusKeyword: true } });
   const kwOf = new Map(jobs.map((j) => [j.postId!, j.focusKeyword || undefined]));
