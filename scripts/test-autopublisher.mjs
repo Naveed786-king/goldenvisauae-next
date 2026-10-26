@@ -172,3 +172,17 @@ test('thinking models get room for an answer after their hidden reasoning', () =
   assert.equal(outputBudget('gemini-2.5-flash', 16000), 16000);
   assert.equal(outputBudget('gpt-4o-mini', 400), 400);
 });
+
+import { buildImagePrompt, peopleAllowed } from '../src/lib/autopublisher/image-prompt.ts';
+test('pictures are people-free unless the house style asks for people', () => {
+  const p = buildImagePrompt({ purpose: 'cover picture for "How much is a UAE Golden Visa"', topic: 'golden visa cost', variant: 3 });
+  assert.match(p, /No people, no faces, no hands/);
+  assert.doesNotMatch(p, /people of mixed ages/);
+  const risky = buildImagePrompt({ purpose: 'cover', hint: 'a family holding passports at a desk', topic: 't', variant: 1 });
+  assert.doesNotMatch(risky, /passports at a desk/);
+  const safe = buildImagePrompt({ purpose: 'cover', hint: 'Dubai Marina towers at dusk', topic: 't', variant: 1 });
+  assert.match(safe, /Dubai Marina towers at dusk/);
+  assert.equal(peopleAllowed('show families in pictures'), true);
+  assert.equal(peopleAllowed('no people, architecture only'), false);
+  assert.match(buildImagePrompt({ purpose: 'cover', topic: 't', houseStyle: 'show families', variant: 2 }), /people of mixed ages/);
+});

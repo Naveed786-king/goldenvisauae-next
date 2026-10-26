@@ -96,6 +96,14 @@ export async function POST(req: Request) {
   if (!job) return fail('Job not found', 404);
   const d = parse(job.data);
 
+  if (action === 'retry' && job.stage === 'held' && /^Picture/i.test(String(job.error || ''))) {
+    // held because a picture failed: make the pictures again with the current settings
+    for (const k of ['picPlan', 'picIndex', 'figures', 'pictureFailures', 'pictures', 'heldReason', 'retryAt']) delete d[k];
+    if (!d.customImage && job.kind !== 'refresh') delete d.cover;
+    await prisma.autoJob.update({ where: { id: job.id }, data: { stage: 'images', tries: 0, error: null, data: JSON.stringify(d) } });
+    await autoLog('info', `New pictures requested by ${s.email}`, job.id);
+    return ok();
+  }
   if (action === 'retry') {
     const stage = job.stage === 'failed' ? String(job.error || '').split(':')[0] || 'research' : job.stage;
     delete d.retryAt;
