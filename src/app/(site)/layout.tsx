@@ -12,10 +12,12 @@ import NavProgress from '@/components/site/NavProgress';
 import CostCalculator from '@/components/site/CostCalculator';
 import OfferPopup from '@/components/site/OfferPopup';
 import { designCss, designBodyClass, googleFontsUrl } from '@/lib/design';
+import ChatLoader from '@/components/site/chat/ChatLoader';
+import { getChatConfig, widgetConfig } from '@/lib/chatbot/config';
 
 export default async function SiteLayout({ children }: { children: React.ReactNode }) {
   const { locale, dict } = await getI18n();
-  const [{ site, header, footer }, tr, design, fees, offer] = await Promise.all([getLocalizedBundle(locale), getSetting('translation'), getSetting('design'), getLocalizedFees(locale), getLocalizedOffer(locale)]);
+  const [{ site, header, footer }, tr, design, fees, offer, chat] = await Promise.all([getLocalizedBundle(locale), getSetting('translation'), getSetting('design'), getLocalizedFees(locale), getLocalizedOffer(locale), getChatConfig()]);
   const languages = tr.showSwitcher ? tr.enabled : ['en'];
   // switching language: no loading screen, the page simply appears in the new language
   const switching = !!(await cookies()).get('rgv_switch');
@@ -39,6 +41,7 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
         <Floating site={site} />
         <CostCalculator fees={fees} />
         <OfferPopup offer={offer} />
+        {chat.enabled && <ChatLoader cfg={widgetConfig(chat, locale)} />}
         <InjectScripts html={site.headScripts} target="head" />
         <InjectScripts html={site.bodyScripts} target="body" />
         {site.showMobileBar && <div className="h-[92px] lg:hidden" />}

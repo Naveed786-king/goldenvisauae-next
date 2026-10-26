@@ -328,3 +328,28 @@ model AutoLog {
 
   @@index([createdAt])
 }
+
+// ---------------------------------------------------------------- AI chatbot (additive)
+// One website chat. Messages are kept as a JSON array (personal ID numbers are masked before saving).
+model ChatSession {
+  id        String    @id @default(cuid())
+  visitorId String    @default("")
+  locale    String    @default("en")
+  page      String    @default("")
+  status    String    @default("open") // open | handed | closed
+  handedAt  DateTime?
+  handover  String? // reason: apply | quote | unknown | human | budget
+  leadId    String?
+  name      String?
+  phone     String?
+  email     String?
+  summary   String    @default("")
+  messages  String    @default("[]") // JSON [{ role: 'user' | 'bot', text, at }]
+  count     Int       @default(0) // visitor messages
+  ipHash    String    @default("")
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([createdAt])
+  @@index([status])
+}

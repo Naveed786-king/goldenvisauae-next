@@ -73,6 +73,20 @@ export async function complete(opts: CompleteOpts): Promise<string> {
   }
 }
 
+/** Direct call to one provider with a given key and model (no budget, no config) — used by the chatbot */
+export async function callModel(id: ProviderId, key: string, model: string, opts: CompleteOpts): Promise<string> {
+  const timeoutMs = opts.timeoutMs ?? 60_000;
+  const temperature = opts.temperature ?? 0.4;
+  const maxTokens = opts.maxTokens ?? 1200;
+  try {
+    if (id === 'gemini') return await callGemini(key, model, opts, temperature, maxTokens, timeoutMs);
+    if (id === 'claude') return await callClaude(key, model, opts, temperature, maxTokens, timeoutMs);
+    return await callOpenAiCompatible(id, key, model, opts, temperature, maxTokens, timeoutMs);
+  } catch (e: any) {
+    throw e instanceof AiError ? e : new AiError(e?.name === 'TimeoutError' || e?.name === 'AbortError' ? 'network' : 'other', e?.message || String(e));
+  }
+}
+
 /** complete() + JSON parsing; on unparseable output asks once more for valid JSON only */
 export async function completeJson<T = any>(opts: CompleteOpts): Promise<T> {
   const raw = await complete({ ...opts, json: true });

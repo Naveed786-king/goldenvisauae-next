@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   Sparkles,
+  Bot,
   LayoutDashboard,
   FileText,
   Newspaper,
@@ -49,6 +50,7 @@ const NAV = [
       { href: '/admin/applications', label: 'Applications', icon: FolderKanban, badge: 'apps' },
       { href: '/admin/customers', label: 'Customers', icon: Users },
       { href: '/admin/subscribers', label: 'Subscribers', icon: Mail },
+      { href: '/admin/chatbot', label: 'AI chatbot', icon: Bot, adminOnly: true },
     ],
   },
   {
