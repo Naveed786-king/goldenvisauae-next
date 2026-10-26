@@ -51,3 +51,72 @@ test('copied slugs list is complete and unique', () => {
   assert.equal(COPIED_SLUGS.length, 93);
   assert.equal(new Set(COPIED_SLUGS).size, 93);
 });
+
+import { jaccard, containment, shingles, titleSimilarity, slugify, scoreKeyword, keywordIntent, seoScore, guaranteeFound, bannedFound, unsupportedNumbers, cleanArticleHtml } from '../src/lib/autopublisher/text.ts';
+
+test('similarity functions', () => {
+  assert.equal(jaccard([1, 2, 3], [2, 3, 4]), 0.5);
+  assert.equal(containment([1, 2], [1, 2, 3]), 1);
+  const a = 'The golden visa lets property owners live in the UAE for ten years with their family';
+  const b = 'The golden visa lets property owners live in the UAE for ten years with their children';
+  const c = 'Business setup in a free zone needs a trade licence and an office lease agreement';
+  assert.ok(jaccard(shingles(a), shingles(b)) > 0.5);
+  assert.equal(jaccard(shingles(a), shingles(c)), 0);
+  assert.ok(titleSimilarity('UAE Golden Visa cost for families', 'Golden Visa costs for a family in the UAE') > 0.6);
+  assert.ok(titleSimilarity('Golden Visa cost', 'Free zone company setup') < 0.1);
+});
+
+test('slugs are short and clean', () => {
+  assert.equal(slugify('How to Renew a UAE Golden Visa — 2026 Guide!'), 'renew-uae-golden-visa-2026-guide');
+  assert.ok(slugify('word '.repeat(60)).length <= 70);
+});
+
+test('keyword scoring prefers commercial, questions and trends; rejects vague', () => {
+  assert.equal(scoreKeyword('golden visa', { hits: 5, bestPos: 0, markets: 3 }), 0);
+  const commercial = scoreKeyword('golden visa cost for family dubai', { hits: 3, bestPos: 1, markets: 2 });
+  const plain = scoreKeyword('golden visa news story today', { hits: 3, bestPos: 1, markets: 2 });
+  assert.ok(commercial > plain);
+  assert.ok(scoreKeyword('golden visa cost for family dubai', { hits: 3, bestPos: 1, markets: 2, trending: true }) > commercial);
+  assert.equal(keywordIntent('golden visa documents required'), 'commercial');
+  assert.equal(scoreKeyword('brightrival golden visa price', { hits: 3, bestPos: 1, markets: 1, banned: ['brightrival'] }), 0);
+});
+
+test('SEO scorer finds missing items', () => {
+  const good = seoScore({
+    title: 'Golden visa renewal: a step-by-step guide',
+    seoTitle: 'Golden Visa Renewal Guide: Steps, Documents and Timing',
+    metaDescription: 'Golden visa renewal explained step by step: when to start, the documents you need on each route, and the mistakes that most often slow renewals down today.',
+    slug: 'golden-visa-renewal-guide',
+    focusKeyword: 'golden visa renewal',
+    contentHtml: '<p>Golden visa renewal starts with checking your route.</p>' + ['When to start', 'Golden visa renewal documents', 'Costs', 'Mistakes'].map((h) => `<h2>${h}</h2><p>Short text about golden visa renewal. More text here for the reader.</p>`).join('') + '<p><a href="/a">a</a><a href="/b">b</a><a href="/c">c</a></p>',
+    faqCount: 4,
+  });
+  assert.ok(good.score >= 80, `score ${good.score} failed: ${good.failed}`);
+  const bad = seoScore({ title: 'Hello', seoTitle: 'Hi', metaDescription: 'short', slug: 'x', focusKeyword: 'golden visa renewal', contentHtml: '<h1>x</h1><p>text</p>', faqCount: 0 });
+  assert.ok(bad.score < 30);
+  assert.ok(bad.failed.includes('No H1 in the content'));
+});
+
+test('honesty checks', () => {
+  assert.equal(guaranteeFound('<p>We guarantee approval in 3 days.</p>').length, 1);
+  assert.equal(guaranteeFound('<p>No consultant can guarantee approval — the authorities decide.</p>').length, 0);
+  assert.deepEqual(bannedFound('<p>Let us delve into the topic.</p>', ['delve', 'tapestry']), ['delve']);
+  const nums = unsupportedNumbers('<p>Fees are AED 4,850 and 98% get approved. Since 2019, 3 steps.</p>', 'our fee AED 4850');
+  assert.ok(nums.some((n) => n.includes('98')));
+  assert.ok(!nums.some((n) => n.includes('4,850')));
+  assert.ok(!nums.some((n) => n.includes('2019')));
+});
+
+test('article HTML is cleaned', () => {
+  const h = cleanArticleHtml('<h1 style="x">T</h1><p onclick="x">a <a href="https://other.com/x">ext</a> <a href="https://goldenvisauae.ai/apply">own</a></p><script>alert(1)</script>');
+  assert.equal(h, '<h2>T</h2><p>a ext <a href="/apply">own</a></p>');
+});
+
+import { topicTerms, stem } from '../src/lib/autopublisher/text.ts';
+test('topic terms ignore site-wide words and stem lightly', () => {
+  assert.deepEqual(topicTerms('How to check your UAE Golden Visa status online'), ['check', 'status', 'online']);
+  assert.equal(stem('renewal'), 'renew');
+  assert.equal(stem('documents'), 'document');
+  assert.equal(stem('families'), 'family');
+  assert.ok(titleSimilarity('How to check your Golden Visa status online', 'How to check your UAE Golden Visa eligibility online') < 0.6);
+});
