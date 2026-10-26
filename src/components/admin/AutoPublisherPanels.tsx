@@ -1,7 +1,7 @@
 'use client';
 // Phase 2 tabs of Admin → Auto Publisher: live jobs, missions, review queue, keywords, company knowledge, similarity report.
 import { useCallback, useEffect, useState } from 'react';
-import { Copy, Eye, FilePenLine, Layers, Pencil, Play, Plus, RefreshCw, RotateCcw, Search, Send, Trash2, Wand2 } from 'lucide-react';
+import { Copy, Eye, FilePenLine, Layers, Pencil, Play, Plus, RefreshCw, RotateCcw, Search, Send, Trash2, Undo2, Wand2 } from 'lucide-react';
 import { Btn, Card, Empty, Modal, Spinner, Toggle, api, confirmDialog, toast } from './ui';
 import { cn } from '@/lib/utils';
 
@@ -17,7 +17,7 @@ const LOCALES = [
   ['ro', 'Romanian'],
   ['hi', 'Hindi'],
 ];
-const STAGE_LABEL: Record<string, string> = { research: 'Research', brief: 'Brief', write: 'Writing', edit: 'Editing', check: 'Checks', images: 'Pictures', publish: 'Publishing', done: 'Done', held: 'Held', failed: 'Failed' };
+const STAGE_LABEL: Record<string, string> = { queued: 'Queued', research: 'Research', brief: 'Brief', write: 'Writing', edit: 'Editing', check: 'Checks', images: 'Pictures', publish: 'Publishing', native: 'Native languages', done: 'Done', held: 'Held', failed: 'Failed' };
 
 function when(d?: string | null) {
   return d ? new Date(d).toLocaleString() : '';
@@ -80,6 +80,7 @@ export function LiveJobs({ enabled }: { enabled: boolean }) {
       }
     >
       <p className="border-b border-gray-100 px-5 py-2.5 text-xs text-gray-500">
+        {d.queued ? `${d.queued} replacement/refresh jobs queued (one runs at a time). ` : ''}
         {enabled ? 'Runs automatically: one small step every few minutes. "Write one article now" always goes to the review queue.' : 'The publisher is off: nothing runs automatically. You can still test with "Write one article now" and "Run one step now" (it goes to the review queue).'}
       </p>
       {!d.active.length && !d.recent.length ? (
@@ -91,7 +92,9 @@ export function LiveJobs({ enabled }: { enabled: boolean }) {
               <div className="min-w-0 flex-1">
                 <p className="truncate font-semibold">{j.title || j.topic || 'Choosing a topic…'}</p>
                 <p className="text-xs text-gray-500">
-                  {name(j.missionId)} · {STAGE_LABEL[j.stage] || j.stage}
+                  {j.kind === 'new' ? name(j.missionId) : j.kind === 'refresh' ? 'Refresh of an old post' : 'Replacement of a copied post'} · {STAGE_LABEL[j.stage] || j.stage}
+                  {j.pending && ' · waiting for approval'}
+                  {j.applied && ' · applied'}
                   {j.quality != null && ` · quality ${j.quality}`}
                   {j.seo != null && ` · SEO ${j.seo}`}
                   {j.retryAt && ` · retry ${when(j.retryAt)}`}
@@ -106,7 +109,7 @@ export function LiveJobs({ enabled }: { enabled: boolean }) {
                 <p className="mt-1 text-right text-[0.68rem] text-gray-400">{STAGE_LABEL[j.stage]}</p>
               </div>
               <div className="flex gap-1">
-                {['research', 'brief', 'write', 'edit', 'check', 'images', 'publish'].includes(j.stage) && (
+                {['research', 'brief', 'write', 'edit', 'check', 'images', 'publish', 'native'].includes(j.stage) && (
                   <Btn size="sm" variant="ghost" title="Run this job's next step now" onClick={() => run('step', { jobId: j.id })} loading={busy === 'step' + j.id}>
                     <Play className="h-3.5 w-3.5" />
                   </Btn>
@@ -114,6 +117,11 @@ export function LiveJobs({ enabled }: { enabled: boolean }) {
                 {j.stage === 'failed' && (
                   <Btn size="sm" variant="ghost" title="Retry" onClick={() => run('retry', { jobId: j.id })}>
                     <RotateCcw className="h-3.5 w-3.5" />
+                  </Btn>
+                )}
+                {j.canRestore && (
+                  <Btn size="sm" variant="ghost" title="Restore the old version of this post" onClick={() => confirmDialog('Put the old version of this post back?') && run('restore', { jobId: j.id })}>
+                    <Undo2 className="h-3.5 w-3.5" />
                   </Btn>
                 )}
                 {j.postId && (
@@ -148,6 +156,7 @@ const EMPTY_MISSION = {
   maxWords: 2500,
   tone: 'Expert, warm and practical — like a senior consultant explaining to a client',
   customTitles: '',
+  nativeLanguages: [],
   stopRule: { type: 'never', value: '' },
 };
 
@@ -176,7 +185,7 @@ export function MissionsTab() {
 
   if (!d) return <Spinner />;
   const set = (k: string, v: any) => setEdit((m: any) => ({ ...m, [k]: v }));
-  const toggleIn = (k: string, v: string) => setEdit((m: any) => ({ ...m, [k]: m[k].includes(v) ? m[k].filter((x: string) => x !== v) : [...m[k], v] }));
+  const toggleIn = (k: string, v: string) => setEdit((m: any) => ({ ...m, [k]: (m[k] || []).includes(v) ? m[k].filter((x: string) => x !== v) : [...(m[k] || []), v] }));
 
   return (
     <>
@@ -277,7 +286,16 @@ export function MissionsTab() {
                   </button>
                 ))}
               </div>
-              <p className="mt-1 text-xs text-gray-500">Native rewrites per language arrive in Phase 3.</p>
+              {edit.languages.length > 0 && (
+                <div className="mt-3 rounded-xl bg-gray-50 p-3">
+                  <p className="text-xs font-bold text-gray-600">Native rewrite (adapted by AI for that market instead of a plain translation — one extra AI call per language):</p>
+                  <div className="mt-2 flex flex-wrap gap-3">
+                    {edit.languages.map((c: string) => (
+                      <Toggle key={c} checked={(edit.nativeLanguages || []).includes(c)} onChange={() => toggleIn('nativeLanguages', c)} label={LOCALES.find(([x]) => x === c)?.[1] || c} />
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -360,7 +378,11 @@ export function ReviewTab() {
   }
 
   if (!d) return <Spinner />;
-  const rows = [...d.drafts.map((x: any) => ({ ...x, kindLabel: 'Draft ready' })), ...d.held.map((x: any) => ({ ...x, kindLabel: 'Held' }))];
+  const rows = [
+    ...(d.pending || []).map((x: any) => ({ ...x, kindLabel: x.kind === 'refresh' ? 'Refresh ready' : 'Replacement ready' })),
+    ...d.drafts.map((x: any) => ({ ...x, kindLabel: 'Draft ready' })),
+    ...d.held.map((x: any) => ({ ...x, kindLabel: 'Held' })),
+  ];
   return (
     <>
       <Card title={`Review queue · ${rows.length}`} actions={<Btn size="sm" variant="ghost" onClick={load}><RefreshCw className="h-3.5 w-3.5" /></Btn>}>
@@ -380,17 +402,24 @@ export function ReviewTab() {
                     {j.similarity && ` · similarity text ${Math.round(j.similarity.text * 100)}% / title ${Math.round(j.similarity.title * 100)}%`}
                   </p>
                   {j.heldReason && <p className="mt-0.5 text-xs text-amber-700">{j.heldReason}</p>}
+                  {j.targetSlug && (
+                    <a href={`/blog/${j.targetSlug}`} target="_blank" rel="noopener noreferrer" className="mt-0.5 inline-block text-xs font-bold text-gold-deep underline">
+                      Current live version
+                    </a>
+                  )}
                 </div>
                 <div className="flex flex-wrap gap-1">
                   <Btn size="sm" variant="outline" onClick={() => setView(j)}>
                     <Eye className="h-3.5 w-3.5" /> Preview
                   </Btn>
-                  <Btn size="sm" onClick={() => confirmDialog('Publish this article now?') && act('publish', j)} loading={busy === 'publish' + j.id}>
-                    <Send className="h-3.5 w-3.5" /> Publish
+                  <Btn size="sm" onClick={() => confirmDialog(j.pending || j.kind !== 'new' ? 'Replace the live post with this new version? The old version is kept and can be restored.' : 'Publish this article now?') && act('publish', j)} loading={busy === 'publish' + j.id}>
+                    <Send className="h-3.5 w-3.5" /> {j.pending || j.kind !== 'new' ? 'Apply' : 'Publish'}
                   </Btn>
-                  <Btn size="sm" variant="ghost" onClick={() => act('edit', j)} loading={busy === 'edit' + j.id}>
-                    <FilePenLine className="h-3.5 w-3.5" /> Edit
-                  </Btn>
+                  {j.kind === 'new' && (
+                    <Btn size="sm" variant="ghost" onClick={() => act('edit', j)} loading={busy === 'edit' + j.id}>
+                      <FilePenLine className="h-3.5 w-3.5" /> Edit
+                    </Btn>
+                  )}
                   <Btn size="sm" variant="ghost" onClick={() => act('rewrite', j, { notes: prompt('Notes for the rewrite (optional):') || '' })}>
                     <RotateCcw className="h-3.5 w-3.5" /> Rewrite
                   </Btn>

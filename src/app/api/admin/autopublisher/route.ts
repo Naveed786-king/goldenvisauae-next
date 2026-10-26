@@ -4,9 +4,10 @@ import { getAutoConfig, publicConfig, saveAutoConfig, PROVIDERS, ProviderId } fr
 import { getStatus } from '@/lib/autopublisher/status';
 import { testProvider } from '@/lib/autopublisher/ai';
 import { autoLog } from '@/lib/autopublisher/log';
+import { producePicture } from '@/lib/autopublisher/images';
 
 export const dynamic = 'force-dynamic';
-export const maxDuration = 60;
+export const maxDuration = 300;
 
 /** Settings (keys masked) + live status */
 export async function GET() {
@@ -44,6 +45,21 @@ export async function POST(req: Request) {
     } catch (e: any) {
       await autoLog('warn', `Test ${id} failed: ${e?.message || e}`);
       return fail(e?.message || 'Test failed', 400);
+    }
+  }
+
+  if (action === 'testPicture') {
+    try {
+      const cfg = await getAutoConfig();
+      const t = Date.now();
+      const r = await producePicture(
+        { kind: 'inline', purpose: String(body.purpose || 'a family reviewing documents in a bright Dubai apartment').slice(0, 300), alt: 'Test picture — family reviewing documents in Dubai' },
+        { topic: 'UAE Golden Visa for families', focusKeyword: 'golden visa test picture', variant: Math.floor(Math.random() * 1000) },
+        cfg,
+      );
+      return r.ok ? ok({ ...r, ms: Date.now() - t }) : fail(`Picture failed the checks: ${(r as { reason: string }).reason}`);
+    } catch (e: any) {
+      return fail(e?.message || 'Picture test failed');
     }
   }
 

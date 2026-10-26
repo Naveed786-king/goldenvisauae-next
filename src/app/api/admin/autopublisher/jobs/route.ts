@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/db';
 import { ok, fail, refreshSite } from '@/lib/api';
 import { requireAdmin } from '@/lib/auth';
-import { ACTIVE_STAGES, STAGE_ORDER, afterPublish, assemble, createJob, savePost, tick } from '@/lib/autopublisher/pipeline';
+import { ACTIVE_STAGES, STAGE_ORDER, afterPublish, applyUpdate, assemble, createJob, restoreBackup, savePost, tick } from '@/lib/autopublisher/pipeline';
 import { autoLog } from '@/lib/autopublisher/log';
 
 export const dynamic = 'force-dynamic';
@@ -43,7 +43,14 @@ function summary(j: any, withPreview = false) {
     heldReason: d.heldReason || null,
     topicWarning: d.topicWarning || null,
     publishedMode: d.publishedMode || null,
-    ...(withPreview && d.article ? { preview: { html: assemble(d.article), cover: d.cover || null, meta: { seoTitle: d.article.seoTitle, metaDescription: d.article.metaDescription, slug: d.article.slug } } } : {}),
+    targetSlug: d.targetSlug || null,
+    pending: !!d.pending,
+    applied: d.applied || null,
+    canRestore: !!(d.backup && d.applied),
+    pictures: d.pictures || [],
+    pictureFailures: d.pictureFailures || [],
+    nativeDone: d.nativeDone || null,
+    ...(withPreview && d.article ? { preview: { html: assemble(d.article, d.figures || []), cover: d.cover || null, meta: { seoTitle: d.article.seoTitle, metaDescription: d.article.metaDescription, slug: d.article.slug } } } : {}),
   };
 }
 
@@ -57,12 +64,14 @@ export async function GET(req: Request) {
     const posts = await prisma.post.findMany({ where: { id: { in: doneDrafts.map((j) => j.postId!) }, status: 'draft' }, select: { id: true, slug: true, title: true, cover: true, content: true } });
     const pm = new Map(posts.map((p) => [p.id, p]));
     const drafts = doneDrafts.filter((j) => pm.has(j.postId!)).map((j) => ({ ...summary(j), post: { ...pm.get(j.postId!)!, content: undefined }, preview: { html: pm.get(j.postId!)!.content, cover: pm.get(j.postId!)!.cover } }));
-    return ok({ held: held.map((j) => summary(j, true)), drafts });
+    const pendingJobs = (await prisma.autoJob.findMany({ where: { stage: 'done', kind: { in: ['refresh', 'replace'] } }, orderBy: { updatedAt: 'desc' }, take: 200 })).filter((j) => parse(j.data).pending);
+    return ok({ held: held.map((j) => summary(j, true)), drafts, pending: pendingJobs.map((j) => summary(j, true)) });
   }
   const active = await prisma.autoJob.findMany({ where: { stage: { in: [...ACTIVE_STAGES] } }, orderBy: { createdAt: 'asc' } });
+  const queued = await prisma.autoJob.count({ where: { stage: 'queued' } });
   const recent = await prisma.autoJob.findMany({ where: { stage: { in: ['done', 'held', 'failed'] } }, orderBy: { updatedAt: 'desc' }, take: 25 });
   const missions = await prisma.autoMission.findMany({ select: { id: true, name: true } });
-  return ok({ active: active.map((j) => summary(j)), recent: recent.map((j) => summary(j)), missions });
+  return ok({ active: active.map((j) => summary(j)), recent: recent.map((j) => summary(j)), missions, queued });
 }
 
 export async function POST(req: Request) {
@@ -98,6 +107,10 @@ export async function POST(req: Request) {
     if (!d.brief) return fail('This job has no brief yet');
     d.fixed = {};
     d.rewrites = { quality: 0 };
+    delete d.picPlan;
+    delete d.picIndex;
+    delete d.figures;
+    if (!d.customImage && job.kind !== 'refresh') delete d.cover;
     d.editorNotes = String(b.notes || '').slice(0, 2000) || d.editorNotes;
     delete d.heldReason;
     delete d.retryAt;
@@ -105,6 +118,24 @@ export async function POST(req: Request) {
     await autoLog('info', `Rewrite requested by ${s.email}`, job.id);
     return ok();
   }
+  if (action === 'restore') {
+    try {
+      const post = await restoreBackup(d);
+      await prisma.autoJob.update({ where: { id: job.id }, data: { data: JSON.stringify(d) } });
+      await autoLog('info', `Old version restored by ${s.email}: /blog/${post.slug}`, job.id);
+      return ok({ postId: post.id });
+    } catch (e: any) {
+      return fail(e.message);
+    }
+  }
+  if (action === 'publish' && (d.pending || ((job.kind === 'refresh' || job.kind === 'replace') && job.stage === 'held' && d.article?.contentHtml))) {
+    if (!d.pending) await autoLog('warn', `Held ${job.kind} applied by ${s.email} despite: ${d.heldReason || job.error}`, job.id);
+    const post = await applyUpdate(d, job.kind);
+    await prisma.autoJob.update({ where: { id: job.id }, data: { stage: 'done', error: null, data: JSON.stringify(d) } });
+    await autoLog('info', `${job.kind === 'refresh' ? 'Refresh' : 'Replacement'} applied by ${s.email}: /blog/${post.slug}`, job.id);
+    return ok({ postId: post.id });
+  }
+  if (action === 'edit' && (job.kind === 'refresh' || job.kind === 'replace')) return fail('Apply the new version first, then edit the post');
   if (action === 'publish' || action === 'edit') {
     // held job → create the post now (admin decision); finished draft → publish it
     if (job.postId) {
