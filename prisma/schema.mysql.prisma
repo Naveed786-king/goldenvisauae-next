@@ -238,3 +238,86 @@ model StoredFile {
   size      Int      @default(0)
   createdAt DateTime @default(now())
 }
+
+// ---------------------------------------------------------------- AI Auto Publisher (additive)
+// Long text fields have no @default on MySQL: the code always passes a value.
+model AutoMission {
+  id           String    @id @default(cuid())
+  name         String
+  active       Boolean   @default(true)
+  focus        String    @db.Text
+  keywords     String    @db.Text
+  markets      String    @db.Text
+  languages    String    @db.Text
+  postsPerWeek Int       @default(21)
+  publishMode  String    @default("review")
+  category     String    @default("")
+  minWords     Int       @default(1500)
+  maxWords     Int       @default(2500)
+  tone         String    @db.Text
+  customTitles String    @db.LongText
+  stopRule     String    @db.Text
+  lastRunAt    DateTime?
+  total        Int       @default(0)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+model AutoJob {
+  id           String    @id @default(cuid())
+  missionId    String?
+  kind         String    @default("new")
+  stage        String    @default("research")
+  topic        String    @db.Text
+  focusKeyword String?
+  postId       String?
+  data         String    @db.LongText
+  error        String?   @db.Text
+  tries        Int       @default(0)
+  publishAt    DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([stage])
+  @@index([postId])
+}
+
+model AutoKeyword {
+  id        String   @id @default(cuid())
+  keyword   String   @unique @db.VarChar(191)
+  market    String   @default("")
+  source    String   @default("manual")
+  intent    String   @default("info")
+  score     Float    @default(0)
+  hits      Int      @default(0)
+  status    String   @default("new")
+  postId    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status, score])
+}
+
+model AutoFingerprint {
+  id           String   @id @default(cuid())
+  kind         String   @db.VarChar(16)
+  refId        String   @db.VarChar(191)
+  postId       String?
+  focusKeyword String?
+  title        String?  @db.Text
+  sig          String   @db.LongText
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([kind, refId])
+}
+
+model AutoLog {
+  id        String   @id @default(cuid())
+  level     String   @default("info")
+  message   String   @db.Text
+  jobId     String?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}
