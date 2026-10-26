@@ -114,8 +114,8 @@ export function LiveJobs({ enabled }: { enabled: boolean }) {
                     <Play className="h-3.5 w-3.5" />
                   </Btn>
                 )}
-                {j.stage === 'failed' && (
-                  <Btn size="sm" variant="ghost" title="Retry" onClick={() => run('retry', { jobId: j.id })}>
+                {(j.stage === 'failed' || (j.stage === 'held' && /^Picture/i.test(j.error || ''))) && (
+                  <Btn size="sm" variant="ghost" title={j.stage === 'held' ? 'Make new pictures' : 'Retry'} onClick={() => run('retry', { jobId: j.id })}>
                     <RotateCcw className="h-3.5 w-3.5" />
                   </Btn>
                 )}

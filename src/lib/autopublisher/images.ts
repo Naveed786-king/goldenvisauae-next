@@ -13,41 +13,8 @@ export { dhash, hamming, sharpness };
 
 // ---------------------------------------------------------------- prompts
 
-const SCENES = [
-  'a family reviewing documents together at a dining table in a bright, modern Dubai apartment',
-  'a consultant calmly explaining a timeline to a couple at a clean desk in a modern Business Bay office',
-  'a professional reading paperwork by a large window with a soft view of a city skyline',
-  'a modern, airy office interior with plants and warm wood, no people',
-  'the Ras Al Khaimah coastline at golden hour, calm sea and mountains in the distance',
-  'a family walking along a quiet waterfront promenade in the evening',
-  'an investor looking at architectural plans in a bright show apartment',
-  'hands organising neat folders and a laptop on a light desk (no readable text)',
-  'a contemporary residential community with palm trees and villas in soft morning light',
-  'a parent and child arriving at a modern apartment lobby with suitcases',
-];
-const PEOPLE = ['South Asian', 'Arab', 'European', 'East Asian', 'African', 'Latin American', 'Central Asian'];
-const TIME = ['soft morning light', 'bright midday daylight through large windows', 'warm late-afternoon light', 'calm golden-hour light'];
-const ANGLE = ['eye-level medium shot', 'slightly elevated wide shot', 'over-the-shoulder medium shot', 'wide establishing shot'];
-
-const NEVER =
-  'No text, letters, numbers, logos, signs, watermarks, captions or banners anywhere. No flags with text. No passports, Emirates ID cards, visas or documents with readable details. No government logos. No real or famous people. No distorted hands, no extra fingers, no warped faces.';
-
-/** Editorial-photo prompt: sharp, realistic, varied, on-brand */
-export function buildImagePrompt(o: { purpose: string; hint?: string; topic: string; houseStyle?: string; variant: number }) {
-  const v = Math.abs(o.variant);
-  const scene = o.hint?.trim() || SCENES[v % SCENES.length];
-  const people = PEOPLE[(v * 3 + 1) % PEOPLE.length];
-  return [
-    `Editorial lifestyle photograph for an article about "${o.topic}". Purpose: ${o.purpose}.`,
-    `Scene: ${scene}. If people appear: ${people} people of mixed ages, natural poses, relaxed and confident.`,
-    `Shot on a full-frame camera with a ${v % 2 ? '35 mm' : '50 mm'} lens, ${ANGLE[v % ANGLE.length]}, ${TIME[(v + 2) % TIME.length]}.`,
-    'Sharp focus across the subject, no motion blur, no heavy bokeh, realistic skin, hands and materials, true-to-life colours, premium calm mood, subtle warm gold accents.',
-    o.houseStyle ? `House style: ${o.houseStyle}.` : '',
-    NEVER,
-  ]
-    .filter(Boolean)
-    .join(' ');
-}
+import { buildImagePrompt } from './image-prompt';
+export { buildImagePrompt, peopleAllowed } from './image-prompt';
 
 // ---------------------------------------------------------------- generation
 
@@ -116,6 +83,7 @@ export async function visionCheck(buf: Buffer, purpose: string, cfg: AutoConfig)
     system: 'You are a strict picture quality inspector for a premium consultancy website. Be honest and critical.',
     prompt: `Check this picture, meant for: "${purpose}".
 Reject it if ANY of these is true: visible text, letters, numbers, logos or watermarks; deformed or extra fingers/hands; warped or uncanny faces; obvious AI artefacts; blurry or low detail; documents with readable details; off-topic or unrealistic scene.
+People-free scenes of UAE cities, architecture, offices, homes or coastlines ARE on-topic for this visa and residency consultancy.
 Return JSON only: {"ok": true|false, "realism": 0-10, "issues": ["…"]}`,
     images: [{ mime: 'image/jpeg', data: small.toString('base64') }],
     temperature: 0,
