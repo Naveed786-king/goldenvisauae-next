@@ -322,3 +322,27 @@ model AutoLog {
 
   @@index([createdAt])
 }
+
+// ---------------------------------------------------------------- AI chatbot (additive)
+model ChatSession {
+  id        String    @id @default(cuid())
+  visitorId String    @default("")
+  locale    String    @default("en")
+  page      String    @db.Text
+  status    String    @default("open")
+  handedAt  DateTime?
+  handover  String?
+  leadId    String?
+  name      String?
+  phone     String?
+  email     String?
+  summary   String    @db.Text
+  messages  String    @db.LongText
+  count     Int       @default(0)
+  ipHash    String    @default("")
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([createdAt])
+  @@index([status])
+}
