@@ -1,26 +1,29 @@
 // Picture prompts for the Auto Publisher — no imports, so they can be unit-tested with plain Node.
 
-// People-free by default: AI pictures fail the realism check mostly on hands, faces and documents.
+// Visa and residency themes only, people-free (AI pictures fail the realism check mostly on hands,
+// faces and anything with writing). Passports are always closed with a plain cover, cards are blank.
 const SCENES = [
-  'a modern, airy consultancy office interior in Business Bay with plants, warm wood and a city view, no people',
-  'the Dubai skyline at golden hour seen from across the water, calm and premium',
-  'a bright, minimal desk by a large window with a coffee cup, a plant and plain unlabelled folders, no screens or devices, no people',
-  'the Ras Al Khaimah coastline at golden hour, calm sea and mountains in the distance',
-  'a contemporary residential community with palm trees and villas in soft morning light',
-  'an elegant, sunlit apartment living room with a view of the Dubai Marina towers, no people',
-  'a quiet waterfront promenade with palm trees and modern towers in the evening, no people',
-  'a modern building lobby with marble floor, warm lighting and green plants, no people',
-  'Dubai Creek with traditional dhows and modern towers behind, soft morning light',
-  'a premium meeting room with a round table, chairs and floor-to-ceiling windows, no people',
+  'a closed navy-blue passport with a plain cover (no emblem, no writing) resting on a light marble desk beside a cup of Arabic coffee, a window with the Dubai skyline softly out of focus behind',
+  'a blank matte-gold card and a closed plain passport on a walnut desk in warm window light, Burj Khalifa visible through the window',
+  'two hard-shell suitcases standing by a floor-to-ceiling window overlooking the Dubai Marina towers at golden hour, an empty bright apartment',
+  'a passenger jet taking off over the Dubai skyline at sunset, Burj Khalifa on the horizon',
+  'a spacious modern airport terminal hall in soft daylight with high curved ceilings and palm trees, empty of people',
+  'a set of new house keys on a marble kitchen island in a bright Dubai villa, palm trees outside the window',
+  'a closed plain passport on top of a leather travel wallet beside a small model aeroplane on a light desk, soft daylight',
+  'the Dubai skyline with Burj Khalifa at blue hour seen across calm water, premium and calm',
+  'a quiet villa entrance in a modern Dubai community with luggage at the door, palm trees and morning light, no people',
+  'the Ras Al Khaimah coastline and Jebel Jais mountains at golden hour, a modern waterfront residence in the foreground',
+  'a premium consultancy meeting room in Business Bay with a closed plain passport and a blank gold card on the table, city view, no people',
+  'Dubai Creek with traditional dhows and modern towers behind at sunrise, calm water',
 ];
 const PEOPLE = ['South Asian', 'Arab', 'European', 'East Asian', 'African', 'Latin American', 'Central Asian'];
 const TIME = ['soft morning light', 'bright midday daylight through large windows', 'warm late-afternoon light', 'calm golden-hour light'];
 const ANGLE = ['eye-level shot', 'slightly elevated wide shot', 'wide establishing shot', 'architectural straight-on shot'];
 
 const NEVER =
-  'No text, letters, numbers, prices, logos, signs, signage, plaques, screens, charts, whiteboards, price tags, watermarks, captions or banners anywhere. No flags with text. No passports, Emirates ID cards, visas, cards or documents. No government logos or emblems. No laptops, phones or screens with brand logos. No books, magazines, newspapers, labels or packaging. No real or famous people.';
+  'No text, letters, numbers, prices, logos, signs, signage, plaques, screens, charts, whiteboards, price tags, watermarks, captions or banners anywhere. No flags with text. Passports only closed with a completely plain cover (no emblem, no writing); cards only blank; no open documents, visas, stamps or ID cards. No government logos or emblems. No laptops, phones or screens with brand logos. No books, magazines, newspapers, labels or packaging. No real or famous people.';
 const NO_PEOPLE = 'No people, no faces, no hands, no body parts anywhere in the picture.';
-const PEOPLE_WORDS = /\b(people|person|persons|family|families|couple|man|men|woman|women|child|children|kid|kids|parent|parents|consultant|investor|hand|hands|face|faces|someone|client|clients|professional|employee|worker|passport|emirates id|id card|card|document|documents|paperwork|visa stamp)\b/i;
+const PEOPLE_WORDS = /\b(people|person|persons|family|families|couple|man|men|woman|women|child|children|kid|kids|parent|parents|consultant|investor|hand|hands|face|faces|someone|client|clients|professional|employee|worker|emirates id|id card|document|documents|paperwork|visa stamp|open passport)\b/i;
 
 // Words that make picture models draw text or numbers (cost articles asked for price signs and charts)
 const TEXT_WORDS = /\b(cost|costs|price|prices|pricing|fee|fees|breakdown|budget|calculator|calculation|chart|charts|graph|graphs|table|tables|infographic|diagram|sign|signs|signage|plaque|plaques|board|whiteboard|screen|screens|display|poster|receipt|invoice|form|forms|certificate|stamp|label|labels|checklist|list|timeline|number|numbers|digits?|aed|dirhams?|usd|dollars?|percent)\b/gi;

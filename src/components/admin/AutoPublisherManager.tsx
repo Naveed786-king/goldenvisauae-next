@@ -45,7 +45,7 @@ export default function AutoPublisherManager() {
 
   useEffect(() => {
     load(true).catch((e) => toast(e.message, 'error'));
-    const t = setInterval(() => load(false).catch(() => null), 5000);
+    const t = setInterval(() => document.visibilityState === 'visible' && load(false).catch(() => null), 5000);
     return () => clearInterval(t);
   }, [load]);
 
@@ -309,10 +309,7 @@ function AiTab({ cfg, patch, providers, act }: { cfg: any; patch: (fn: (c: any) 
           </div>
           <div>
             <label className="admin-label">If a picture fails the quality checks</label>
-            <select className="admin-input" value={cfg.images.onFail} onChange={(e) => patch((c) => ((c.images.onFail = e.target.value), c))}>
-              <option value="hold">Keep the article for review</option>
-              <option value="skip">Publish without that inline picture</option>
-            </select>
+            <p className="rounded-lg bg-gray-50 p-3 text-xs leading-relaxed text-gray-600">The AI fixes it itself: a cover gets up to 8 attempts with new scenes (the best clean one is used if none is perfect); an inside picture that still fails is left out. An article only stops if no usable cover can be made.</p>
           </div>
           <div className="md:col-span-2">
             <label className="admin-label">House photo style</label>
@@ -419,8 +416,8 @@ function QualityTab({ cfg, patch }: { cfg: any; patch: (fn: (c: any) => any) => 
           <div>
             <label className="admin-label">Refreshed & replaced posts</label>
             <select className="admin-input" value={q.refreshMode} onChange={(e) => patch((c) => ((c.quality.refreshMode = e.target.value), c))}>
-              <option value="review">Wait for my approval (review queue)</option>
               <option value="publish">Update the live post directly</option>
+              <option value="review">Wait for my approval</option>
             </select>
             <p className="mt-1 text-xs text-gray-500">The old version is always kept and can be restored with one click.</p>
           </div>
@@ -545,7 +542,7 @@ function LogsTab() {
   const load = useCallback(() => api<any>(`/api/admin/autopublisher/logs${level ? `?level=${level}` : ''}`).then((d) => setItems(d.items)).catch((e) => toast(e.message, 'error')), [level]);
   useEffect(() => {
     load();
-    const t = setInterval(load, 5000);
+    const t = setInterval(() => document.visibilityState === 'visible' && load(), 5000);
     return () => clearInterval(t);
   }, [load]);
 

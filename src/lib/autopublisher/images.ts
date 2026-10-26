@@ -13,7 +13,7 @@ export { dhash, hamming, sharpness };
 
 // ---------------------------------------------------------------- prompts
 
-import { buildImagePrompt } from './image-prompt';
+import { buildImagePrompt, pictureSafe } from './image-prompt';
 export { buildImagePrompt, peopleAllowed } from './image-prompt';
 
 // ---------------------------------------------------------------- generation
@@ -86,9 +86,10 @@ export async function visionCheck(buf: Buffer, purpose: string, cfg: AutoConfig,
   const small = await sharp(buf).resize(1024, 1024, { fit: 'inside' }).jpeg({ quality: 82 }).toBuffer();
   const r = await completeJson<any>({
     system: 'You are a strict picture quality inspector for a premium consultancy website. Be honest and critical.',
-    prompt: `Check this picture, meant for: "${purpose}".
+    prompt: `Check this picture, meant for: "${pictureSafe(purpose) || 'a UAE visa article'}".
 Reject it if ANY of these is true: visible text, letters, numbers, logos or watermarks; deformed or extra fingers/hands; warped or uncanny faces; obvious AI artefacts; blurry or low detail; documents with readable details; off-topic or unrealistic scene.
-People-free scenes of UAE cities, architecture, offices, homes or coastlines ARE on-topic for this visa and residency consultancy.
+On-topic for this UAE visa and residency consultancy: closed passports with a plain cover, blank gold or white cards, luggage, airports and planes, UAE landmarks, skylines, homes, offices and coastlines. A plain passport cover or a blank card is fine as long as nothing on it is readable.
+Realism: 9-10 = indistinguishable from a professional photo, 7-8 = convincing photo with tiny flaws, 5-6 = clearly AI-looking, under 5 = broken.
 Return JSON only: {"ok": true|false, "realism": 0-10, "issues": ["…"]}`,
     images: [{ mime: 'image/jpeg', data: small.toString('base64') }],
     temperature: 0,
@@ -112,13 +113,21 @@ async function saveWebp(buf: Buffer, name: string, alt: string): Promise<{ url: 
 export type PictureSpec = { purpose: string; hint?: string; alt: string; kind: 'cover' | 'inline'; placement?: string };
 export type PictureResult = { ok: true; url: string; ogUrl?: string; width: number; height: number; alt: string; hash: string; sharpness: number; realism: number; attempts: number } | { ok: false; reason: string; attempts: number };
 
+/** Problems that make a picture unusable even as a fallback (text, logos, broken hands or faces) */
+const SERIOUS = /text|letter|number|digit|logo|watermark|brand|finger|hand|face|emblem|sign|caption|readable/i;
+
 /**
- * Makes one picture: up to 3 attempts of generate → sharpness → vision → duplicate check,
- * then saves WebP files (cover 1600×900 + Open Graph 1200×630, inline 1200 wide).
+ * Makes one picture: generate → sharpness → duplicate check → vision check. Covers get 4 attempts,
+ * inline pictures 2 (they are optional). If no cover attempt passes, the best clean attempt is used
+ * when it is at most one point under the minimum and has no serious problem (text, logos, hands, faces).
+ * Saves WebP files (cover 1600×900 + Open Graph 1200×630, inline 1200 wide).
  */
 export async function producePicture(spec: PictureSpec, ctx: { topic: string; focusKeyword: string; variant: number; jobId?: string }, cfg: AutoConfig): Promise<PictureResult> {
   const reasons: string[] = [];
-  for (let attempt = 1; attempt <= 3; attempt++) {
+  const maxAttempts = spec.kind === 'cover' ? 4 : 2;
+  const needed = realismNeeded(cfg.images.minRealism, spec.kind);
+  let best: { raw: Buffer; hash: string; sharp: number; realism: number; attempt: number } | null = null;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     const prompt = buildImagePrompt({ purpose: spec.purpose, hint: attempt === 1 ? spec.hint : undefined, topic: ctx.topic, houseStyle: cfg.images.houseStyle, variant: ctx.variant + attempt * 5 });
     let raw: Buffer;
     try {
@@ -148,39 +157,50 @@ export async function producePicture(spec: PictureSpec, ctx: { topic: string; fo
         // budget / missing key stop the job as before; a garbled or failed answer from the checker is not a
         // verdict on the picture — it already passed sharpness and duplicate checks, so keep it and say so
         if (e instanceof AiError && (e.kind === 'quota' || e.kind === 'config' || e.kind === 'auth')) throw e;
-        await autoLog('warn', `Vision check could not run (${e?.message || e}) — picture kept after sharpness and duplicate checks; please look at it in review.`, ctx.jobId);
+        await autoLog('warn', `Vision check could not run (${e?.message || e}) — picture kept after sharpness and duplicate checks.`, ctx.jobId);
         v = { ok: true, realism: 0, issues: ['vision check unavailable'] };
       }
     }
     if (!v.ok) {
       reasons.push(`attempt ${attempt}: vision check failed (realism ${v.realism}${v.issues.length ? `: ${v.issues.join(', ')}` : ''})`);
+      const clean = !v.issues.some((i) => SERIOUS.test(i));
+      if (clean && v.realism >= Math.max(5, needed - 1) && (!best || v.realism > best.realism)) best = { raw, hash, sharp: sharpScore, realism: v.realism, attempt };
       continue;
     }
-    const base = `${slugify(ctx.focusKeyword || ctx.topic, 40)}-${slugify(spec.purpose, 24) || spec.kind}`;
-    let out: { url: string }, ogUrl: string | undefined, width: number, height: number;
-    if (spec.kind === 'cover') {
-      const cover = await sharp(raw).resize(1600, 900, { fit: 'cover', position: 'attention' }).webp({ quality: 82 }).toBuffer();
-      const og = await sharp(raw).resize(1200, 630, { fit: 'cover', position: 'attention' }).webp({ quality: 80 }).toBuffer();
-      out = await saveWebp(cover, base, spec.alt);
-      ogUrl = (await saveWebp(og, `${base}-og`, spec.alt)).url;
-      width = 1600;
-      height = 900;
-    } else {
-      const img = sharp(raw).resize(1200, undefined, { withoutEnlargement: false });
-      const buf = await img.webp({ quality: 80 }).toBuffer();
-      const meta = await sharp(buf).metadata();
-      out = await saveWebp(buf, base, spec.alt);
-      width = meta.width || 1200;
-      height = meta.height || 800;
-    }
-    await prisma.autoFingerprint
-      .upsert({ where: { kind_refId: { kind: 'image', refId: out.url } }, update: { sig: JSON.stringify({ h: hash }) }, create: { kind: 'image', refId: out.url, sig: JSON.stringify({ h: hash }), title: spec.alt.slice(0, 200) } })
-      .catch(() => null);
-    await autoLog('info', `Picture ready (${spec.kind}, attempt ${attempt}, sharpness ${sharpScore}, realism ${v.realism}): ${out.url}`, ctx.jobId);
-    return { ok: true, url: out.url, ogUrl, width, height, alt: spec.alt, hash, sharpness: sharpScore, realism: v.realism, attempts: attempt };
+    return savePicture(spec, ctx, raw, hash, sharpScore, v.realism, attempt);
   }
-  await autoLog('warn', `Picture failed after 3 attempts (${spec.purpose}): ${reasons.join(' · ')}`, ctx.jobId);
-  return { ok: false, reason: reasons.join(' · '), attempts: 3 };
+  if (best && spec.kind === 'cover') {
+    await autoLog('info', `No cover attempt reached ${needed}/10 — using the best clean attempt (realism ${best.realism}, no text, logos, hands or faces).`, ctx.jobId);
+    return savePicture(spec, ctx, best.raw, best.hash, best.sharp, best.realism, maxAttempts);
+  }
+  await autoLog('warn', `Picture failed after ${maxAttempts} attempts (${spec.kind}): ${reasons.join(' · ')}`, ctx.jobId);
+  return { ok: false, reason: reasons.join(' · '), attempts: maxAttempts };
+}
+
+async function savePicture(spec: PictureSpec, ctx: { topic: string; focusKeyword: string; jobId?: string }, raw: Buffer, hash: string, sharpScore: number, realism: number, attempt: number): Promise<PictureResult> {
+  const base = `${slugify(ctx.focusKeyword || ctx.topic, 40)}-${spec.kind}`;
+  let out: { url: string }, ogUrl: string | undefined, width: number, height: number;
+  if (spec.kind === 'cover') {
+    const [cover, og] = await Promise.all([
+      sharp(raw).resize(1600, 900, { fit: 'cover', position: 'attention' }).webp({ quality: 82 }).toBuffer(),
+      sharp(raw).resize(1200, 630, { fit: 'cover', position: 'attention' }).webp({ quality: 80 }).toBuffer(),
+    ]);
+    out = await saveWebp(cover, base, spec.alt);
+    ogUrl = (await saveWebp(og, `${base}-og`, spec.alt)).url;
+    width = 1600;
+    height = 900;
+  } else {
+    const buf = await sharp(raw).resize(1200, undefined, { withoutEnlargement: false }).webp({ quality: 80 }).toBuffer();
+    const meta = await sharp(buf).metadata();
+    out = await saveWebp(buf, base, spec.alt);
+    width = meta.width || 1200;
+    height = meta.height || 800;
+  }
+  await prisma.autoFingerprint
+    .upsert({ where: { kind_refId: { kind: 'image', refId: out.url } }, update: { sig: JSON.stringify({ h: hash }) }, create: { kind: 'image', refId: out.url, sig: JSON.stringify({ h: hash }), title: spec.alt.slice(0, 200) } })
+    .catch(() => null);
+  await autoLog('info', `Picture ready (${spec.kind}, attempt ${attempt}, sharpness ${sharpScore}, realism ${realism}): ${out.url}`, ctx.jobId);
+  return { ok: true, url: out.url, ogUrl, width, height, alt: spec.alt, hash, sharpness: sharpScore, realism, attempts: attempt };
 }
 
 /** Registers the dHash of pictures already on the site (blog covers in Media), so new ones never repeat them */

@@ -45,7 +45,7 @@ export async function getStatus(cfg: AutoConfig) {
     maxAiCallsPerDay: cfg.quality.maxAiCallsPerDay,
     stats,
     pipelineReady: true,
-    tickEveryMinutes: process.env.VERCEL ? 10 : 2,
+    tickEveryMinutes: process.env.VERCEL ? 10 : 1,
     tickerDisabled: process.env.DISABLE_AUTOPUBLISHER === '1',
   };
 }

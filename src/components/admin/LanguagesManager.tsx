@@ -26,7 +26,7 @@ export default function LanguagesManager({ isAdmin }: { isAdmin: boolean }) {
   useEffect(() => {
     if (isAdmin) api<{ value: any }>('/api/admin/settings/translation').then((d) => setCfg(d.value)).catch((e) => toast(e.message, 'error'));
     load();
-    const t = setInterval(load, 5000);
+    const t = setInterval(() => document.visibilityState === 'visible' && load(), 5000);
     return () => clearInterval(t);
   }, [load, isAdmin]);
 

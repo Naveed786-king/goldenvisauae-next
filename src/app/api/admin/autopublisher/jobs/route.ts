@@ -80,16 +80,18 @@ export async function POST(req: Request) {
   const b = await req.json().catch(() => ({}));
   const action = String(b.action || '');
 
+  // the work runs in the background (an article takes a few minutes); the page shows progress live
+  const kick = (jobId?: string) => void tick({ manual: true, jobId }).catch(() => null);
   if (action === 'step') {
-    const r = await tick({ manual: true, jobId: b.jobId ? String(b.jobId) : undefined });
-    return ok(r);
+    kick(b.jobId ? String(b.jobId) : undefined);
+    return ok({ did: 'started' });
   }
   if (action === 'write') {
     if (!b.missionId) return fail('Choose a mission');
     const id = await createJob(String(b.missionId), { manual: true });
     if (!id) return fail('Could not create a job (mission missing or out of custom titles)');
-    const r = await tick({ manual: true, jobId: id });
-    return ok({ jobId: id, ...r });
+    kick(id);
+    return ok({ jobId: id, did: 'started' });
   }
 
   const job = b.jobId ? await prisma.autoJob.findUnique({ where: { id: String(b.jobId) } }) : null;
@@ -98,7 +100,7 @@ export async function POST(req: Request) {
 
   if (action === 'retry' && job.stage === 'held' && /^Picture/i.test(String(job.error || ''))) {
     // held because a picture failed: make the pictures again with the current settings
-    for (const k of ['picPlan', 'picIndex', 'figures', 'pictureFailures', 'pictures', 'heldReason', 'retryAt']) delete d[k];
+    for (const k of ['picPlan', 'picIndex', 'figures', 'pictureFailures', 'pictures', 'heldReason', 'retryAt', 'coverRounds']) delete d[k];
     if (!d.customImage && job.kind !== 'refresh') delete d.cover;
     await prisma.autoJob.update({ where: { id: job.id }, data: { stage: 'images', tries: 0, error: null, data: JSON.stringify(d) } });
     await autoLog('info', `New pictures requested by ${s.email}`, job.id);
