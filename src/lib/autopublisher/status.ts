@@ -44,6 +44,8 @@ export async function getStatus(cfg: AutoConfig) {
     aiCallsToday: calls,
     maxAiCallsPerDay: cfg.quality.maxAiCallsPerDay,
     stats,
-    pipelineReady: false, // the writing pipeline arrives in Phase 2
+    pipelineReady: true,
+    tickEveryMinutes: process.env.VERCEL ? 10 : 2,
+    tickerDisabled: process.env.DISABLE_AUTOPUBLISHER === '1',
   };
 }

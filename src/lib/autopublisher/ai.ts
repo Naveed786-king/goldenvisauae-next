@@ -100,6 +100,37 @@ export async function testProvider(id: ProviderId): Promise<{ answer: string; ms
   return { answer: answer.slice(0, 500), ms: Date.now() - t, model: isFakeAi() ? 'fake' : cfg.providers[id].model };
 }
 
+/** Text embedding (256 numbers) for the meaning check. Returns null when switched off. */
+export async function embed(text: string, cfg?: AutoConfig): Promise<number[] | null> {
+  const c = cfg || (await getAutoConfig());
+  const which = c.quality.embeddings;
+  if (which === 'off') return null;
+  if (isFakeAi()) {
+    // deterministic pseudo-embedding from words (dry runs only)
+    const v = new Array(256).fill(0);
+    for (const w of text.toLowerCase().split(/\W+/).filter(Boolean)) {
+      let h = 0;
+      for (let i = 0; i < w.length; i++) h = (h * 31 + w.charCodeAt(i)) >>> 0;
+      v[h % 256] += 1;
+    }
+    return v;
+  }
+  const key = await providerKey(c, which);
+  if (!key) return null;
+  const input = text.slice(0, 6000);
+  await countAiCall();
+  if (which === 'gemini') {
+    const base = process.env.GEMINI_API_BASE || 'https://generativelanguage.googleapis.com';
+    const model = c.quality.embedModelGemini;
+    const j = await http(`${base}/v1beta/models/${encodeURIComponent(model)}:embedContent`, { method: 'POST', headers: { 'content-type': 'application/json', 'x-goog-api-key': key }, body: JSON.stringify({ model: `models/${model}`, content: { parts: [{ text: input }] }, outputDimensionality: 256 }) }, 30_000, 'Gemini embeddings');
+    const v = j?.embedding?.values;
+    return Array.isArray(v) ? v.slice(0, 256) : null;
+  }
+  const j = await http('https://api.openai.com/v1/embeddings', { method: 'POST', headers: { Authorization: `Bearer ${key}`, 'content-type': 'application/json' }, body: JSON.stringify({ model: c.quality.embedModelOpenai, input, dimensions: 256 }) }, 30_000, 'OpenAI embeddings');
+  const v = j?.data?.[0]?.embedding;
+  return Array.isArray(v) ? v.slice(0, 256) : null;
+}
+
 // ---------------------------------------------------------------- providers
 
 async function http(url: string, init: RequestInit, timeoutMs: number, who: string) {
@@ -183,6 +214,8 @@ async function callOpenAiCompatible(id: ProviderId, key: string, model: string, 
 function fakeAnswer(o: CompleteOpts): string {
   if (/connection test/i.test(o.system)) return JSON.stringify({ ok: true, message: 'Golden Visa UAE publisher connected (fake mode)' });
   if (!o.json) return 'Fake AI answer for a dry run.';
+  if (/content strategist/i.test(o.system)) return JSON.stringify({ intent: 'informational', reader: { who: 'family', country: 'AE', fears: 'rejection', wants: 'clear steps' }, angle: 'checklist with mistakes', title: FAKE_ARTICLE.title, outline: [{ h2: 'What this sample shows', h3: [], notes: '' }], quickAnswer: 'sample', table: '', companyFacts: [], faq: ['Is this a real article?'], internalLinks: FAKE_ARTICLE.internalLinks, cta: 'Talk to us', imagePlan: [{ purpose: 'cover' }], category: 'Process' });
+  if (/strict senior human editor/i.test(o.system)) return JSON.stringify({ article: FAKE_ARTICLE, quality: { score: 90, helpfulness: 90, originality: 90, accuracy: 90, readability: 90, eeat: 90, reasons: ['Fake mode sample'] }, unsupportedClaims: [] });
   return JSON.stringify(FAKE_ARTICLE);
 }
 
@@ -197,8 +230,13 @@ export const FAKE_ARTICLE = {
   category: 'Process',
   tags: ['golden visa', 'documents'],
   quickAnswer: 'This is a fake-mode sample. Real articles are written by the selected AI provider.',
-  contentHtml: '<h2>What this sample shows</h2><p>The pipeline produced this text without calling any AI provider.</p>',
-  faq: [{ q: 'Is this a real article?', a: 'No, it is a dry-run sample.' }],
+  contentHtml:
+    '<h2>Golden visa document checklist: what this sample shows</h2><p>The pipeline produced this golden visa document checklist without calling any AI provider, so you can test research, checks and publishing for free.</p><h2>Documents most families prepare</h2><ul><li>Passports and photos</li><li>Attested marriage and birth certificates</li><li>Health insurance</li></ul><p>See <a href="/services/golden-visa">Golden Visa services</a>, the <a href="/services/golden-visa-cost">cost calculator</a> and <a href="/apply">apply online</a>.</p><h2>Common mistakes</h2><p>Names that differ between documents cause most delays.</p><h2>Next steps</h2><p>Talk to a consultant before you submit.</p>',
+  faq: [
+    { q: 'Is this a real article?', a: 'No, it is a dry-run sample.' },
+    { q: 'Does fake mode cost anything?', a: 'No, no AI provider is called.' },
+    { q: 'Where does a real article go?', a: 'To the review queue or straight to the blog, depending on the mission.' },
+  ],
   internalLinks: [{ anchor: 'Golden Visa services', href: '/services/golden-visa' }],
   imagePlan: [],
   quality: 92,
