@@ -1,18 +1,23 @@
 'use client';
 import { useCallback, useEffect, useState } from 'react';
-import { Activity, CirclePause, CirclePlay, FileWarning, FlaskConical, Gauge, ImageIcon, KeyRound, ListChecks, Power, RefreshCw, Save, ScrollText, Sparkles, Trash2, Undo2 } from 'lucide-react';
+import { Activity, BookOpen, CirclePause, CirclePlay, ClipboardCheck, FileWarning, FlaskConical, Gauge, ImageIcon, KeyRound, ListChecks, Power, RefreshCw, Save, ScrollText, Search, Sparkles, Target, Trash2, Undo2, Waypoints } from 'lucide-react';
 import { Btn, Card, Empty, PageTitle, Spinner, Toggle, api, confirmDialog, toast } from './ui';
 import { cn } from '@/lib/utils';
+import { KeywordsTab, KnowledgeTab, LiveJobs, MissionsTab, ReportTab, ReviewTab } from './AutoPublisherPanels';
 
-type Tab = 'overview' | 'ai' | 'quality' | 'copied' | 'logs';
+type Tab = 'overview' | 'missions' | 'review' | 'keywords' | 'knowledge' | 'ai' | 'quality' | 'report' | 'copied' | 'logs';
 const TABS: { id: Tab; label: string; icon: any }[] = [
   { id: 'overview', label: 'Overview', icon: Activity },
+  { id: 'missions', label: 'Missions', icon: Target },
+  { id: 'review', label: 'Review queue', icon: ClipboardCheck },
+  { id: 'keywords', label: 'Keywords', icon: Search },
+  { id: 'knowledge', label: 'Company knowledge', icon: BookOpen },
   { id: 'ai', label: 'AI & pictures', icon: KeyRound },
   { id: 'quality', label: 'Quality & SEO', icon: Gauge },
+  { id: 'report', label: 'Similarity report', icon: Waypoints },
   { id: 'copied', label: 'Copied posts', icon: FileWarning },
   { id: 'logs', label: 'Logs', icon: ScrollText },
 ];
-const LATER = ['Missions', 'Review queue', 'Keywords', 'Company knowledge', 'Similarity report'];
 
 const STATE: Record<string, { label: string; tone: string; help: string }> = {
   off: { label: 'Off', tone: 'bg-gray-100 text-gray-700', help: 'The publisher is switched off. The website works exactly as before.' },
@@ -98,14 +103,19 @@ export default function AutoPublisherManager() {
             <t.icon className="h-4 w-4" /> {t.label}
           </button>
         ))}
-        {LATER.map((l) => (
-          <span key={l} title="Arrives in the next phase" className="inline-flex cursor-not-allowed items-center rounded-xl px-4 py-2 text-sm font-bold text-gray-300 ring-1 ring-gray-100">
-            {l}
-          </span>
-        ))}
       </div>
 
-      {tab === 'overview' && <Overview cfg={cfg} status={status} saving={saving} onToggle={(v) => save({ ...cfg, enabled: v })} act={act} />}
+      {tab === 'overview' && (
+        <>
+          <Overview cfg={cfg} status={status} saving={saving} onToggle={(v) => save({ ...cfg, enabled: v })} act={act} />
+          <LiveJobs enabled={!!cfg.enabled} />
+        </>
+      )}
+      {tab === 'missions' && <MissionsTab />}
+      {tab === 'review' && <ReviewTab />}
+      {tab === 'keywords' && <KeywordsTab />}
+      {tab === 'knowledge' && <KnowledgeTab cfg={cfg} patch={patch} />}
+      {tab === 'report' && <ReportTab />}
       {tab === 'ai' && <AiTab cfg={cfg} patch={patch} providers={providers} act={act} />}
       {tab === 'quality' && <QualityTab cfg={cfg} patch={patch} />}
       {tab === 'copied' && <CopiedTab />}
@@ -180,11 +190,9 @@ function Overview({ cfg, status, saving, onToggle, act }: { cfg: any; status: an
             </div>
           </div>
         </div>
-        {!status.pipelineReady && (
-          <p className="border-t border-gray-100 px-5 py-3 text-xs text-gray-500">
-            Phase 1 is installed: settings, AI connections, logs and the copied-posts tools. Research, writing, the review queue and scheduling arrive in Phase 2 — switching the publisher on now does not write anything yet.
-          </p>
-        )}
+        <p className="border-t border-gray-100 px-5 py-3 text-xs text-gray-500">
+          {status.tickerDisabled ? 'The automatic ticker is disabled on this server (DISABLE_AUTOPUBLISHER=1) — use an external cron on /api/cron/autopublish.' : cfg.enabled ? `Next automatic step: within ${status.tickEveryMinutes} minutes.` : 'Switch the publisher on to let missions run automatically.'} Pictures, refreshing old posts and replacing copied posts arrive in Phase 3 — until then articles use the image you give in a custom title, or none.
+        </p>
       </Card>
     </div>
   );
@@ -337,6 +345,15 @@ function QualityTab({ cfg, patch }: { cfg: any; patch: (fn: (c: any) => any) => 
           {num('maxTitleSimilarity', 'Max title similarity', 'Titles closer than this are regenerated.', 0.01, 0.05, 0.95)}
           {num('maxImageDistance', 'Picture difference (bits)', 'Pictures closer than this to one we used are regenerated.', 1, 0, 32)}
           {num('meaningThreshold', 'Meaning threshold', 'Topic too close in meaning (needs an embedding key).', 0.01, 0.5, 0.99)}
+          <div className="sm:col-span-2">
+            <label className="admin-label">Meaning check (embeddings)</label>
+            <select className="admin-input" value={q.embeddings} onChange={(e) => patch((c) => ((c.quality.embeddings = e.target.value), c))}>
+              <option value="off">Off — compare words only (free)</option>
+              <option value="gemini">Gemini embeddings (uses the Gemini key)</option>
+              <option value="openai">OpenAI embeddings (uses the OpenAI key)</option>
+            </select>
+            <p className="mt-1 text-xs text-gray-500">Catches topics that mean the same thing in different words. Costs one small call per post; after switching on, press "Rebuild fingerprints" in Similarity report.</p>
+          </div>
         </div>
       </Card>
       <Card title="Schedule & budget">
