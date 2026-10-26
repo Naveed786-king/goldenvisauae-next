@@ -18,7 +18,7 @@ const TIME = ['soft morning light', 'bright midday daylight through large window
 const ANGLE = ['eye-level shot', 'slightly elevated wide shot', 'wide establishing shot', 'architectural straight-on shot'];
 
 const NEVER =
-  'No text, letters, numbers, logos, signs, watermarks, captions or banners anywhere. No flags with text. No passports, Emirates ID cards, visas, cards or documents. No government logos or emblems. No laptops, phones or screens with brand logos. No real or famous people.';
+  'No text, letters, numbers, logos, signs, watermarks, captions or banners anywhere. No flags with text. No passports, Emirates ID cards, visas, cards or documents. No government logos or emblems. No laptops, phones or screens with brand logos. No books, magazines, newspapers, labels or packaging. No real or famous people.';
 const NO_PEOPLE = 'No people, no faces, no hands, no body parts anywhere in the picture.';
 const PEOPLE_WORDS = /\b(people|person|persons|family|families|couple|man|men|woman|women|child|children|kid|kids|parent|parents|consultant|investor|hand|hands|face|faces|someone|client|clients|professional|employee|worker|passport|emirates id|id card|card|document|documents|paperwork|visa stamp)\b/i;
 
