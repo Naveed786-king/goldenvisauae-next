@@ -192,3 +192,14 @@ test('inline pictures pass one point below the cover minimum, never under 5; no 
   assert.match(src, /kind === 'inline' \? Math\.max\(5, minRealism - 1\) : minRealism/);
   for (let v = 0; v < 20; v++) assert.doesNotMatch(buildImagePrompt({ purpose: 'inline', topic: 't', variant: v }).split('No text')[0], /laptop/i);
 });
+
+import { pictureSafe } from '../src/lib/autopublisher/image-prompt.ts';
+test('picture prompts carry no figures, prices or chart ideas', () => {
+  const t = 'How Much Is a UAE Golden Visa? 2026 Cost Breakdown and Government Fees';
+  const safe = pictureSafe(t);
+  assert.doesNotMatch(safe, /\d|cost|fees|breakdown/i);
+  assert.match(safe, /Golden Visa/);
+  const p = buildImagePrompt({ purpose: 'illustration for the section "Government fees: AED 9,978 for the main applicant"', hint: 'a price board showing AED fees', topic: t, variant: 4 });
+  const head = p.split('Shot on')[0];
+  assert.doesNotMatch(head, /\d|AED|price board|fees/i);
+});

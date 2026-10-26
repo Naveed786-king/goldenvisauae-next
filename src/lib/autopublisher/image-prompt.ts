@@ -18,9 +18,24 @@ const TIME = ['soft morning light', 'bright midday daylight through large window
 const ANGLE = ['eye-level shot', 'slightly elevated wide shot', 'wide establishing shot', 'architectural straight-on shot'];
 
 const NEVER =
-  'No text, letters, numbers, logos, signs, watermarks, captions or banners anywhere. No flags with text. No passports, Emirates ID cards, visas, cards or documents. No government logos or emblems. No laptops, phones or screens with brand logos. No books, magazines, newspapers, labels or packaging. No real or famous people.';
+  'No text, letters, numbers, prices, logos, signs, signage, plaques, screens, charts, whiteboards, price tags, watermarks, captions or banners anywhere. No flags with text. No passports, Emirates ID cards, visas, cards or documents. No government logos or emblems. No laptops, phones or screens with brand logos. No books, magazines, newspapers, labels or packaging. No real or famous people.';
 const NO_PEOPLE = 'No people, no faces, no hands, no body parts anywhere in the picture.';
 const PEOPLE_WORDS = /\b(people|person|persons|family|families|couple|man|men|woman|women|child|children|kid|kids|parent|parents|consultant|investor|hand|hands|face|faces|someone|client|clients|professional|employee|worker|passport|emirates id|id card|card|document|documents|paperwork|visa stamp)\b/i;
+
+// Words that make picture models draw text or numbers (cost articles asked for price signs and charts)
+const TEXT_WORDS = /\b(cost|costs|price|prices|pricing|fee|fees|breakdown|budget|calculator|calculation|chart|charts|graph|graphs|table|tables|infographic|diagram|sign|signs|signage|plaque|plaques|board|whiteboard|screen|screens|display|poster|receipt|invoice|form|forms|certificate|stamp|label|labels|checklist|list|timeline|number|numbers|digits?|aed|dirhams?|usd|dollars?|percent)\b/gi;
+
+/** Topic or purpose text made safe for a picture prompt: no figures, currencies or text-prone words */
+export function pictureSafe(text: string): string {
+  return String(text || '')
+    .replace(/[0-9][0-9.,:%/-]*/g, ' ')
+    .replace(/[$€£₹%#]/g, ' ')
+    .replace(TEXT_WORDS, ' ')
+    .replace(/["“”«»]/g, '')
+    .replace(/\s+([?.,:;!])/g, '$1')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+}
 
 /** The house style may ask for people on purpose ("show people", "families in pictures") */
 export function peopleAllowed(houseStyle?: string): boolean {
@@ -32,11 +47,14 @@ export function buildImagePrompt(o: { purpose: string; hint?: string; topic: str
   const v = Math.abs(o.variant);
   const withPeople = peopleAllowed(o.houseStyle);
   // the article AI often suggests people with passports — the riskiest picture there is
-  const hint = o.hint?.trim() && (withPeople || !PEOPLE_WORDS.test(o.hint)) ? o.hint.trim() : '';
+  const raw = o.hint?.trim() || '';
+  TEXT_WORDS.lastIndex = 0;
+  const textProne = /\d/.test(raw) || new RegExp(TEXT_WORDS.source, 'i').test(raw);
+  const hint = raw && !textProne && (withPeople || !PEOPLE_WORDS.test(raw)) ? raw : '';
   const scene = hint || SCENES[v % SCENES.length];
   const people = PEOPLE[(v * 3 + 1) % PEOPLE.length];
   return [
-    `Editorial photograph for an article about "${o.topic}". Purpose: ${o.purpose.replace(PEOPLE_WORDS, (w) => (withPeople ? w : 'scene'))}.`,
+    `Editorial photograph for an article about ${pictureSafe(o.topic) || 'UAE residency'}. Purpose: ${pictureSafe(o.purpose).replace(new RegExp(PEOPLE_WORDS.source, 'gi'), (w) => (withPeople ? w : 'scene')) || 'illustration'}.`,
     `Scene: ${scene}.`,
     withPeople ? `If people appear: ${people} people of mixed ages, natural poses, relaxed and confident, hands relaxed and mostly out of frame.` : '',
     `Shot on a full-frame camera with a ${v % 2 ? '24 mm' : '35 mm'} lens, ${ANGLE[v % ANGLE.length]}, ${TIME[(v + 2) % TIME.length]}.`,
