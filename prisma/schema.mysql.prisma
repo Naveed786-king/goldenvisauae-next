@@ -249,6 +249,7 @@ model AutoMission {
   keywords     String    @db.Text
   markets      String    @db.Text
   languages    String    @db.Text
+  nativeLanguages String? @db.Text // optional so it can be added to existing rows
   postsPerWeek Int       @default(21)
   publishMode  String    @default("review")
   category     String    @default("")
