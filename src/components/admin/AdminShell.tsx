@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
+  Sparkles,
   LayoutDashboard,
   FileText,
   Newspaper,
@@ -55,6 +56,7 @@ const NAV = [
     items: [
       { href: '/admin/pages', label: 'Pages', icon: FileText },
       { href: '/admin/posts', label: 'Blog posts', icon: Newspaper },
+      { href: '/admin/autopublisher', label: 'Auto Publisher', icon: Sparkles, adminOnly: true },
       { href: '/admin/services', label: 'Services & prices', icon: BadgeCheck },
       { href: '/admin/calculator', label: 'Cost calculator', icon: Calculator },
       { href: '/admin/offer', label: 'Offer pop-up', icon: Megaphone },
