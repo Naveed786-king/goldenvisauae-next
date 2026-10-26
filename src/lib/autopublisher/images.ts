@@ -119,7 +119,7 @@ Reject it if ANY of these is true: visible text, letters, numbers, logos or wate
 Return JSON only: {"ok": true|false, "realism": 0-10, "issues": ["…"]}`,
     images: [{ mime: 'image/jpeg', data: small.toString('base64') }],
     temperature: 0,
-    maxTokens: 400,
+    maxTokens: 1500,
     timeoutMs: 60_000,
   });
   const realism = Math.max(0, Math.min(10, Number(r?.realism) || 0));
@@ -166,7 +166,19 @@ export async function producePicture(spec: PictureSpec, ctx: { topic: string; fo
       reasons.push(`attempt ${attempt}: too similar to a picture we used (distance ${near.distance})`);
       continue;
     }
-    const v = isFakeAi() ? { ok: true, realism: 9, issues: [] as string[] } : await visionCheck(raw, spec.purpose, cfg);
+    let v: { ok: boolean; realism: number; issues: string[] };
+    if (isFakeAi()) v = { ok: true, realism: 9, issues: [] };
+    else {
+      try {
+        v = await visionCheck(raw, spec.purpose, cfg);
+      } catch (e: any) {
+        // budget / missing key stop the job as before; a garbled or failed answer from the checker is not a
+        // verdict on the picture — it already passed sharpness and duplicate checks, so keep it and say so
+        if (e instanceof AiError && (e.kind === 'quota' || e.kind === 'config' || e.kind === 'auth')) throw e;
+        await autoLog('warn', `Vision check could not run (${e?.message || e}) — picture kept after sharpness and duplicate checks; please look at it in review.`, ctx.jobId);
+        v = { ok: true, realism: 0, issues: ['vision check unavailable'] };
+      }
+    }
     if (!v.ok) {
       reasons.push(`attempt ${attempt}: vision check failed (realism ${v.realism}${v.issues.length ? `: ${v.issues.join(', ')}` : ''})`);
       continue;

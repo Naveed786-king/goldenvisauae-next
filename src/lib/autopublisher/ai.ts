@@ -4,7 +4,8 @@
 import { getSetting } from '@/lib/settings';
 import { AutoConfig, getAutoConfig, ProviderId } from './config';
 import { aiCallsToday, autoLog, countAiCall, setBackoff } from './log';
-import { parseJsonLoose, scrubSecrets } from './pure';
+import { outputBudget, parseJsonLoose, scrubSecrets } from './pure';
+export { outputBudget, thinkingModel } from './pure';
 
 export class AiError extends Error {
   kind: 'quota' | 'auth' | 'config' | 'bad_output' | 'network' | 'other';
@@ -170,6 +171,7 @@ export async function http(url: string, init: RequestInit, timeoutMs: number, wh
 }
 
 async function callGemini(key: string, model: string, o: CompleteOpts, temperature: number, maxTokens: number, timeoutMs: number) {
+  maxTokens = outputBudget(model, maxTokens);
   const base = process.env.GEMINI_API_BASE || 'https://generativelanguage.googleapis.com';
   const body: any = {
     systemInstruction: { parts: [{ text: o.system }] },
@@ -184,6 +186,7 @@ async function callGemini(key: string, model: string, o: CompleteOpts, temperatu
 }
 
 async function callClaude(key: string, model: string, o: CompleteOpts, temperature: number, maxTokens: number, timeoutMs: number) {
+  maxTokens = outputBudget(model, maxTokens);
   const body = {
     model,
     max_tokens: maxTokens,
@@ -199,6 +202,7 @@ async function callClaude(key: string, model: string, o: CompleteOpts, temperatu
 
 async function callOpenAiCompatible(id: ProviderId, key: string, model: string, o: CompleteOpts, temperature: number, maxTokens: number, timeoutMs: number) {
   const isOpenAi = id === 'openai';
+  maxTokens = outputBudget(model, maxTokens);
   const url = isOpenAi ? 'https://api.openai.com/v1/chat/completions' : 'https://openrouter.ai/api/v1/chat/completions';
   // reasoning models (o-series, gpt-5) only accept the default temperature
   const reasoning = /^(o\d|gpt-5)/i.test(model.replace(/^openai\//, ''));

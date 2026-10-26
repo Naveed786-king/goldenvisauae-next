@@ -116,3 +116,16 @@ export function parseCustomTitle(line: string): { title: string; date?: string; 
   }
   return out;
 }
+
+/**
+ * "Thinking" models (Gemini 2.5+/3, OpenAI o-series and GPT-5, also via OpenRouter) spend output tokens on
+ * hidden reasoning before they answer. A small limit then cuts the answer off mid-JSON, so short calls get
+ * a floor. The limit is only a ceiling — normal answers stay as short as the prompt asks.
+ */
+export function thinkingModel(model: string): boolean {
+  const m = model.toLowerCase().replace(/^[a-z-]+\//, '');
+  return /^gemini-(2\.5|[3-9])/.test(m) || /^(o\d|gpt-5)/.test(m) || /thinking|reason|deepseek-r1/.test(m);
+}
+export function outputBudget(model: string, maxTokens: number): number {
+  return thinkingModel(model) ? Math.max(maxTokens, 4096) : maxTokens;
+}
