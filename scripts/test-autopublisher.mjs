@@ -186,3 +186,9 @@ test('pictures are people-free unless the house style asks for people', () => {
   assert.equal(peopleAllowed('no people, architecture only'), false);
   assert.match(buildImagePrompt({ purpose: 'cover', topic: 't', houseStyle: 'show families', variant: 2 }), /people of mixed ages/);
 });
+
+test('inline pictures pass one point below the cover minimum, never under 5; no laptops in scenes', async () => {
+  const src = (await import('node:fs')).readFileSync(new URL('../src/lib/autopublisher/images.ts', import.meta.url), 'utf8');
+  assert.match(src, /kind === 'inline' \? Math\.max\(5, minRealism - 1\) : minRealism/);
+  for (let v = 0; v < 20; v++) assert.doesNotMatch(buildImagePrompt({ purpose: 'inline', topic: 't', variant: v }).split('No text')[0], /laptop/i);
+});

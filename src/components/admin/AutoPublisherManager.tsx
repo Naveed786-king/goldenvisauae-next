@@ -327,6 +327,7 @@ function AiTab({ cfg, patch, providers, act }: { cfg: any; patch: (fn: (c: any) 
             <div>
               <label className="admin-label">Minimum realism (0–10)</label>
               <input type="number" min={0} max={10} className="admin-input" value={cfg.images.minRealism} onChange={(e) => patch((c) => ((c.images.minRealism = Number(e.target.value)), c))} />
+              <p className="mt-1 text-xs text-gray-500">For the cover. Pictures inside the article pass one point lower. 7 is a good balance.</p>
               <p className="mt-1 text-xs text-gray-500">From the AI vision check.</p>
             </div>
           </div>
