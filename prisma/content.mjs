@@ -11233,8 +11233,8 @@ export const posts = [
   "cover": "/images/blog/bank-noc.jpg",
   "category": "Property Visa",
   "tags": "",
-  "metaTitle": "Bank NOC no longer required for any Dubai property visa — from our desk",
-  "metaDescription": "The bank No Objection Certificate was the biggest source of delay on mortgaged-property visa applications. It is no longer being asked for — across Golden, Retirement and Investor visas. What changed, the real government fees, and the new timeline.",
+  "metaTitle": "Bank NOC no longer required for any Dubai property visa",
+  "metaDescription": "The bank No Objection Certificate was the biggest source of delay on mortgaged-property visa applications. It is no longer being asked for — across…",
   "publishedAt": "2026-08-01T08:00:00.000Z"
  },
  {
@@ -11246,7 +11246,7 @@ export const posts = [
   "category": "Golden Visa",
   "tags": "",
   "metaTitle": "Dubai Golden Visa for property owners: the 2026 complete guide",
-  "metaDescription": "Own AED 2 million or more in Dubai property and you can apply for the 10-year Golden Visa with just three documents. Here is what qualifies, what it costs, and how the process runs step by step.",
+  "metaDescription": "Own AED 2 million or more in Dubai property and you can apply for the 10-year Golden Visa with just three documents. Here is what qualifies, what it…",
   "publishedAt": "2026-08-01T08:00:00.000Z"
  },
  {
@@ -11258,7 +11258,7 @@ export const posts = [
   "category": "Golden Visa",
   "tags": "",
   "metaTitle": "UAE Golden Visa cost: price breakdown for every category (2026)",
-  "metaDescription": "The UAE Golden Visa cost is the same across most categories — only property owners pay more. Here is the full government-fee breakdown, by category and for every dependant.",
+  "metaDescription": "The UAE Golden Visa cost is the same across most categories — only property owners pay more. Here is the full government-fee breakdown, by category and…",
   "publishedAt": "2026-08-01T08:00:00.000Z"
  },
  {
@@ -11269,8 +11269,8 @@ export const posts = [
   "cover": "/images/blog/portfolio-merging.jpg",
   "category": "Property Visa",
   "tags": "",
-  "metaTitle": "Dubai property visa rules change: portfolio merging between co-owners ends",
-  "metaDescription": "From 14 July 2026, spouses and co-owners can no longer combine property portfolios to qualify for the Golden Visa, retirement visa or 2-year investor visa. Each applicant must now meet the threshold individually.",
+  "metaTitle": "Dubai property visa rules: portfolio merging ends (2026)",
+  "metaDescription": "From 14 July 2026, spouses and co-owners can no longer combine property portfolios to qualify for the Golden Visa, retirement visa or 2-year investor…",
   "publishedAt": "2026-08-01T08:00:00.000Z"
  },
  {
@@ -11282,7 +11282,7 @@ export const posts = [
   "category": "Family Visa",
   "tags": "",
   "metaTitle": "Family visa renewal cost in the UAE: adult & child fees (2026)",
-  "metaDescription": "Renewing a UAE family visa is far cheaper than a new one — no entry permit, no change of status. Here is the full renewal fee breakdown for adults and children.",
+  "metaDescription": "Renewing a UAE family visa is far cheaper than a new one — no entry permit, no change of status. Here is the full renewal fee breakdown for adults and…",
   "publishedAt": "2026-08-01T08:00:00.000Z"
  },
  {
@@ -11294,7 +11294,7 @@ export const posts = [
   "category": "Family Visa",
   "tags": "",
   "metaTitle": "New family visa cost in the UAE: inside vs outside the country (2026)",
-  "metaDescription": "The UAE family visa cost hinges on one detail most people miss — whether your dependant applies from inside or outside the country. Here is the full fee comparison.",
+  "metaDescription": "The UAE family visa cost hinges on one detail most people miss — whether your dependant applies from inside or outside the country. Here is the full fee…",
   "publishedAt": "2026-07-28T08:00:00.000Z"
  },
  {
@@ -11332,6 +11332,222 @@ export const posts = [
   "metaTitle": "Moving a family to Dubai: a 90-day sequencing plan",
   "metaDescription": "Attestation, school deadlines, medicals and Emirates ID, ordered so nothing blocks anything else.",
   "publishedAt": "2026-03-27T08:00:00.000Z"
+ },
+ {
+  "slug": "golden-visa-property-second-home-holiday-home",
+  "title": "Can your Golden Visa property be a second home or holiday home?",
+  "excerpt": "The property that qualifies you for a 10-year Golden Visa does not have to be where you live. Here is what the rules actually ask of it — and what they leave up to you.",
+  "content": "<div class=\"quick-answer\"><p><strong>Quick answer</strong></p><p>Yes. The UAE does not require you to live in the property that qualifies you for the Golden Visa. It must stay in your name and keep meeting the value rule (AED 2 million, held individually) for the visa to be renewed, but you can use it as a holiday home, a second residence or a rental while you live elsewhere in the UAE or abroad.</p></div><p>Many owners assume the Golden Visa turns their apartment into a legal &quot;main residence&quot;. It does not. The visa is linked to ownership and value, not to where you sleep at night.</p><p>That gives families a lot of freedom — but a few practical rules still matter, mostly around ownership, the address you register and renting the unit out.</p><h2>What the Golden Visa needs from the property</h2><p>The property is the qualifying asset. For the 10-year visa it must be worth at least AED 2 million, registered with the Dubai Land Department (or the land authority of the relevant emirate) and held in your own name. Since July 2026, the value has to be met by your individual share — a co-owner&#x27;s share no longer counts towards yours.</p><ul><li>Registered title deed (or an approved off-plan contract) in your name</li><li>DLD-assessed value of AED 2 million or more for your share</li><li>Kept in your ownership for as long as you want the visa renewed</li></ul><h2>What it does not need</h2><p>There is no rule that the property must be your home, and no minimum number of nights you must spend there. Golden Visa holders are also exempt from the six-month absence rule that applies to ordinary residence visas, so you can keep a home abroad and visit the UAE when you like.</p><ul><li>No requirement to live in the unit</li><li>No minimum stay in the UAE after the visa is issued</li><li>Your Emirates ID address can be another home you rent or own</li></ul><h2>Using it as a holiday home</h2><p>If you want to earn from the property while you are away, you have two routes: a normal annual tenancy registered on Ejari, or short stays through a holiday-home permit issued by Dubai&#x27;s Department of Economy and Tourism (DET). Both are allowed for Golden Visa properties. Short stays without a DET permit are not.</p><blockquote><p>Renting the property out never cancels the Golden Visa by itself. Selling it, transferring it or letting its value fall below the threshold at renewal is what affects the visa.</p></blockquote><h2>Family members and the second-home set-up</h2><p>Your spouse and children sponsored on your Golden Visa do not need to live in the qualifying property either. Many families keep the qualifying unit as an investment and rent a home nearer schools or work. Tenancy contracts for that rented home are accepted for utilities, school registration and the like.</p><h2>Read next</h2><ul><li><a href=\"/services/golden-visa\">See the full property Golden Visa process</a></li><li><a href=\"/services/golden-visa-cost\">Estimate your Golden Visa cost</a></li></ul><section class=\"post-faq\"><h2>Frequently asked questions</h2><h3>Do I have to live in my Golden Visa property?</h3><p>No. The visa depends on owning a qualifying property, not on living in it. You can live in another home in the UAE or abroad.</p><h3>Can I rent out my Golden Visa property?</h3><p>Yes, on a registered annual tenancy (Ejari) or as a licensed holiday home with a DET permit. Renting it out does not cancel the visa.</p><h3>Is there a minimum stay for Golden Visa holders?</h3><p>No minimum stay applies once the visa is issued, and the six-month absence rule for ordinary residence visas does not apply. You must be in the UAE for the medical and biometrics when you first apply.</p><h3>What if I sell the property?</h3><p>Selling the qualifying property means you no longer meet the criterion the visa was issued on. You need a replacement qualifying property or another Golden Visa route; otherwise the visa is cancelled and a grace period applies.</p></section>",
+  "cover": "/images/blog/second-home.webp",
+  "category": "Golden Visa",
+  "tags": "golden visa property, second home dubai, holiday home, dubai residency",
+  "metaTitle": "Golden Visa Property as a Second Home in the UAE",
+  "metaDescription": "Yes — the property behind a 10-year Golden Visa does not have to be your main home. What the rules require, what they do not, and how families use it.",
+  "publishedAt": "2026-10-22T08:00:00.000Z"
+ },
+ {
+  "slug": "prove-entrepreneur-experience-golden-visa",
+  "title": "How entrepreneurs prove their case for a UAE Golden Visa (2026 guide)",
+  "excerpt": "The entrepreneur Golden Visa is not judged on a CV. It is judged on evidence — and each of the three routes needs a different kind of proof.",
+  "content": "<div class=\"quick-answer\"><p><strong>Quick answer</strong></p><p>You prove an entrepreneur Golden Visa case with documents, not experience letters. The Ministry of Economy and Tourism accepts three routes: an SME you own or co-own in the UAE with annual revenue of at least AED 1 million; an approval from an accredited business incubator, the Ministry or a local authority for your project; or past projects you founded and sold for a combined AED 7 million or more. Comprehensive health insurance is required on every route.</p></div><p>Founders often ask how many years of &quot;entrepreneurial experience&quot; they need. The honest answer is that the rules do not count years. They look for proof that your business is real and viable today, or that you have built and sold businesses before.</p><p>Choosing the right route first saves months, because each one is assessed on a different set of papers.</p><h2>Route 1 — a UAE business with AED 1 million in yearly revenue</h2><p>If you already own or co-own a small or medium business registered in the UAE, the key figure is annual revenue of at least AED 1 million in a sector the Ministry accredits.</p><ul><li>Valid UAE trade licence showing you as owner or partner</li><li>Audited financial statements showing the revenue</li><li>Memorandum of association or share register</li><li>Comprehensive health insurance for you and your family</li></ul><h2>Route 2 — approval from an incubator or authority</h2><p>Early-stage founders without revenue yet can qualify through an approval letter from an accredited business incubator or accelerator, the Ministry of Economy and Tourism, or the relevant local authority, confirming support for launching the activity in the UAE.</p><ul><li>Approval or recommendation letter from the incubator or authority</li><li>Business plan or project summary submitted with that approval</li><li>Company documents once the business is registered</li><li>Health insurance</li></ul><h2>Route 3 — founders with a past exit</h2><p>If you founded one or more projects that were sold for a combined value of at least AED 7 million, that track record can qualify you, subject to approval by the Ministry or a competent authority.</p><ul><li>Sale and purchase agreements for each exit</li><li>Proof of your founder role (incorporation documents, cap tables)</li><li>Proof of the sale value (bank transfers or audited statements)</li><li>Health insurance</li></ul><h2>How the file is assessed</h2><p>The Ministry or the relevant authority issues a nomination or recommendation first; the residence application with ICP or GDRFA follows. Documents issued abroad usually need attestation and a legal Arabic translation. Weak points tend to be revenue that is not visible in audited accounts and approval letters that do not name the applicant clearly.</p><blockquote><p>Revenue is the figure that counts on Route 1 — not profit, and not your company&#x27;s capital. Make sure the audited statements show it plainly.</p></blockquote><h2>Read next</h2><ul><li><a href=\"/services/golden-visa\">Explore every Golden Visa route</a></li><li><a href=\"/contact\">Talk to a consultant about your business</a></li></ul><section class=\"post-faq\"><h2>Frequently asked questions</h2><h3>How many years of business experience do I need for the entrepreneur Golden Visa?</h3><p>None are specified. You qualify through revenue of AED 1 million, an approval from an accredited incubator or authority, or past exits worth AED 7 million combined.</p><h3>Does my business have to be in the UAE?</h3><p>For the revenue route, yes — it must be a project registered in the UAE. The exit route can rely on projects sold elsewhere, subject to approval.</p><h3>Is health insurance mandatory?</h3><p>Yes. Comprehensive health insurance covering you and the family members you sponsor is required on every entrepreneur route.</p><h3>Can my co-founder also get a Golden Visa?</h3><p>A partner in a qualifying project may be able to apply too. Each partner&#x27;s position is assessed on its own documents.</p></section>",
+  "cover": "/images/blog/entrepreneur.webp",
+  "category": "Golden Visa",
+  "tags": "entrepreneur golden visa, startup golden visa uae, business golden visa, MOET",
+  "metaTitle": "Entrepreneur Golden Visa: Documents That Prove Your Case",
+  "metaDescription": "The three entrepreneur routes to a 10-year Golden Visa and the documents that prove each one — revenue, approvals or a past exit — explained clearly.",
+  "publishedAt": "2026-10-19T08:00:00.000Z"
+ },
+ {
+  "slug": "is-uae-golden-visa-permanent-residency",
+  "title": "Is the UAE Golden Visa permanent residency? What it really gives you",
+  "excerpt": "\"Permanent\" is the word people use, but it is not what the law says. Here is the plain difference — and why the Golden Visa still comes close.",
+  "content": "<div class=\"quick-answer\"><p><strong>Quick answer</strong></p><p>No. The UAE Golden Visa is a long-term residence visa — usually 10 years, renewable for as long as you keep meeting a qualifying condition. It is not permanent residency and it is not a route to citizenship. In practice it is the most stable residence the UAE offers: no employer sponsor, no six-month absence rule, and family sponsorship included.</p></div><p>The Golden Visa is often marketed as &quot;permanent residency&quot;. That shorthand causes real confusion when renewal time comes, so it is worth being precise about what it is.</p><h2>What the Golden Visa is</h2><p>It is a self-sponsored residence visa granted for 10 years (5 years in a few categories). You do not need an employer or a local sponsor, and your Emirates ID is issued for the same period.</p><h2>What it gives you</h2><ul><li>Residence without an employer or local sponsor</li><li>Sponsorship of your spouse and children regardless of their age, and of your parents</li><li>Sponsorship of domestic workers</li><li>No cancellation for staying outside the UAE for more than six months</li><li>A longer grace period for family members if the main holder&#x27;s visa ends</li></ul><h2>What it does not give you</h2><ul><li>Citizenship or a UAE passport</li><li>A residence that lasts for life without renewal</li><li>Tax residency on its own — that depends on days spent in the UAE and other tests</li></ul><h2>How renewal works</h2><p>At renewal you must again meet a qualifying condition — for example owning property worth AED 2 million, earning the qualifying salary or keeping the qualifying investment. If you no longer meet the original condition, you may qualify through a different route.</p><blockquote><p>Think of it as &quot;permanent while you qualify&quot;. Plan renewal 30 to 60 days before expiry so nothing lapses.</p></blockquote><h2>Read next</h2><ul><li><a href=\"/services/golden-visa\">Check which Golden Visa route fits you</a></li></ul><section class=\"post-faq\"><h2>Frequently asked questions</h2><h3>Is the Golden Visa the same as permanent residency?</h3><p>No. It is a renewable long-term residence visa, normally 10 years, renewed as long as you meet a qualifying condition.</p><h3>Does the Golden Visa lead to UAE citizenship?</h3><p>No. UAE citizenship is granted by nomination in rare cases and is not linked to holding a Golden Visa.</p><h3>Can I lose my Golden Visa?</h3><p>It can be cancelled if you give false information or commit serious violations, and it will not be renewed if you no longer meet any qualifying condition.</p><h3>Do I have to live in the UAE to keep it?</h3><p>No. Golden Visa holders are exempt from the six-month absence rule.</p></section>",
+  "cover": "/images/blog/permanent.webp",
+  "category": "Golden Visa",
+  "tags": "golden visa permanent residency, uae residency, 10 year visa, golden visa renewal",
+  "metaTitle": "Is the UAE Golden Visa Permanent Residency?",
+  "metaDescription": "The Golden Visa is a renewable 10-year residence, not permanent residency or citizenship. What it gives you, what it does not, and how renewal works.",
+  "publishedAt": "2026-10-16T08:00:00.000Z"
+ },
+ {
+  "slug": "golden-visa-aed-30000-salary-skilled-professionals",
+  "title": "Can you get a Golden Visa on an AED 30,000 salary?",
+  "excerpt": "AED 30,000 a month is the headline figure, but it is only one of four conditions. Here is the full skilled-professional checklist.",
+  "content": "<div class=\"quick-answer\"><p><strong>Quick answer</strong></p><p>Yes — if the rest of the skilled-professional conditions are met. You need a valid employment contract in the UAE, a job classified by MOHRE at skill level 1 or 2, at least a bachelor&#x27;s degree, and a monthly salary of AED 30,000 or more. Professions that need a licence, such as doctors or teachers, also need a valid UAE practising licence.</p></div><p>The salary route is the most common way employees reach a Golden Visa without buying property. Most rejections come not from the salary itself but from the job classification or the degree.</p><h2>The four conditions</h2><table><thead><tr><th>Condition</th><th>What is checked</th></tr></thead><tbody><tr><td>Employment</td><td>A valid employment contract registered in the UAE</td></tr><tr><td>Skill level</td><td>MOHRE classification level 1 (managers, executives) or level 2 (professionals)</td></tr><tr><td>Education</td><td>Bachelor&#x27;s degree or equivalent, attested</td></tr><tr><td>Salary</td><td>At least AED 30,000 a month, shown on the salary certificate and bank statements</td></tr></tbody></table><h2>How the salary is proven</h2><p>Expect to provide a salary certificate from your employer and recent bank statements — usually six months — showing the salary being paid. Make sure the figure on your contract, the certificate and the statements match; differences are the most common reason files are paused.</p><blockquote><p>Ask HR to confirm how your salary is split between basic pay and allowances before you apply, and keep the documents consistent.</p></blockquote><h2>When the job title is the problem</h2><p>If your MOHRE work permit lists a job title outside levels 1 and 2, the application will not pass even with a high salary. In some cases the employer can correct the job title on the work permit first, which then has to match your real role and degree.</p><h2>Documents checklist</h2><ul><li>Passport and current residence visa</li><li>Employment contract and labour card</li><li>Salary certificate and six months of bank statements</li><li>Attested degree certificate</li><li>Practising licence, if your profession needs one</li><li>Passport photo</li></ul><h2>Read next</h2><ul><li><a href=\"/services/golden-visa\">See all Golden Visa routes</a></li><li><a href=\"/contact\">Ask us to check your job classification</a></li></ul><section class=\"post-faq\"><h2>Frequently asked questions</h2><h3>Is AED 30,000 basic salary or total salary?</h3><p>Authorities assess the monthly salary on your contract and salary certificate. Requirements have been applied differently over time, so confirm how your package is split before applying.</p><h3>Can I apply if I work in a free zone?</h3><p>Yes. Free-zone employees can qualify if the same conditions on skill level, degree and salary are met.</p><h3>What happens if my salary drops later?</h3><p>The visa is not usually cancelled mid-term, but you must meet a qualifying condition again at renewal.</p><h3>Do I need a degree?</h3><p>Yes. At least a bachelor&#x27;s degree or equivalent is required, attested for use in the UAE.</p></section>",
+  "cover": "/images/blog/salary.webp",
+  "category": "Golden Visa",
+  "tags": "golden visa salary 30000, skilled professional golden visa, MOHRE level, employee golden visa",
+  "metaTitle": "Golden Visa With an AED 30,000 Salary: Skilled Professionals",
+  "metaDescription": "An AED 30,000 monthly salary can qualify you for a 10-year Golden Visa — if your role is MOHRE level 1 or 2 and you hold a degree. Full checklist.",
+  "publishedAt": "2026-10-13T08:00:00.000Z"
+ },
+ {
+  "slug": "travel-entering-uae-during-golden-visa-processing",
+  "title": "Travelling during Golden Visa processing: when you can leave and when you must be here",
+  "excerpt": "Most of a Golden Visa file can move while you are abroad. Two stages cannot. Here is how to plan your trips around them.",
+  "content": "<div class=\"quick-answer\"><p><strong>Quick answer</strong></p><p>You can usually be abroad while your documents are being verified and the application is reviewed. You must be in the UAE for the medical fitness test (if you are 18 or older) and Emirates ID biometrics, and for the visa to be issued if you are changing status inside the country. Investors outside the UAE normally enter on an entry permit issued for the application and complete the remaining steps on arrival.</p></div><p>A Golden Visa file has several stages. Knowing which ones need you physically in the UAE lets you keep business trips and family holidays on track.</p><h2>Stages you can complete from abroad</h2><ul><li>Collecting and attesting documents</li><li>Property verification by the land department (property route)</li><li>Nomination or approval by the relevant authority (other routes)</li><li>Submitting the application and receiving pre-approval</li></ul><h2>Stages that need you in the UAE</h2><ul><li>Medical fitness test (18 and over)</li><li>Emirates ID biometrics for first-time applicants</li><li>Status change, if you are inside the UAE on another visa</li></ul><h2>If you are already in the UAE on another visa</h2><p>If you hold a visit visa or another residence visa, the Golden Visa can usually be issued as a change of status. Leaving the country mid-process can mean the file has to move to an entry-permit route instead, which adds time. Tell your consultant before you book a trip.</p><blockquote><p>Do not cancel your existing residence visa yourself before the Golden Visa is ready — the cancellation is timed with the new visa.</p></blockquote><h2>Investors applying from abroad</h2><p>Applicants outside the UAE normally receive an entry permit linked to the application. You enter on it, complete the medical and biometrics, and the Golden Visa is issued. Plan a stay of several working days to cover these appointments.</p><h2>Read next</h2><ul><li><a href=\"/check-visa-status\">Check your current visa status</a></li><li><a href=\"/services/golden-visa\">Plan your Golden Visa timeline</a></li></ul><section class=\"post-faq\"><h2>Frequently asked questions</h2><h3>Can I leave the UAE while my Golden Visa is processing?</h3><p>Often yes, while documents are being verified. Check first if you are inside the UAE on a status-change route, as leaving can change the process.</p><h3>Do I need to be in the UAE for the medical test?</h3><p>Yes. Applicants aged 18 and over complete the medical fitness test in the UAE.</p><h3>Can I enter the UAE while my investor visa is being processed?</h3><p>Yes. Applicants abroad usually enter on an entry permit issued for the application.</p><h3>How long should I plan to stay for the final steps?</h3><p>Allow several working days for the medical, biometrics and issuance. VIP appointments can shorten this.</p></section>",
+  "cover": "/images/blog/travel.webp",
+  "category": "Golden Visa",
+  "tags": "golden visa processing travel, entry permit golden visa, golden visa medical biometrics",
+  "metaTitle": "Travel During Golden Visa Processing: What to Know",
+  "metaDescription": "Which Golden Visa stages need you in the UAE, when you can travel, and how investors abroad enter on an entry permit while the visa is being processed.",
+  "publishedAt": "2026-10-10T08:00:00.000Z"
+ },
+ {
+  "slug": "abu-dhabi-rent-increase-freeze-2026",
+  "title": "Abu Dhabi rent freeze 2026: what the 0% increase cap means for tenants and landlords",
+  "excerpt": "In June 2026 Abu Dhabi cut the annual rent increase cap to zero. Here is how it works for renewals, new leases and investors.",
+  "content": "<div class=\"quick-answer\"><p><strong>Quick answer</strong></p><p>Since 2 June 2026, Abu Dhabi has set the annual rent increase cap at 0% (down from 5%) for residential, commercial and industrial properties, until further notice. Renewals and new leases on a previously rented unit must not exceed the rent in the unit&#x27;s last registered Tawtheeq contract. The Abu Dhabi Real Estate Centre (ADREC) oversees the rule.</p></div><p>Rising rents pushed Abu Dhabi to act quickly. The freeze is described as temporary, but it applies now to every renewal and to every new lease of a unit that has been rented before.</p><h2>What changed</h2><p>The cap on yearly rent increases was cut from 5% to 0% across the emirate. ADREC said the move followed strong demand and a sharp rise in new lease prices over the previous year.</p><ul><li>Applies to residential, commercial and industrial property</li><li>Effective from the circular in early June 2026, until further notice</li><li>Not retroactive — contracts renewed and registered before the announcement stand</li></ul><h2>For tenants</h2><ul><li>At renewal, your rent should stay at the value in your last registered Tawtheeq contract</li><li>Moving into a previously rented unit? Ask for the last registered Tawtheeq value — the new rent should not exceed it</li><li>If a landlord raises the rent, contact ADREC through its official channels</li></ul><h2>For landlords and investors</h2><p>Rental income on existing units is frozen at current registered levels for now. Investors comparing Abu Dhabi and Dubai should factor this into yield projections, and keep Tawtheeq registrations up to date to avoid disputes.</p><blockquote><p>The freeze does not change residence visa rules. Property investor and Golden Visa eligibility in Abu Dhabi is still assessed on property value, not rent.</p></blockquote><h2>Read next</h2><ul><li><a href=\"/contact\">Talk to us about property and residency</a></li></ul><section class=\"post-faq\"><h2>Frequently asked questions</h2><h3>Is the Abu Dhabi rent freeze permanent?</h3><p>No. It is described as temporary and in force until further notice. Changes will be announced by ADREC.</p><h3>Does the 0% cap apply to new tenants?</h3><p>Yes, for units rented before — the new rent should not exceed the last registered Tawtheeq value.</p><h3>Does it apply to commercial property?</h3><p>Yes. It covers residential, commercial and industrial property.</p><h3>Does it affect Dubai rents?</h3><p>No. Dubai rent increases follow Dubai&#x27;s own rules and rental index.</p></section>",
+  "cover": "/images/blog/rent-freeze.webp",
+  "category": "Policy",
+  "tags": "abu dhabi rent freeze, rent increase cap 2026, ADREC, tawtheeq",
+  "metaTitle": "Abu Dhabi Rent Freeze 2026: The 0% Increase Cap Explained",
+  "metaDescription": "Abu Dhabi cut the yearly rent increase cap from 5% to 0% in June 2026. Who it covers, how renewals and new leases are priced, and where to complain.",
+  "publishedAt": "2026-10-07T08:00:00.000Z"
+ },
+ {
+  "slug": "selling-property-golden-visa-investor-visa",
+  "title": "Selling your property on a Golden Visa or investor visa: what happens to your residency",
+  "excerpt": "The visa is tied to the title deed. Sell the property and the residency needs a new basis — here is how to sequence it without leaving your family exposed.",
+  "content": "<div class=\"quick-answer\"><p><strong>Quick answer</strong></p><p>A property-based residence visa depends on you owning the qualifying property. If you sell it, the visa no longer has a basis: you either move it to another qualifying property, switch to a different visa route, or the visa is cancelled — after which a grace period applies to you and your family. Plan the sequence before signing the sale.</p></div><p>Selling is often the right investment decision. The mistake is treating the sale and the visa as separate projects. They are linked by the title deed, and the order of steps matters.</p><h2>Why the sale affects the visa</h2><p>Your residence was granted because you own the property. The land department records that link, and a transfer of the qualifying property normally requires the residence linked to it to be dealt with first.</p><h2>Your three options</h2><table><thead><tr><th>Option</th><th>When it fits</th></tr></thead><tbody><tr><td>Replace the property</td><td>You are buying another qualifying property (AED 2 million individually for the Golden Visa)</td></tr><tr><td>Switch route</td><td>You now qualify another way — salary, business, retirement (55+) or a 2-year investor visa</td></tr><tr><td>Cancel and use the grace period</td><td>You are leaving the UAE or need time to arrange a new basis</td></tr></tbody></table><h2>Protecting your family</h2><p>Dependants&#x27; visas are linked to yours. Ask about holding or transferring family files while you change routes, so medicals and Emirates IDs do not have to be repeated unnecessarily.</p><blockquote><p>Start visa planning when you sign the memorandum of understanding (Form F), not on transfer day.</p></blockquote><h2>Grace periods</h2><p>After a Golden Visa ends, holders and their sponsored family are generally given a longer grace period than ordinary residents — commonly reported as up to six months. Confirm the exact end date on the official portal before relying on it.</p><h2>Read next</h2><ul><li><a href=\"/services/property-investor-visa\">Property investor visa options</a></li><li><a href=\"/check-visa-status\">Check visa status and grace periods</a></li></ul><section class=\"post-faq\"><h2>Frequently asked questions</h2><h3>Is my Golden Visa cancelled immediately when I sell?</h3><p>The property is the basis of the visa, so the visa has to be moved to a new basis or cancelled as part of the sale. A grace period follows cancellation.</p><h3>Can I move my Golden Visa to a new property?</h3><p>Yes, if the new property qualifies — AED 2 million held individually for the 10-year visa — and the timing is planned with the land department.</p><h3>What happens to my family visas?</h3><p>They depend on yours. Plan their transfer or holding before the sale so they are not left without status.</p><h3>Can I sell part of my portfolio and keep the visa?</h3><p>Yes, if the properties you keep still meet the threshold in your own name.</p></section>",
+  "cover": "/images/blog/selling.webp",
+  "category": "Property Visa",
+  "tags": "sell property golden visa, investor visa cancellation, replace property golden visa, dld",
+  "metaTitle": "Selling Property on a Golden or Investor Visa: What Happens",
+  "metaDescription": "Selling the property behind your residence visa ends that route. How cancellation, replacement properties, family visas and grace periods work.",
+  "publishedAt": "2026-10-04T08:00:00.000Z"
+ },
+ {
+  "slug": "rent-out-golden-visa-property-uae",
+  "title": "Can you rent out your Golden Visa property? The rules owners should know",
+  "excerpt": "Renting the property out is allowed. Doing it without registering the tenancy or the holiday-home permit is where owners get into trouble.",
+  "content": "<div class=\"quick-answer\"><p><strong>Quick answer</strong></p><p>Yes. The property behind your Golden Visa can be rented out — on an annual tenancy registered on Ejari, or for short stays with a holiday-home permit from Dubai&#x27;s Department of Economy and Tourism. Renting does not affect the visa. What matters for renewal is that you still own the property and it still meets the value requirement.</p></div><p>Owners are sometimes told that a rented-out unit cannot back a Golden Visa. That is not the rule. The visa looks at ownership and value; how you use the property is your choice, as long as you follow the rental regulations.</p><h2>Long-term rentals</h2><ul><li>Register every annual tenancy on Ejari</li><li>Follow Dubai&#x27;s rental index rules on increases at renewal</li><li>Keep service charges paid — unpaid charges can complicate later transactions</li></ul><h2>Short-term rentals</h2><p>Short stays need a holiday-home permit from DET for the specific unit, and the permit number must appear on listings. Some buildings do not allow holiday-home use, so check the building and developer rules first.</p><h2>Effect on the visa</h2><p>A tenant living in the unit does not change your eligibility. Renewal looks at whether you still own the property and whether its value — usually re-assessed by the land department — still meets the threshold.</p><blockquote><p>Your Emirates ID address does not have to be the qualifying property. Use the home you actually live in.</p></blockquote><h2>Read next</h2><ul><li><a href=\"/services/golden-visa\">Golden Visa through property</a></li></ul><section class=\"post-faq\"><h2>Frequently asked questions</h2><h3>Will renting out my property cancel my Golden Visa?</h3><p>No. Renting is allowed. Selling or transferring the property, or failing the value test at renewal, is what affects the visa.</p><h3>Do I need Ejari?</h3><p>Yes, for annual tenancies in Dubai. Short stays need a DET holiday-home permit instead.</p><h3>Can my tenant&#x27;s address be my Golden Visa property?</h3><p>Yes. You register your own residential address separately.</p></section>",
+  "cover": "/images/blog/renting.webp",
+  "category": "Property Visa",
+  "tags": "rent golden visa property, ejari, holiday home permit, dubai landlord",
+  "metaTitle": "Can I Rent Out My Golden Visa Property in the UAE?",
+  "metaDescription": "Yes — Golden Visa properties can be rented long-term (Ejari) or as licensed holiday homes. What to register, what to avoid and how it affects renewal.",
+  "publishedAt": "2026-09-30T08:00:00.000Z"
+ },
+ {
+  "slug": "dubai-first-time-home-buyer-programme",
+  "title": "Dubai First-Time Home Buyer Programme: who qualifies and what you get",
+  "excerpt": "A Dubai Land Department programme that gives first-time buyers early access, better prices and mortgage offers. Here is how to qualify.",
+  "content": "<div class=\"quick-answer\"><p><strong>Quick answer</strong></p><p>The Dubai Land Department&#x27;s First-Time Home Buyer Programme is open to UAE residents of any nationality aged 18 or over who do not already own freehold residential property in Dubai, for homes valued under AED 5 million. Approved applicants get a QR code that unlocks priority access to launches, preferential prices and payment plans from participating developers, and better mortgage terms from participating banks.</p></div><p>The programme exists to help residents move from renting to owning. It does not replace the normal purchase process — it adds benefits on top of it.</p><h2>Who qualifies</h2><ul><li>UAE resident, any nationality, aged 18+</li><li>No freehold residential property in Dubai in your name (property in other emirates does not count against you)</li><li>Target property valued below AED 5 million</li></ul><h2>What you get</h2><ul><li>Early access to new launches and existing stock from participating developers</li><li>Preferential prices and flexible payment plans on selected off-plan units</li><li>Better mortgage rates and fees from participating banks — a mortgage is optional</li><li>Interest-free instalments on DLD registration fees through eligible credit cards</li></ul><h2>How to apply</h2><ul><li>Register through the Dubai Land Department website or the Dubai REST app</li><li>If eligible, you receive a programme QR code by email</li><li>Show the QR code to a participating developer and bank</li></ul><h2>Good to know</h2><p>Standard registration fees still apply. The QR code stays valid until you buy and register a property, and benefits apply with one participating developer and one participating bank.</p><blockquote><p>Buying at AED 2 million or more in your own name can also open the 10-year Golden Visa — worth planning together.</p></blockquote><h2>Read next</h2><ul><li><a href=\"/services/golden-visa\">Golden Visa through property</a></li><li><a href=\"/contact\">Talk to us before you buy</a></li></ul><section class=\"post-faq\"><h2>Frequently asked questions</h2><h3>Can expats join the First-Time Home Buyer Programme?</h3><p>Yes. UAE residents of any nationality aged 18 or over can apply.</p><h3>What is the price limit?</h3><p>The property must be valued below AED 5 million.</p><h3>Do I need a mortgage?</h3><p>No. Mortgage offers are a benefit, not a requirement.</p><h3>I own property in Abu Dhabi. Can I still apply?</h3><p>Yes. Only freehold residential property in Dubai disqualifies you.</p></section>",
+  "cover": "/images/blog/first-home.webp",
+  "category": "Investment",
+  "tags": "first time home buyer dubai, DLD programme, dubai mortgage, buy first home dubai",
+  "metaTitle": "Dubai First-Time Home Buyer Programme: Eligibility & Benefits",
+  "metaDescription": "The DLD First-Time Home Buyer Programme gives UAE residents priority access, better prices and mortgage offers on homes under AED 5 million. How to apply.",
+  "publishedAt": "2026-09-26T08:00:00.000Z"
+ },
+ {
+  "slug": "benefits-of-dubai-property-investor-visa",
+  "title": "Benefits of a Dubai property visa: what owners and their families get",
+  "excerpt": "Buying property in Dubai can bring residency for you and your family. Here is what each property visa actually unlocks.",
+  "content": "<div class=\"quick-answer\"><p><strong>Quick answer</strong></p><p>A Dubai property visa gives you UAE residency without an employer: an Emirates ID, the right to sponsor your family, access to local banking, schooling and healthcare, and a stable base to live and work. The 2-year investor visa has no minimum value for a sole owner, the 5-year retirement visa needs AED 1 million and age 55+, and the 10-year Golden Visa needs AED 2 million held individually.</p></div><p>For many families the property visa is the most straightforward residency in the UAE: it depends on something you own, not on a job you might change.</p><h2>Three property visas</h2><table><thead><tr><th>Visa</th><th>Main condition</th><th>Length</th></tr></thead><tbody><tr><td>Investor visa</td><td>Property in your name — no minimum for a sole owner, AED 400,000 per joint owner</td><td>2 years</td></tr><tr><td>Retirement visa</td><td>Age 55+ and property worth AED 1 million held individually</td><td>5 years</td></tr><tr><td>Golden Visa</td><td>Property worth AED 2 million held individually</td><td>10 years</td></tr></tbody></table><h2>What all three give you</h2><ul><li>Residence and Emirates ID without an employer</li><li>Sponsorship of your spouse and children</li><li>Ability to open bank accounts, get a driving licence and register utilities</li><li>Access to schools and healthcare for the family</li></ul><h2>Extra benefits of the Golden Visa</h2><ul><li>10-year validity</li><li>No cancellation for staying abroad more than six months</li><li>Sponsorship of children regardless of age, and of parents</li><li>Longer grace period for family members</li></ul><h2>Read next</h2><ul><li><a href=\"/services/property-investor-visa\">Compare property visas</a></li><li><a href=\"/services/golden-visa-cost\">Estimate your visa cost</a></li></ul><section class=\"post-faq\"><h2>Frequently asked questions</h2><h3>Can I work on a property visa?</h3><p>Residency itself does not give a work permit with an employer, but you can run your own business or take a job with the right permit.</p><h3>Can I sponsor my parents on a property visa?</h3><p>Parents can be sponsored under the Golden Visa, subject to the standard conditions.</p><h3>Is a mortgaged property accepted?</h3><p>Yes. Eligibility is based on the DLD-assessed value; the outstanding mortgage is not deducted.</p></section>",
+  "cover": "/images/blog/benefits.webp",
+  "category": "Property Visa",
+  "tags": "dubai property visa benefits, investor visa dubai, golden visa benefits, retirement visa",
+  "metaTitle": "Dubai Property Visa Benefits for Owners and Families",
+  "metaDescription": "Residency without an employer, family sponsorship, banking, schooling and more — the real benefits of 2-year, 5-year and 10-year Dubai property visas.",
+  "publishedAt": "2026-09-22T08:00:00.000Z"
+ },
+ {
+  "slug": "dubai-holiday-home-permit-short-term-rentals",
+  "title": "Listing a Dubai property on short-stay platforms: holiday home permit rules (2026)",
+  "excerpt": "Short-stay letting is legal in Dubai — with a permit from the Department of Economy and Tourism. Here is the process and the pitfalls.",
+  "content": "<div class=\"quick-answer\"><p><strong>Quick answer</strong></p><p>To rent a Dubai property for short stays you need a holiday-home permit for that unit from the Department of Economy and Tourism (DET). Owners can register a limited number of units themselves; larger portfolios need a licensed holiday-home company. Only whole units can be let, the permit number must appear on every listing, and guests pay the Tourism Dirham, which the host collects and files.</p></div><p>Short stays can earn more than a yearly tenancy, but only with the right permit. Unlicensed listings face fines and can be removed.</p><h2>Who can apply</h2><ul><li>Owners, for a limited number of units in their own name</li><li>Tenants, for their unit, with the landlord&#x27;s written approval</li><li>Licensed holiday-home operators, for larger portfolios</li></ul><h2>What the unit needs</h2><ul><li>A title deed or approved contract that allows holiday-home use</li><li>Developer or building approval where required</li><li>The whole unit let — not single rooms</li><li>Furnishing and safety standards set by DET</li><li>Insurance covering guest damage</li></ul><h2>Running costs and filings</h2><p>There is a one-time registration and a permit for each unit, priced by bedroom and renewed every year, plus the Tourism Dirham collected from guests per occupied bedroom per night and filed monthly. Check DET&#x27;s current schedule before you budget — fees and promotions change.</p><h2>Penalties</h2><p>Operating without a permit, letting by the room or missing insurance all carry fines, and repeated violations can lead to suspension.</p><blockquote><p>Holiday-home use does not affect a property-based visa — but keep the permit in good standing.</p></blockquote><h2>Read next</h2><ul><li><a href=\"/blog/golden-visa-property-second-home-holiday-home\">Can a Golden Visa property be a holiday home?</a></li></ul><section class=\"post-faq\"><h2>Frequently asked questions</h2><h3>Do I need a permit to list my Dubai apartment for short stays?</h3><p>Yes. Each unit needs a DET holiday-home permit before it is listed.</p><h3>Can tenants run a holiday home?</h3><p>Yes, for their own unit, with the landlord&#x27;s written approval.</p><h3>Can I rent out single rooms?</h3><p>No. Only whole units can be licensed as holiday homes.</p></section>",
+  "cover": "/images/blog/holiday-home.webp",
+  "category": "Investment",
+  "tags": "dubai holiday home permit, short term rental dubai, DET, tourism dirham",
+  "metaTitle": "Dubai Holiday Home Permit Rules for Short-Term Rentals",
+  "metaDescription": "Short-term letting in Dubai needs a DET holiday-home permit. Who can apply, what the unit needs, how the Tourism Dirham works and the penalties.",
+  "publishedAt": "2026-09-18T08:00:00.000Z"
+ },
+ {
+  "slug": "short-term-vs-long-term-rentals-dubai-investors",
+  "title": "Short-term vs long-term rentals in Dubai: which suits investors?",
+  "excerpt": "Higher income or steadier income? A practical comparison for owners deciding how to let a Dubai property.",
+  "content": "<div class=\"quick-answer\"><p><strong>Quick answer</strong></p><p>Short-term lets usually bring higher gross income but come with permits, furnishing, management fees, seasonality and the Tourism Dirham. Long-term lets on Ejari bring steadier income with lower effort and costs, but rent increases are limited by Dubai&#x27;s rental index. Neither affects a property-based visa — choose by your time, risk appetite and the building&#x27;s rules.</p></div><p>The right choice depends less on the headline yield and more on who will manage the unit and how much variation in income you can accept.</p><h2>Side by side</h2><table><thead><tr><th></th><th>Short-term (holiday home)</th><th>Long-term (annual)</th></tr></thead><tbody><tr><td>Income</td><td>Higher potential, seasonal</td><td>Steady, fixed for the year</td></tr><tr><td>Costs</td><td>Furnishing, cleaning, management, permit, utilities</td><td>Lower — tenant usually pays utilities</td></tr><tr><td>Rules</td><td>DET permit, Tourism Dirham, building approval</td><td>Ejari registration, rental index on increases</td></tr><tr><td>Effort</td><td>High, or a management fee</td><td>Low</td></tr><tr><td>Visa impact</td><td>None</td><td>None</td></tr></tbody></table><h2>When short-term wins</h2><ul><li>Prime tourist locations with strong year-round demand</li><li>Owners who use the unit themselves for part of the year</li><li>Professional management in place</li></ul><h2>When long-term wins</h2><ul><li>Family communities with steady tenant demand</li><li>Owners abroad who want low effort</li><li>Investors who value predictable cash flow</li></ul><h2>Read next</h2><ul><li><a href=\"/blog/dubai-holiday-home-permit-short-term-rentals\">Holiday home permit rules</a></li></ul><section class=\"post-faq\"><h2>Frequently asked questions</h2><h3>Which earns more in Dubai?</h3><p>Short-term lets often earn more gross income, but net income after costs and empty nights can be close to long-term.</p><h3>Does either choice affect my Golden Visa?</h3><p>No. The visa depends on ownership and value, not on how you let the property.</p></section>",
+  "cover": "/images/blog/rentals.webp",
+  "category": "Investment",
+  "tags": "short term vs long term rental dubai, dubai rental yield, ejari, holiday home",
+  "metaTitle": "Short-Term vs Long-Term Rentals in Dubai for Investors",
+  "metaDescription": "Compare short-stay and annual rentals in Dubai: income, costs, permits, effort and how each affects a property-based residence visa.",
+  "publishedAt": "2026-09-14T08:00:00.000Z"
+ },
+ {
+  "slug": "non-resident-buy-investment-property-dubai",
+  "title": "Can a non-resident buy investment property in Dubai?",
+  "excerpt": "You do not need to live in the UAE to buy in Dubai. Here is how non-residents buy, finance and use property as a route to residency.",
+  "content": "<div class=\"quick-answer\"><p><strong>Quick answer</strong></p><p>Yes. Foreign nationals can buy freehold property in Dubai&#x27;s designated freehold areas without being UAE residents. Purchases are registered with the Dubai Land Department and can be completed with a power of attorney. Non-residents can get mortgages from some UAE banks, usually with a larger deposit than residents. The property can then qualify you for a 2-year investor visa or, at AED 2 million in your name, a 10-year Golden Visa.</p></div><p>Dubai was built to welcome overseas buyers. The process is the same as for residents in most respects; financing and paperwork are where the differences lie.</p><h2>How the purchase works</h2><ul><li>Choose a property in a freehold area</li><li>Sign the memorandum of understanding (Form F) for ready property, or the sales contract for off-plan</li><li>Pay the deposit and the Dubai Land Department transfer and registration fees</li><li>Transfer at a DLD trustee office — in person or through a registered power of attorney</li></ul><h2>Financing as a non-resident</h2><p>Several UAE banks lend to non-residents, generally with a lower loan-to-value than for residents and with proof of income from abroad. Cash purchases are simpler and faster.</p><h2>Residency after buying</h2><p>Ownership can lead to residency. A sole owner can apply for the 2-year investor visa regardless of value; AED 2 million held individually opens the 10-year Golden Visa. Mortgaged properties are accepted based on their assessed value.</p><blockquote><p>If you plan to apply for residency, make sure the title deed is in the name of the person who will be the main applicant.</p></blockquote><h2>Read next</h2><ul><li><a href=\"/services/power-of-attorney\">Power of attorney service</a></li><li><a href=\"/services/property-investor-visa\">Property investor visa</a></li></ul><section class=\"post-faq\"><h2>Frequently asked questions</h2><h3>Do I need a UAE visa to buy property in Dubai?</h3><p>No. Non-residents can buy freehold property and register it with the Dubai Land Department.</p><h3>Can I buy without travelling to Dubai?</h3><p>Yes, using a registered power of attorney for the transfer.</p><h3>Can non-residents get a mortgage?</h3><p>Yes, from some UAE banks, usually with a higher deposit than residents.</p></section>",
+  "cover": "/images/blog/non-resident.webp",
+  "category": "Investment",
+  "tags": "non resident buy property dubai, freehold dubai foreigners, dubai mortgage non resident",
+  "metaTitle": "Can Non-Residents Buy Property in Dubai? | Golden Visa UAE",
+  "metaDescription": "Yes — foreigners can buy freehold property in Dubai without living in the UAE. How the purchase works, financing for non-residents and the residency it…",
+  "publishedAt": "2026-09-10T08:00:00.000Z"
+ },
+ {
+  "slug": "role-of-dld-property-investor-visa",
+  "title": "What the Dubai Land Department does in a property investor visa",
+  "excerpt": "Before immigration sees your file, the Dubai Land Department confirms the property. Here is what it checks and why files stall there.",
+  "content": "<div class=\"quick-answer\"><p><strong>Quick answer</strong></p><p>The Dubai Land Department (DLD) is the first gate in every property-based visa. It confirms that the property is registered in your name, verifies its value against the threshold for the visa you are applying for, and records the link between the property and the residence. Only then does the file move to immigration (GDRFA or ICP).</p></div><p>Most delays on property visas happen before immigration is involved. Knowing what the DLD checks helps you prepare a clean file.</p><h2>What the DLD checks</h2><ul><li>Ownership — the title deed or approved off-plan contract is in the applicant&#x27;s name</li><li>Your individual share — co-owners&#x27; shares are no longer combined</li><li>Value — assessed against AED 2 million (Golden Visa), AED 1 million (retirement) or the 2-year investor rules</li><li>Status — no disputes or blocks that prevent the visa</li></ul><h2>2-year investor visa steps</h2><ul><li>DLD review and recommendation for the visa</li><li>A simple DLD trade licence and establishment card, opening your immigration file</li><li>Entry permit or status change, then medical, Emirates ID and stamping</li></ul><h2>10-year Golden Visa steps</h2><ul><li>DLD verification of ownership and value</li><li>Application and pre-approval with immigration</li><li>Medical, Emirates ID and issuance</li></ul><h2>Where files stall</h2><ul><li>Name differences between passport and title deed</li><li>Joint ownership where the individual share is below the threshold</li><li>Valuations below the expected figure</li></ul><h2>Read next</h2><ul><li><a href=\"/services/property-investor-visa\">Property investor visa</a></li><li><a href=\"/services/golden-visa\">10-year Golden Visa</a></li></ul><section class=\"post-faq\"><h2>Frequently asked questions</h2><h3>Does the DLD issue the visa?</h3><p>No. The DLD verifies the property; the residence visa is issued by immigration (GDRFA in Dubai).</p><h3>Is a mortgaged property accepted?</h3><p>Yes. The DLD looks at the assessed value; the outstanding loan is not deducted.</p><h3>Can off-plan property qualify?</h3><p>Off-plan units registered with the DLD can qualify, subject to the developer and payment conditions in force.</p></section>",
+  "cover": "/images/blog/dld.webp",
+  "category": "Property Visa",
+  "tags": "DLD property visa, dubai land department golden visa, title deed valuation, investor visa process",
+  "metaTitle": "Role of the Dubai Land Department in Property Visas",
+  "metaDescription": "The DLD verifies ownership and value before any property visa reaches immigration. What it checks for 2-year, 5-year and 10-year visas, step by step.",
+  "publishedAt": "2026-09-06T08:00:00.000Z"
+ },
+ {
+  "slug": "golden-visa-salary-drops-after-approval",
+  "title": "What happens if your salary drops after you get a Golden Visa?",
+  "excerpt": "Changed jobs or took a pay cut? Here is how it affects a salary-based Golden Visa — now and at renewal.",
+  "content": "<div class=\"quick-answer\"><p><strong>Quick answer</strong></p><p>A Golden Visa is self-sponsored, so a lower salary, a new job or a period without work does not normally cancel it while it is valid. The salary condition is checked again at renewal: if you no longer earn the qualifying amount in a qualifying role, you will need to renew through another route — property, investment, business or a different talent category.</p></div><p>Careers change over ten years. The Golden Visa was designed with that in mind — but renewal is where the conditions come back into play.</p><h2>During the visa</h2><ul><li>Changing employer does not require a new Golden Visa</li><li>A pay cut does not trigger cancellation by itself</li><li>Your family&#x27;s visas stay linked to yours</li></ul><h2>At renewal</h2><p>Renewal re-tests eligibility. If your salary or job classification no longer meets the skilled-professional route, prepare another route early — for example property worth AED 2 million in your name, a qualifying investment, or the entrepreneur route.</p><blockquote><p>Start reviewing your renewal route at least six months before expiry.</p></blockquote><h2>If the visa is not renewed</h2><p>You and your family receive a grace period to arrange another visa or leave. Golden Visa families are generally given a longer grace period than ordinary residents.</p><h2>Read next</h2><ul><li><a href=\"/blog/golden-visa-aed-30000-salary-skilled-professionals\">Golden Visa on an AED 30,000 salary</a></li><li><a href=\"/services/golden-visa\">Other Golden Visa routes</a></li></ul><section class=\"post-faq\"><h2>Frequently asked questions</h2><h3>Will my Golden Visa be cancelled if I lose my job?</h3><p>Not normally while it is valid. Eligibility is reviewed at renewal.</p><h3>Do I need to tell anyone about a salary change?</h3><p>There is no general reporting step for salary changes, but keep your records ready for renewal.</p></section>",
+  "cover": "/images/blog/salary-drop.webp",
+  "category": "Golden Visa",
+  "tags": "golden visa salary drop, change job golden visa, golden visa renewal salary",
+  "metaTitle": "Salary Drop After a UAE Golden Visa: What Happens",
+  "metaDescription": "A lower salary or a job change does not usually cancel a Golden Visa mid-term, but it matters at renewal. Your options explained.",
+  "publishedAt": "2026-09-03T08:00:00.000Z"
+ },
+ {
+  "slug": "aed-1-million-property-uae-visa-options",
+  "title": "Is an AED 1 million property enough for a 5-year UAE visa?",
+  "excerpt": "AED 1 million is a key number — but whether it brings a 5-year visa depends on your age. Here are your real options.",
+  "content": "<div class=\"quick-answer\"><p><strong>Quick answer</strong></p><p>Only if you are 55 or older. The 5-year retirement visa accepts property worth AED 1 million held in your own name for applicants aged 55+. Under 55, an AED 1 million property qualifies you for the 2-year investor visa (renewable). For a 10-year Golden Visa you need AED 2 million held individually.</p></div><p>People often hear about &quot;the AED 1 million visa&quot; without the age condition attached. Here is the full picture.</p><h2>Your options at AED 1 million</h2><table><thead><tr><th>Your situation</th><th>Visa</th><th>Length</th></tr></thead><tbody><tr><td>Aged 55+, property in your own name</td><td>Retirement visa</td><td>5 years</td></tr><tr><td>Under 55, sole owner</td><td>2-year investor visa</td><td>2 years, renewable</td></tr><tr><td>Under 55, joint owner</td><td>2-year investor visa if your share is AED 400,000+</td><td>2 years, renewable</td></tr></tbody></table><h2>Retirement visa essentials</h2><ul><li>Age 55 or above</li><li>Property worth AED 1 million or more held individually (several properties in your name can be combined)</li><li>Renewable while you remain eligible</li></ul><h2>Getting to the Golden Visa later</h2><p>If your property value rises or you buy more in your own name, you can move to the 10-year Golden Visa once your individual holding reaches AED 2 million.</p><h2>Read next</h2><ul><li><a href=\"/services/property-investor-visa\">Retirement and investor visas</a></li><li><a href=\"/services/golden-visa-cost\">Estimate the cost</a></li></ul><section class=\"post-faq\"><h2>Frequently asked questions</h2><h3>Can I combine my property with my spouse&#x27;s to reach AED 1 million?</h3><p>No. Since July 2026 each applicant must meet the threshold with their own share.</p><h3>Is there a 5-year property visa for people under 55?</h3><p>Not on property value alone. Under 55, the property routes are the 2-year investor visa and, at AED 2 million, the 10-year Golden Visa.</p></section>",
+  "cover": "/images/blog/one-million.webp",
+  "category": "Property Visa",
+  "tags": "aed 1 million property visa, 5 year visa uae, retirement visa dubai, 2 year investor visa",
+  "metaTitle": "AED 1 Million Property: Which UAE Visa Do You Get?",
+  "metaDescription": "An AED 1 million Dubai property qualifies for the 5-year retirement visa if you are 55+, otherwise the 2-year investor visa. Here is how each works.",
+  "publishedAt": "2026-08-30T08:00:00.000Z"
+ },
+ {
+  "slug": "oqood-off-plan-property-golden-visa",
+  "title": "Oqood and off-plan property: can it qualify you for a Golden Visa?",
+  "excerpt": "Off-plan buyers hold an Oqood registration, not a title deed. Here is how that affects a Golden Visa application.",
+  "content": "<div class=\"quick-answer\"><p><strong>Quick answer</strong></p><p>Oqood is the Dubai Land Department&#x27;s interim registration for off-plan property — your proof of purchase until the title deed is issued. Off-plan units registered on Oqood can support a property Golden Visa when the value and the developer and payment conditions in force are met; the assessment is made by the DLD at application.</p></div><p>Buying off-plan is a common route to the Golden Visa, but the paperwork differs from ready property. The key document is the Oqood registration.</p><h2>What Oqood is</h2><p>When you buy from a developer before completion, the sale is registered with the DLD on the Oqood system. The registration shows you as the buyer and records the unit, price and developer.</p><h2>Using it for a Golden Visa</h2><ul><li>Your individual share must meet the AED 2 million threshold</li><li>The developer and project must be registered with the DLD</li><li>Payment conditions in force at the time of application must be met</li><li>The DLD assesses the file before it goes to immigration</li></ul><h2>Documents to prepare</h2><ul><li>Oqood registration certificate</li><li>Sales and purchase agreement</li><li>Statement of account or payment receipts from the developer</li><li>Passport, photo and current visa</li></ul><h2>When the title deed arrives</h2><p>On handover the Oqood is replaced by a title deed. Your visa continues; keep a copy of the new deed for renewal.</p><blockquote><p>Ask the developer for an up-to-date statement of account before applying — payment records are the most common query on off-plan files.</p></blockquote><h2>Read next</h2><ul><li><a href=\"/services/golden-visa\">Golden Visa through property</a></li></ul><section class=\"post-faq\"><h2>Frequently asked questions</h2><h3>Can I get a Golden Visa with an off-plan property?</h3><p>Yes, when the unit is registered with the DLD on Oqood and the value and payment conditions in force are met.</p><h3>Is Oqood the same as a title deed?</h3><p>No. Oqood is the interim registration for off-plan property; the title deed is issued on completion.</p></section>",
+  "cover": "/images/blog/oqood.webp",
+  "category": "Golden Visa",
+  "tags": "oqood golden visa, off plan golden visa dubai, oqood certificate, DLD",
+  "metaTitle": "Oqood Certificate and Off-Plan Golden Visa Guide",
+  "metaDescription": "Oqood is the DLD registration for off-plan property. When an off-plan unit can support a Golden Visa, which documents you need and the common pitfalls.",
+  "publishedAt": "2026-08-26T08:00:00.000Z"
+ },
+ {
+  "slug": "uae-golden-visa-without-property",
+  "title": "Can you get a UAE Golden Visa without buying property?",
+  "excerpt": "Property is the best-known route, not the only one. Here are the other ways to a 10-year Golden Visa.",
+  "content": "<div class=\"quick-answer\"><p><strong>Quick answer</strong></p><p>Yes. Besides property, the Golden Visa is open to skilled professionals earning AED 30,000 a month in MOHRE level 1 or 2 roles with a degree; public investors (for example an AED 2 million deposit in an accredited UAE investment fund or capital in a UAE company); entrepreneurs (AED 1 million revenue, an incubator approval or past exits worth AED 7 million); specialised talents such as doctors, scientists, creatives and athletes; outstanding students and graduates; and humanitarian pioneers and frontline heroes.</p></div><p>If buying property is not right for you, one of the other routes may fit better — and some are faster.</p><h2>Routes without property</h2><table><thead><tr><th>Route</th><th>In short</th></tr></thead><tbody><tr><td>Skilled professionals</td><td>AED 30,000 a month, MOHRE level 1 or 2, bachelor&#x27;s degree</td></tr><tr><td>Public investment</td><td>AED 2 million in an accredited fund or company capital</td></tr><tr><td>Entrepreneurs</td><td>AED 1 million revenue, incubator approval or AED 7 million in past exits</td></tr><tr><td>Specialised talents</td><td>Doctors, scientists, inventors, creatives, athletes — with endorsement</td></tr><tr><td>Students and graduates</td><td>Top results at school or university</td></tr><tr><td>Humanitarian and frontline</td><td>Recognised humanitarian work or frontline service</td></tr></tbody></table><h2>How to choose</h2><p>Pick the route where your documents are strongest today. A professional with a clear salary record is usually faster on the skilled route than on the investment route, for example.</p><h2>Read next</h2><ul><li><a href=\"/services/golden-visa\">All Golden Visa routes</a></li><li><a href=\"/blog/prove-entrepreneur-experience-golden-visa\">Entrepreneur route explained</a></li></ul><section class=\"post-faq\"><h2>Frequently asked questions</h2><h3>What is the easiest Golden Visa without property?</h3><p>For employees, the skilled-professional route is often the most straightforward if the salary, job level and degree conditions are met.</p><h3>Can I switch routes at renewal?</h3><p>Yes. Renewal can use any route you qualify for at the time.</p></section>",
+  "cover": "/images/blog/no-property.webp",
+  "category": "Golden Visa",
+  "tags": "golden visa without property, golden visa routes, skilled professional, entrepreneur golden visa, investment fund",
+  "metaTitle": "UAE Golden Visa Without Property: Every Other Route",
+  "metaDescription": "Property is only one route. Skilled professionals, investors, entrepreneurs, talents, students and more can qualify for a 10-year UAE Golden Visa.",
+  "publishedAt": "2026-08-22T08:00:00.000Z"
  }
 ];
 export const serviceRecords = [
@@ -11586,39 +11802,12 @@ export const faqRecords = [
 ];
 export const testimonialRecords = [
  {
-  "name": "Markus Schneider",
-  "role": "Property investor",
-  "country": "Germany",
-  "text": "The eligibility opinion arrived the next morning and flagged a valuation issue that would have cost us weeks. Approved in eleven days.",
-  "rating": 5,
-  "order": 1,
-  "active": true
- },
- {
-  "name": "Priya Mehta",
-  "role": "Consultant physician",
-  "country": "India",
-  "text": "They handled attestation across two countries, the medicals and my children's files. I signed four documents in total.",
-  "rating": 5,
-  "order": 2,
-  "active": true
- },
- {
-  "name": "Sofia Romano",
-  "role": "Founder",
-  "country": "Italy",
-  "text": "Clear fixed fee, a named consultant who answered on WhatsApp, and no surprises at any government stage.",
-  "rating": 5,
-  "order": 3,
-  "active": true
- },
- {
   "name": "Georgios Chamilothoris",
   "role": "Investor",
   "country": "Greece",
   "text": "Great service and a quick turnaround. Everything was explained before it happened, which is rare here.",
   "rating": 5,
-  "order": 4,
+  "order": 1,
   "active": true
  },
  {
@@ -11627,7 +11816,7 @@ export const testimonialRecords = [
   "country": "India",
   "text": "Excellent service, very prompt responses and a fast processing time on the Golden Visa application.",
   "rating": 5,
-  "order": 5,
+  "order": 2,
   "active": true
  },
  {
@@ -11636,7 +11825,7 @@ export const testimonialRecords = [
   "country": "Dubai",
   "text": "Our visa was secured in a very short period, with no hidden cost and no surprises. Highly recommended.",
   "rating": 5,
-  "order": 6,
+  "order": 3,
   "active": true
  }
 ];

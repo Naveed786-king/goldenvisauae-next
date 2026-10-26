@@ -47,6 +47,7 @@ async function main() {
 
   // 3) Content
   await applyPageUpgrades();
+  await applyContentUpgrades();
   const pageCount = await prisma.page.count();
   if (pageCount > 0 && !force) {
     console.log('✔ Database already has content — skipping content seed (use "npm run seed:reset" to restore the original content).');
@@ -69,6 +70,7 @@ async function main() {
   }
   console.log(`✔ ${C.allPages.length} pages`);
   // fresh content already includes every page upgrade
+  for (const id of CONTENT_UPGRADES) await prisma.setting.upsert({ where: { key: 'upgrade:' + id }, update: {}, create: { key: 'upgrade:' + id, value: new Date().toISOString() } });
   for (const up of PAGE_UPGRADES) await prisma.setting.upsert({ where: { key: 'upgrade:' + up.id }, update: {}, create: { key: 'upgrade:' + up.id, value: new Date().toISOString() } });
 
   for (const p of C.posts) {
@@ -115,6 +117,27 @@ async function applyPageUpgrades() {
     }
     await prisma.setting.create({ data: { key, value: new Date().toISOString() } });
     console.log(`✔ Updated pages: ${up.slugs.join(', ')}`);
+  }
+}
+
+/* Once per website: add new blog articles that are not there yet (existing posts are never touched),
+   and hide sample reviews that cannot be traced to a real client (they stay in Admin → Testimonials). */
+const CONTENT_UPGRADES = ['2026-10-articles'];
+const UNVERIFIED_REVIEWS = ['Markus Schneider', 'Priya Mehta', 'Sofia Romano'];
+async function applyContentUpgrades() {
+  if ((await prisma.page.count()) === 0) return;
+  for (const id of CONTENT_UPGRADES) {
+    const key = 'upgrade:' + id;
+    if (await prisma.setting.findUnique({ where: { key } })) continue;
+    let added = 0;
+    for (const p of C.posts) {
+      if (await prisma.post.findUnique({ where: { slug: p.slug } })) continue;
+      await prisma.post.create({ data: { ...p, publishedAt: new Date(p.publishedAt), author: 'Golden Visa UAE', status: 'published' } });
+      added++;
+    }
+    await prisma.testimonial.updateMany({ where: { name: { in: UNVERIFIED_REVIEWS } }, data: { active: false } }).catch(() => {});
+    await prisma.setting.create({ data: { key, value: new Date().toISOString() } });
+    console.log(`✔ Added ${added} new articles`);
   }
 }
 
