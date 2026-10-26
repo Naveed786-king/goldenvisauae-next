@@ -122,7 +122,7 @@ async function applyPageUpgrades() {
 
 /* Once per website: add new blog articles that are not there yet (existing posts are never touched),
    and hide sample reviews that cannot be traced to a real client (they stay in Admin → Testimonials). */
-const CONTENT_UPGRADES = ['2026-10-articles', '2026-10-no-awards'];
+const CONTENT_UPGRADES = ['2026-10-articles', '2026-10-no-awards', '2026-10-articles-2'];
 const REMOVE_STATS = ['Awards won'];
 const UNVERIFIED_REVIEWS = ['Markus Schneider', 'Priya Mehta', 'Sofia Romano'];
 /** Removes number tiles (e.g. "Awards won") from every page, and the same tile from each saved translation */
