@@ -77,7 +77,12 @@ export async function nearestImage(hash: string): Promise<{ distance: number; re
 }
 
 /** Vision check with the text AI: realism, text/letters, hands/faces, artefacts, topic */
-export async function visionCheck(buf: Buffer, purpose: string, cfg: AutoConfig): Promise<{ ok: boolean; realism: number; issues: string[] }> {
+/** Inline pictures are small and sit inside the text, so they pass one point below the cover minimum (never under 5) */
+export function realismNeeded(minRealism: number, kind: 'cover' | 'inline'): number {
+  return kind === 'inline' ? Math.max(5, minRealism - 1) : minRealism;
+}
+
+export async function visionCheck(buf: Buffer, purpose: string, cfg: AutoConfig, kind: 'cover' | 'inline' = 'cover'): Promise<{ ok: boolean; realism: number; issues: string[] }> {
   const small = await sharp(buf).resize(1024, 1024, { fit: 'inside' }).jpeg({ quality: 82 }).toBuffer();
   const r = await completeJson<any>({
     system: 'You are a strict picture quality inspector for a premium consultancy website. Be honest and critical.',
@@ -92,7 +97,7 @@ Return JSON only: {"ok": true|false, "realism": 0-10, "issues": ["…"]}`,
   });
   const realism = Math.max(0, Math.min(10, Number(r?.realism) || 0));
   const issues = Array.isArray(r?.issues) ? r.issues.map(String).slice(0, 6) : [];
-  return { ok: !!r?.ok && realism >= cfg.images.minRealism, realism, issues };
+  return { ok: !!r?.ok && realism >= realismNeeded(cfg.images.minRealism, kind), realism, issues };
 }
 
 // ---------------------------------------------------------------- output
@@ -138,7 +143,7 @@ export async function producePicture(spec: PictureSpec, ctx: { topic: string; fo
     if (isFakeAi()) v = { ok: true, realism: 9, issues: [] };
     else {
       try {
-        v = await visionCheck(raw, spec.purpose, cfg);
+        v = await visionCheck(raw, spec.purpose, cfg, spec.kind);
       } catch (e: any) {
         // budget / missing key stop the job as before; a garbled or failed answer from the checker is not a
         // verdict on the picture — it already passed sharpness and duplicate checks, so keep it and say so

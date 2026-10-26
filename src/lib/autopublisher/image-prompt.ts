@@ -4,7 +4,7 @@
 const SCENES = [
   'a modern, airy consultancy office interior in Business Bay with plants, warm wood and a city view, no people',
   'the Dubai skyline at golden hour seen from across the water, calm and premium',
-  'a bright, minimal desk by a large window with a closed laptop, a coffee cup and plain unlabelled folders, no people',
+  'a bright, minimal desk by a large window with a coffee cup, a plant and plain unlabelled folders, no screens or devices, no people',
   'the Ras Al Khaimah coastline at golden hour, calm sea and mountains in the distance',
   'a contemporary residential community with palm trees and villas in soft morning light',
   'an elegant, sunlit apartment living room with a view of the Dubai Marina towers, no people',
@@ -18,7 +18,7 @@ const TIME = ['soft morning light', 'bright midday daylight through large window
 const ANGLE = ['eye-level shot', 'slightly elevated wide shot', 'wide establishing shot', 'architectural straight-on shot'];
 
 const NEVER =
-  'No text, letters, numbers, logos, signs, watermarks, captions or banners anywhere. No flags with text. No passports, Emirates ID cards, visas, cards or documents. No government logos or emblems. No real or famous people.';
+  'No text, letters, numbers, logos, signs, watermarks, captions or banners anywhere. No flags with text. No passports, Emirates ID cards, visas, cards or documents. No government logos or emblems. No laptops, phones or screens with brand logos. No real or famous people.';
 const NO_PEOPLE = 'No people, no faces, no hands, no body parts anywhere in the picture.';
 const PEOPLE_WORDS = /\b(people|person|persons|family|families|couple|man|men|woman|women|child|children|kid|kids|parent|parents|consultant|investor|hand|hands|face|faces|someone|client|clients|professional|employee|worker|passport|emirates id|id card|card|document|documents|paperwork|visa stamp)\b/i;
 
