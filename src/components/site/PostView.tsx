@@ -60,7 +60,7 @@ export default function PostView({ post, related, site, lang = 'en-GB', url }: {
         <div className="hero-aurora" />
         <div className="hero-grid" />
         <Particles density={0.3} />
-        <div className="container-x relative max-w-4xl">
+        <div className="container-x relative max-w-6xl">
           <nav aria-label="Breadcrumb" className="fx-up flex flex-wrap items-center gap-1.5 text-[0.8rem] text-[#6e6e73]">
             <SmartLink href="/" className="inline-flex items-center gap-1 hover:text-black">
               <Home className="h-3.5 w-3.5" />
@@ -77,7 +77,7 @@ export default function PostView({ post, related, site, lang = 'en-GB', url }: {
               </>
             )}
           </nav>
-          <h1 className="h-display fx-blur mt-6 text-[clamp(1.9rem,1.1rem+3.2vw,3.8rem)]" style={{ ['--d' as any]: '.08s' }}>
+          <h1 className="h-display fx-blur mt-6 max-w-5xl text-[clamp(1.9rem,1.1rem+3vw,3.6rem)] [text-wrap:balance]" style={{ ['--d' as any]: '.08s' }}>
             {post.title}
           </h1>
           <p className="fx-up mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-[#6e6e73]" style={{ ['--d' as any]: '.18s' }}>
@@ -91,9 +91,9 @@ export default function PostView({ post, related, site, lang = 'en-GB', url }: {
           </p>
         </div>
         {post.cover && (
-          <div className="container-x fx-pop relative mt-10 max-w-5xl" style={{ ['--d' as any]: '.22s' }}>
+          <div className="container-x fx-pop relative mt-10 max-w-6xl" style={{ ['--d' as any]: '.22s' }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={post.cover} alt={post.title} className="aspect-[16/8] w-full rounded-[28px] object-cover shadow-[var(--shadow-lift)]" />
+            <img src={post.cover} alt={post.title} className="aspect-[1536/816] h-auto w-full rounded-[28px] bg-[#f3efe4] object-contain shadow-[var(--shadow-lift)]" />
           </div>
         )}
       </header>

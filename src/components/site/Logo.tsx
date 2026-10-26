@@ -14,6 +14,10 @@ export default function Logo({ src, name, tagline, className, size = 'md' }: { s
     <SmartLink href="/" className={cn('site-logo group flex min-w-0 shrink items-center', className)} ariaLabel={name}>
       {src ? (
         // eslint-disable-next-line @next/next/no-img-element
+        <img src={BRAND_COIN} alt="" aria-hidden="true" width={256} height={256} className="logo-compact hidden h-11 w-11 shrink-0 object-contain" />
+      ) : null}
+      {src ? (
+        // eslint-disable-next-line @next/next/no-img-element
         <img src={src} alt={name} width={src === BRAND_LOGO ? 1009 : undefined} height={src === BRAND_LOGO ? 132 : undefined} fetchPriority="high" decoding="async" style={{ height: size === 'lg' ? 'var(--ftr-logo-h, 46px)' : 'var(--logo-h, 40px)' }} className="logo-img w-auto max-w-[62vw] object-contain transition-transform duration-500 group-hover:scale-[1.02]" />
       ) : (
         <TextMark name={name} tagline={tagline} size={size} />

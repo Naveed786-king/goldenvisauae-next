@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Check, FileText, Fingerprint, Pause, Play, Stethoscope, Sparkles, ShieldCheck } from 'lucide-react';
 import { Icon } from '@/components/ui/Icon';
 import { useT } from '@/components/site/SiteProvider';
-import { Coin, Emblem } from '@/components/site/Logo';
+import { Coin } from '@/components/site/Logo';
 import { cn } from '@/lib/utils';
 import { lines } from './parts';
 
@@ -112,7 +112,7 @@ function Scene({ step, index }: { step: JourneyStep; index: number }) {
       <div className="vj-gcard">
         <div className="vj-gcard-in">
           <div className="flex items-start justify-between">
-            <Emblem className="h-9 w-9 text-[#3b2a08]" />
+            <Coin className="h-11 w-11 !drop-shadow-[0_4px_8px_rgba(90,60,10,.45)]" />
             <span className="vj-chip" />
           </div>
           <div>

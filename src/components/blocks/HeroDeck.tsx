@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ArrowRight } from 'lucide-react';
 import SmartLink from '@/components/ui/SmartLink';
-import { Emblem } from '@/components/site/Logo';
+import { Coin } from '@/components/site/Logo';
 import { cn } from '@/lib/utils';
 
 export type DeckSlide = { image?: string; eyebrow?: string; title?: string; sub?: string; tag?: string; link?: { label?: string; href?: string } };
@@ -115,7 +115,7 @@ export default function HeroDeck({ slides, onIndex }: { slides: DeckSlide[]; onI
               <div className="deck-shade" />
               <div className="deck-body">
                 <span className="deck-brand">
-                  <Emblem className="h-4 w-4" />
+                  <Coin eager className="h-5 w-5 !drop-shadow-none" />
                   {s.eyebrow}
                 </span>
                 {s.title && <p className="deck-title">{s.title}</p>}

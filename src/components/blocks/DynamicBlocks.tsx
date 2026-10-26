@@ -7,6 +7,7 @@ import { Icon } from '@/components/ui/Icon';
 import { withDirham } from '@/components/ui/Dirham';
 import { cn } from '@/lib/utils';
 import { Btn, Head, Section, hasLink, lines, WhatsAppIcon } from './parts';
+import CalcDevice from './CalcDevice';
 import { Accordion, CallbackForm, CalcButton, ContactForm, ReviewGrid, VisaStatusForm } from './Interactive';
 import { FaqFilter } from './CompanyInteractive';
 import PostCard from './PostCard';
@@ -519,21 +520,7 @@ export function CalculatorBlock({ data }: P) {
           </div>
           <div className="card3d-wrap">
             <div className="tilt mx-auto w-full max-w-[300px] rounded-[28px]" data-tilt="14">
-              <div className="ink-panel calc-device !rounded-[28px] p-5" style={{ transform: 'rotateX(8deg) rotateY(-12deg)' }}>
-                <div className="calc-screen rounded-2xl bg-white/5 px-4 py-5 text-end font-display text-3xl font-semibold text-white">
-                  <span className="accent">AED</span> 11,553
-                </div>
-                <div className="mt-4 grid grid-cols-4 gap-2">
-                  {['7', '8', '9', '÷', '4', '5', '6', '×', '1', '2', '3', '−', '0', '.', '=', '+'].map((k, i) => (
-                    <span key={i} className={cn('calc-key grid h-11 place-items-center rounded-xl text-sm font-medium', k === '=' ? 'text-[#1a1406]' : 'bg-white/[0.07] text-white/80')} style={{ ...(k === '=' ? { background: 'var(--gold-grad)' } : {}), ['--k' as any]: `${(i * 7) % 16}` }}>
-                      {k}
-                    </span>
-                  ))}
-                </div>
-                <p className="mt-4 flex items-center justify-center gap-2 text-[0.7rem] uppercase tracking-[0.2em] text-white/40">
-                  <CalcIcon className="h-3.5 w-3.5" /> Golden Visa
-                </p>
-              </div>
+              <CalcDevice />
             </div>
           </div>
         </div>

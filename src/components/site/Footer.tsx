@@ -1,6 +1,6 @@
 import { MapPin, Phone, Mail } from 'lucide-react';
 import type { FooterSettings, SiteSettings } from '@/lib/defaults';
-import Logo, { Emblem } from './Logo';
+import Logo, { BRAND_COIN } from './Logo';
 import SmartLink from '@/components/ui/SmartLink';
 import { SocialIcon } from '@/components/ui/Icon';
 import NewsletterForm from './NewsletterForm';
@@ -11,7 +11,8 @@ export default function Footer({ site, footer }: { site: SiteSettings; footer: F
   const socials = (['facebook', 'instagram', 'youtube', 'twitter', 'linkedin', 'tiktok'] as const).filter((k) => site.social[k]);
   return (
     <footer className="site-footer">
-      <Emblem className="ftr-mark" />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={BRAND_COIN} alt="" aria-hidden="true" loading="lazy" className="ftr-mark" />
       <div className="container-x grid gap-12 py-14 md:grid-cols-2 lg:grid-cols-12 lg:py-16">
         <div className="min-w-0 lg:col-span-4">
           <Logo src={site.logo} name={site.name} tagline={site.tagline} size="lg" />

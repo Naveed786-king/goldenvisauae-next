@@ -28,6 +28,50 @@ export default function Header({ site, header }: { site: SiteSettings; header: H
   const closeTimer = useRef<number | null>(null);
 
   const [hidden, setHidden] = useState(false);
+  // 0 = everything fits, 1 = compact (coin logo, tighter menu), 2 = menu moves into the ☰ button
+  const [fit, setFit] = useState(0);
+  const islandRef = useRef<HTMLDivElement>(null);
+  const labels = header.menu.map((m) => m.label).join('|');
+  useEffect(() => {
+    const isl = islandRef.current;
+    if (!isl) return;
+    let raf = 0;
+    const measure = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        if (window.innerWidth < 1024) return setFit(0);
+        const tight = () => {
+          const nav = isl.querySelector<HTMLElement>('.site-nav');
+          const logo = isl.querySelector<HTMLElement>('.site-logo');
+          const acts = isl.querySelector<HTMLElement>('.hdr-actions');
+          if (!nav || !logo || !acts) return false;
+          const rtl = document.documentElement.dir === 'rtl';
+          const n = nav.getBoundingClientRect(), l = logo.getBoundingClientRect(), a = acts.getBoundingClientRect();
+          const navW = Array.from(nav.children).reduce((w, c) => w + (c as HTMLElement).getBoundingClientRect().width, 0);
+          const avail = isl.clientWidth - l.width - a.width - 56;
+          const out = isl.scrollWidth > isl.clientWidth + 1;
+          return out || navW > avail || (rtl ? n.right > l.left - 6 : n.left < l.right + 6);
+        };
+        for (const f of [0, 1, 2]) {
+          isl.parentElement?.setAttribute('data-fit', String(f));
+          if (f === 2 || !tight()) return setFit(f);
+        }
+      });
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(isl);
+    // the menu words themselves (a language switch changes their length without resizing the window)
+    const nav = isl.querySelector('.site-nav');
+    if (nav) for (const c of Array.from(nav.children)) ro.observe(c);
+    const acts = isl.querySelector('.hdr-actions');
+    if (acts) ro.observe(acts);
+    document.fonts?.ready.then(measure).catch(() => {});
+    return () => {
+      ro.disconnect();
+      cancelAnimationFrame(raf);
+    };
+  }, [labels]);
   useEffect(() => {
     let raf = 0;
     let last = window.scrollY;
@@ -99,7 +143,7 @@ export default function Header({ site, header }: { site: SiteSettings; header: H
 
   return (
     <>
-      <header className="site-header" data-scrolled={scrolled ? '' : undefined} data-hidden={hidden && !open && drop === null ? '' : undefined}>
+      <header className="site-header" data-fit={fit} data-scrolled={scrolled ? '' : undefined} data-hidden={hidden && !open && drop === null ? '' : undefined}>
         {header.topbar.enabled && header.topbar.text && (
           <div className={cn('topbar transition-all duration-500', scrolled && 'pointer-events-none !my-0 !min-h-0 !py-0 h-0 opacity-0')}>
             <span className="dot-gold" />
@@ -111,7 +155,7 @@ export default function Header({ site, header }: { site: SiteSettings; header: H
             )}
           </div>
         )}
-        <div className="hdr-island" onMouseLeave={leave}>
+        <div ref={islandRef} className="hdr-island" onMouseLeave={leave}>
           <span aria-hidden className="hdr-progress" />
           <span aria-hidden className="hdr-sheen" />
           <Logo src={site.logo} name={site.name} tagline={site.tagline} />
@@ -147,7 +191,7 @@ export default function Header({ site, header }: { site: SiteSettings; header: H
             })}
           </nav>
 
-          <div className="ms-auto flex shrink-0 items-center gap-1 lg:ms-3">
+          <div className="hdr-actions ms-auto flex shrink-0 items-center gap-1 lg:ms-3">
             <LanguageSwitcher />
             {header.showLogin && (
               <Link href={accountHref} className="hidden h-10 w-10 place-items-center rounded-xl text-[#1d1d1f] transition hover:bg-black/[0.045] md:grid" aria-label={me ? t('My account') : t('Client login')} title={me ? me.name : t('Client login')}>
@@ -159,7 +203,7 @@ export default function Header({ site, header }: { site: SiteSettings; header: H
                 {header.cta.label}
               </SmartLink>
             )}
-            <button onClick={() => setOpen(true)} className="grid h-10 w-10 place-items-center rounded-xl text-[#1d1d1f] transition hover:bg-black/[0.045] lg:hidden" aria-label={t('Menu')} aria-expanded={open}>
+            <button onClick={() => setOpen(true)} className="hdr-burger grid h-10 w-10 place-items-center rounded-xl text-[#1d1d1f] transition hover:bg-black/[0.045] lg:hidden" aria-label={t('Menu')} aria-expanded={open}>
               <Menu className="h-5 w-5" />
             </button>
           </div>
@@ -222,7 +266,7 @@ export default function Header({ site, header }: { site: SiteSettings; header: H
 
       {/* mobile & tablet menu — a bottom sheet (easy to reach with the thumb) */}
       {open && (
-        <div className="lg:hidden">
+        <div className={cn(fit < 2 && 'lg:hidden')}>
           <div className="sheet-backdrop" onClick={() => setOpen(false)} />
           <div className="sheet" role="dialog" aria-modal="true" aria-label={t('Menu')}>
             <div className="sheet-grip" />

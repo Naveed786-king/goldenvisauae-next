@@ -1,7 +1,7 @@
 'use client';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { BadgeCheck, Briefcase, Globe, GraduationCap, HeartHandshake, Plane, ShieldCheck, TrendingUp, Users, Wallet } from 'lucide-react';
-import { Emblem } from '@/components/site/Logo';
+import { Coin } from '@/components/site/Logo';
 import { cn } from '@/lib/utils';
 import HeroDeck, { type DeckSlide } from './HeroDeck';
 
@@ -69,7 +69,7 @@ export default function HeroShowcase({ left, right, eyebrow, title, sub, slides 
             <div className="card3d">
               <div key={i} className="hs-turn relative flex h-full flex-col justify-between p-5 text-start sm:p-6" style={{ transform: 'translateZ(40px)' }}>
                 <div className="flex items-start justify-between">
-                  <Emblem className="h-11 w-11 text-[#3b2a08]" />
+                  <Coin eager className="h-12 w-12 !drop-shadow-[0_4px_8px_rgba(90,60,10,.45)]" />
                   {f ? (
                     <span className="hs-ico">
                       <Ico className="h-5 w-5" />
