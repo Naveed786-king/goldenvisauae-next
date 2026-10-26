@@ -241,3 +241,89 @@ model StoredFile {
   size      Int      @default(0)
   createdAt DateTime @default(now())
 }
+
+// ---------------------------------------------------------------- AI Auto Publisher (additive)
+// One standing writing job ("mission")
+model AutoMission {
+  id           String    @id @default(cuid())
+  name         String
+  active       Boolean   @default(true)
+  focus        String    @default("") // what this mission is about, in plain words
+  keywords     String    @default("") // seed keywords (lines or commas)
+  markets      String    @default("[]") // JSON array of country codes
+  languages    String    @default("[]") // JSON array of locales ([] = site setting)
+  postsPerWeek Int       @default(21)
+  publishMode  String    @default("review") // publish | review
+  category     String    @default("") // "" = AI picks from existing categories
+  minWords     Int       @default(1500)
+  maxWords     Int       @default(2500)
+  tone         String    @default("")
+  customTitles String    @default("") // Title | YYYY-MM-DD | Category | image URL (one per line)
+  stopRule     String    @default("{}") // JSON: { type: never|date|count|titles, value }
+  lastRunAt    DateTime?
+  total        Int       @default(0)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+// One article on its way through the pipeline
+model AutoJob {
+  id           String    @id @default(cuid())
+  missionId    String?
+  kind         String    @default("new") // new | refresh | replace
+  stage        String    @default("research") // research | brief | write | edit | check | images | publish | done | held | failed
+  topic        String    @default("")
+  focusKeyword String?
+  postId       String?
+  data         String    @default("{}") // JSON working data (incl. backups)
+  error        String?
+  tries        Int       @default(0)
+  publishAt    DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([stage])
+  @@index([postId])
+}
+
+// Keyword bank from research
+model AutoKeyword {
+  id        String   @id @default(cuid())
+  keyword   String   @unique
+  market    String   @default("")
+  source    String   @default("manual") // autocomplete | trends | news | manual
+  intent    String   @default("info") // info | commercial | local | news
+  score     Float    @default(0)
+  hits      Int      @default(0)
+  status    String   @default("new") // new | used | skipped
+  postId    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status, score])
+}
+
+// Similarity data for every post and picture
+model AutoFingerprint {
+  id           String   @id @default(cuid())
+  kind         String // post | image
+  refId        String
+  postId       String?
+  focusKeyword String?
+  title        String?
+  sig          String   @default("{}") // JSON: text shingles (+ optional embedding) or image hash
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([kind, refId])
+}
+
+model AutoLog {
+  id        String   @id @default(cuid())
+  level     String   @default("info") // info | warn | error
+  message   String
+  jobId     String?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}
