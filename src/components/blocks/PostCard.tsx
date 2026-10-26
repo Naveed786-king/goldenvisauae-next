@@ -1,7 +1,7 @@
 'use client';
 import SmartLink from '@/components/ui/SmartLink';
 import T from '@/components/ui/T';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Eye } from 'lucide-react';
 import { cn, formatDate, readingTime, postPath } from '@/lib/utils';
 import { useLocale } from '@/components/site/SiteProvider';
 import { localeInfo } from '@/lib/i18n/config';
@@ -31,6 +31,12 @@ export default function PostCard({ post, priority }: { post: any; dark?: boolean
               {formatDate(post.publishedAt, undefined, localeInfo(locale).htmlLang)}
             </time>{' '}
             · {readingTime(post.content)} <T>min read</T>
+            {post.views > 0 && (
+              <span className="ms-2 inline-flex items-center gap-1 align-middle" title="Views">
+                <Eye className="h-3.5 w-3.5" />
+                <span className="ltr tabular-nums">{post.views >= 1000 ? `${(post.views / 1000).toFixed(1).replace(/\.0$/, '')}k` : post.views}</span>
+              </span>
+            )}
           </span>
           <ArrowRight className="h-4 w-4 shrink-0 text-gold-deep transition-transform group-hover:translate-x-1 rtl:group-hover:-translate-x-1" />
         </p>

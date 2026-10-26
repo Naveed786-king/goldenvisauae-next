@@ -971,10 +971,18 @@ body { background: transparent; }
 /* header auto-fit for long languages (Turkish, Russian, Spanish …) — set by Header.tsx */
 @media (min-width: 1024px) {
   .site-header .site-logo { flex-shrink: 0; }
-  .site-header[data-fit='1'] .site-logo .logo-img { display: none; }
-  .site-header[data-fit='1'] .site-logo .logo-compact { display: block; }
+  .site-header[data-fit='1'] .site-logo .logo-img { height: 30px !important; }
   .site-header[data-fit='1'] .site-nav .nav-link { padding-inline: 0.5rem; font-size: 13.5px; }
   .site-header[data-fit='1'] .hdr-actions .btn { padding-inline: 0.9rem; }
   .site-header[data-fit='2'] .site-nav { display: none !important; }
   .site-header[data-fit='2'] .hdr-burger { display: grid !important; }
 }
+
+/* Arabic: letter-spacing breaks how Arabic letters join, and tight line-heights crop tall letters/dots */
+[dir='rtl'] *, [dir='rtl'] *::before, [dir='rtl'] *::after { letter-spacing: 0 !important; }
+[dir='rtl'] :is(.h-display, .h-section, h1, h2) { line-height: 1.3 !important; }
+[dir='rtl'] :is(h3, .font-display) { line-height: 1.4; }
+[dir='rtl'] .deck-title { line-height: 1.35; padding-block: 0.1em; overflow: visible; }
+[dir='rtl'] .deck-sub { line-height: 1.45; }
+[dir='rtl'] .deck-body { gap: 2px; }
+[dir='rtl'] .text-gold-gradient, [dir='rtl'] .accent { padding-block: 0.06em; }

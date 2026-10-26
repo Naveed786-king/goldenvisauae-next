@@ -133,11 +133,6 @@ export const allPages = [
        "label": "Client satisfaction"
       },
       {
-       "icon": "trophy",
-       "value": "12",
-       "label": "Awards won"
-      },
-      {
        "icon": "trending",
        "value": "98%",
        "label": "Success rate"

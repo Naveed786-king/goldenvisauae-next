@@ -122,8 +122,34 @@ async function applyPageUpgrades() {
 
 /* Once per website: add new blog articles that are not there yet (existing posts are never touched),
    and hide sample reviews that cannot be traced to a real client (they stay in Admin → Testimonials). */
-const CONTENT_UPGRADES = ['2026-10-articles'];
+const CONTENT_UPGRADES = ['2026-10-articles', '2026-10-no-awards'];
+const REMOVE_STATS = ['Awards won'];
 const UNVERIFIED_REVIEWS = ['Markus Schneider', 'Priya Mehta', 'Sofia Romano'];
+/** Removes number tiles (e.g. "Awards won") from every page, and the same tile from each saved translation */
+async function removeStats() {
+  for (const page of await prisma.page.findMany()) {
+    const blocks = JSON.parse(page.blocks || '[]');
+    const cut = []; // [blockId, index]
+    for (const b of blocks) {
+      if (b?.type !== 'stats' || !Array.isArray(b.data?.items)) continue;
+      b.data.items.forEach((it, i) => { if (REMOVE_STATS.includes(it?.label)) cut.push([b.id, i]); });
+    }
+    if (!cut.length) continue;
+    const strip = (list) => list.map((b) => {
+      const c = cut.filter(([id]) => id === b?.id).map(([, i]) => i).sort((x, y) => y - x);
+      if (c.length && Array.isArray(b.data?.items)) for (const i of c) b.data.items.splice(i, 1);
+      return b;
+    });
+    await prisma.page.update({ where: { id: page.id }, data: { blocks: JSON.stringify(strip(blocks)) } });
+    for (const t of await prisma.translation.findMany({ where: { entity: 'page', entityId: page.id } })) {
+      try {
+        const d = JSON.parse(t.data);
+        if (Array.isArray(d.blocks)) { d.blocks = strip(d.blocks); await prisma.translation.update({ where: { id: t.id }, data: { data: JSON.stringify(d) } }); }
+      } catch {}
+    }
+  }
+}
+
 async function applyContentUpgrades() {
   if ((await prisma.page.count()) === 0) return;
   for (const id of CONTENT_UPGRADES) {
@@ -136,6 +162,7 @@ async function applyContentUpgrades() {
       added++;
     }
     await prisma.testimonial.updateMany({ where: { name: { in: UNVERIFIED_REVIEWS } }, data: { active: false } }).catch(() => {});
+    await removeStats().catch((e) => console.error('remove stats', e.message));
     await prisma.setting.create({ data: { key, value: new Date().toISOString() } });
     console.log(`✔ Added ${added} new articles`);
   }

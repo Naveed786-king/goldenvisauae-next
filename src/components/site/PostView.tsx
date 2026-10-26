@@ -1,4 +1,4 @@
-import { CalendarDays, Clock, ChevronRight, Phone, Home } from 'lucide-react';
+import { CalendarDays, Clock, ChevronRight, Phone, Home, Eye } from 'lucide-react';
 import type { SiteSettings } from '@/lib/defaults';
 import { formatDate, readingTime, POST_BASE } from '@/lib/utils';
 import PostCard from '@/components/blocks/PostCard';
@@ -19,6 +19,8 @@ function faqFrom(html: string) {
   if (!sec) return [];
   return Array.from(sec[1].matchAll(/<h3>([\s\S]*?)<\/h3>\s*<p>([\s\S]*?)<\/p>/g)).map((m) => ({ q: strip(m[1]), a: strip(m[2]) }));
 }
+
+const fmtViews = (n: number) => (n >= 1000 ? `${(n / 1000).toFixed(n >= 10000 ? 0 : 1).replace(/\.0$/, '')}k` : String(n));
 
 export default function PostView({ post, related, site, lang = 'en-GB', url }: { post: any; related: any[]; site: SiteSettings; lang?: string; url?: string }) {
   const base = (process.env.NEXT_PUBLIC_SITE_URL || '').replace(/\/+$/, '');
@@ -87,6 +89,9 @@ export default function PostView({ post, related, site, lang = 'en-GB', url }: {
             </span>
             <span className="flex items-center gap-2">
               <Clock className="h-4 w-4 text-gold-deep" /> {readingTime(post.content)} <T>min read</T>
+            </span>
+            <span className="flex items-center gap-2" title="Views">
+              <Eye className="h-4 w-4 text-gold-deep" /> <span className="ltr tabular-nums">{fmtViews((post.views || 0) + 1)}</span>
             </span>
           </p>
         </div>
