@@ -48,6 +48,9 @@ export type AutoConfig = {
     activeTo: number;
     refreshPerWeek: number;
     maxAiCallsPerDay: number;
+    embeddings: 'off' | 'gemini' | 'openai'; // meaning check (uses that provider's key)
+    embedModelGemini: string;
+    embedModelOpenai: string;
   };
   knowledge: { about: string; services: string; prices: string; timelines: string; cases: string; mistakes: string; rules: string; cta: string };
 };
@@ -78,6 +81,9 @@ export const DEFAULT_CONFIG: AutoConfig = {
     activeTo: 20,
     refreshPerWeek: 7,
     maxAiCallsPerDay: 200,
+    embeddings: 'off',
+    embedModelGemini: 'text-embedding-004',
+    embedModelOpenai: 'text-embedding-3-small',
   },
   knowledge: {
     about: '',
@@ -139,5 +145,8 @@ function sanitizeQuality(q: AutoConfig['quality']): AutoConfig['quality'] {
     activeTo: clamp(Math.round(num(q.activeTo, D.activeTo)), 1, 24),
     refreshPerWeek: clamp(Math.round(num(q.refreshPerWeek, D.refreshPerWeek)), 0, 100),
     maxAiCallsPerDay: clamp(Math.round(num(q.maxAiCallsPerDay, D.maxAiCallsPerDay)), 0, 5000),
+    embeddings: (['off', 'gemini', 'openai'] as const).includes(q.embeddings as any) ? q.embeddings : 'off',
+    embedModelGemini: String(q.embedModelGemini || D.embedModelGemini).trim(),
+    embedModelOpenai: String(q.embedModelOpenai || D.embedModelOpenai).trim(),
   };
 }
