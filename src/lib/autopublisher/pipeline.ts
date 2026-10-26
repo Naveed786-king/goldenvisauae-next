@@ -1,4 +1,5 @@
-// The article pipeline. Each tick advances ONE job by ONE stage and saves it.
+// The article pipeline. Each tick takes ONE job and runs its stages back to back (saving after each)
+// until it is done, waits, or the tick's time budget is used.
 // research → brief → write → edit → check → images → publish → native → done   (or held / failed)
 // Job kinds: new (missions), refresh (improve an old post), replace (new original article for a copied post).
 import { prisma } from '@/lib/db';
@@ -22,7 +23,7 @@ export const ACTIVE_STAGES = ['research', 'brief', 'write', 'edit', 'check', 'im
 export const STAGE_ORDER = ['research', 'brief', 'write', 'edit', 'check', 'images', 'publish', 'native', 'done'];
 const MAX_TRIES = 4;
 const MAX_IN_FLIGHT = 4;
-const TICK_LIMIT_MS = 4 * 60_000;
+const TICK_LIMIT_MS = 4 * 60_000; // no new stage starts after this; the lock lasts 20 minutes
 
 type JobData = Record<string, any>;
 const parse = (s?: string | null) => {
@@ -50,14 +51,27 @@ export async function tick(opts: { manual?: boolean; jobId?: string } = {}): Pro
   if (cfg.quality.maxAiCallsPerDay > 0 && (await aiCallsToday()) >= cfg.quality.maxAiCallsPerDay) return { did: 'budget' };
   if (!isFakeAi() && !(await providerKey(cfg, cfg.writer))) return { did: 'no_key' };
 
-  const release = await acquireLock();
+  const release = await acquireLock('autopublisher:lock', 20 * 60_000);
   if (!release) return { did: 'locked' };
   const started = Date.now();
   try {
     const job = await nextJob(opts.jobId);
     if (job) {
-      await runStage(job, cfg);
-      return { did: `stage:${job.stage}`, jobId: job.id };
+      // run the job's stages back to back: an article is finished in one go instead of one stage per tick
+      let cur = job;
+      const did: string[] = [];
+      for (let i = 0; i < 20; i++) {
+        did.push(cur.stage);
+        await runStage(cur, cfg);
+        if (Date.now() - started > TICK_LIMIT_MS) break;
+        const fresh = await prisma.autoJob.findUnique({ where: { id: cur.id } });
+        if (!fresh || !(ACTIVE_STAGES as readonly string[]).includes(fresh.stage) || fresh.tries > 0) break;
+        const fd = parse(fresh.data);
+        if (fd.retryAt && new Date(fd.retryAt) > new Date()) break;
+        if (fresh.stage === 'publish' && fresh.publishAt && fresh.publishAt > new Date()) break;
+        cur = fresh;
+      }
+      return { did: `stage:${did.join('→')}`, jobId: job.id };
     }
     if (cfg.enabled) {
       const created = (await scheduleMissions(cfg)) || (await scheduleUpkeep(cfg));
@@ -368,13 +382,13 @@ const edit: Stage = async (job, d, cfg) => {
   const score = Number(d.quality.score) || 0;
   if (score >= cfg.quality.minQuality || isFakeAi()) return 'check';
   d.rewrites = d.rewrites || { quality: 0 };
-  if (d.rewrites.quality < 1) {
+  if (d.rewrites.quality < 2) {
     d.rewrites.quality++;
     d.editorNotes = (d.quality.reasons || []).join('; ');
-    await autoLog('info', `Quality ${score} < ${cfg.quality.minQuality} — rewriting once with the editor's notes`, job.id);
+    await autoLog('info', `Quality ${score} < ${cfg.quality.minQuality} — the editor fixes it (round ${d.rewrites.quality} of 2)`, job.id);
     return 'edit';
   }
-  await hold(job.id, d, `Quality score ${score} below ${cfg.quality.minQuality} after a rewrite: ${(d.quality.reasons || []).join('; ')}`);
+  await hold(job.id, d, `Quality score ${score} below ${cfg.quality.minQuality} after 2 automatic fixes: ${(d.quality.reasons || []).join('; ')}`);
   return 'held';
 };
 
@@ -399,8 +413,8 @@ const check: Stage = async (job, d, cfg) => {
   // 1) SEO checklist
   const seo = seoScore({ title: a.title, seoTitle: a.seoTitle, metaDescription: a.metaDescription, slug: a.slug, focusKeyword: a.focusKeyword || d.focusKeyword, contentHtml: html, faqCount: (a.faq || []).length });
   d.seo = seo;
-  if (seo.score < cfg.quality.minSeo && !d.fixed.seo && !isFakeAi()) {
-    d.fixed.seo = true;
+  if (seo.score < cfg.quality.minSeo && Number(d.fixed.seo || 0) < 2 && !isFakeAi()) {
+    d.fixed.seo = Number(d.fixed.seo || 0) + 1;
     const { system, prompt } = fixPrompt(cfg, a, seo.failed.map((f) => `SEO: ${f}`), `Focus keyword: ${d.focusKeyword}. Allowed internal links: ${[...(d.links?.fixed || []), ...(d.links?.related || [])].map((l: any) => l.href).join(', ')}`);
     d.article = { ...a, ...(await completeJson({ system, prompt, temperature: 0.4, maxTokens: 16000, timeoutMs: 230_000 })) };
     return 'check'; // re-check on the next tick
@@ -410,15 +424,15 @@ const check: Stage = async (job, d, cfg) => {
   const sim = await checkArticle(a.title, html, cfg, { excludePostId: d.targetPostId || d.postId, webTexts: (d.news || []).map((n: any) => `${n.title} ${n.snippet}`) });
   d.similarity = sim;
   if (!sim.ok) {
-    if (!d.fixed.sim && !isFakeAi()) {
-      d.fixed.sim = true;
+    if (Number(d.fixed.sim || 0) < 2 && !isFakeAi()) {
+      d.fixed.sim = Number(d.fixed.sim || 0) + 1;
       const problems = sim.clashes.map((c) => `Too similar to our post "${c.title}" (text ${Math.round(c.text * 100)}%, title ${Math.round(c.title_ * 100)}%) — rewrite the overlapping parts and choose a clearly different title/angle`);
       if (sim.maxWeb > cfg.quality.maxTextSimilarity) problems.push('Some passages are too close to the researched news texts — rewrite them fully in our own words');
       const { system, prompt } = fixPrompt(cfg, a, problems);
       d.article = { ...a, ...(await completeJson({ system, prompt, temperature: 0.6, maxTokens: 16000, timeoutMs: 230_000 })) };
       return 'check';
     }
-    await hold(job.id, d, `Still too similar after a rewrite: ${sim.clashes.map((c) => `"${c.title}" ${Math.round(c.text * 100)}%`).join(', ') || `web ${Math.round(sim.maxWeb * 100)}%`}`);
+    await hold(job.id, d, `Still too similar after 2 automatic rewrites: ${sim.clashes.map((c) => `"${c.title}" ${Math.round(c.text * 100)}%`).join(', ') || `web ${Math.round(sim.maxWeb * 100)}%`}`);
     return 'held';
   }
 
@@ -429,8 +443,8 @@ const check: Stage = async (job, d, cfg) => {
   const numbers = unsupportedNumbers(html, allowedPool);
   d.honesty = { banned, guarantees, numbers };
   if (banned.length || guarantees.length || numbers.length) {
-    if (!d.fixed.honesty && !isFakeAi()) {
-      d.fixed.honesty = true;
+    if (Number(d.fixed.honesty || 0) < 3 && !isFakeAi()) {
+      d.fixed.honesty = Number(d.fixed.honesty || 0) + 1;
       const problems = [
         ...banned.map((b) => `Remove the banned phrase "${b}"`),
         ...guarantees.map((g) => `Remove any promise or guarantee of approval: "${g}"`),
@@ -446,8 +460,8 @@ const check: Stage = async (job, d, cfg) => {
     }
   }
   if (seo.score < cfg.quality.minSeo && !isFakeAi()) {
-    await hold(job.id, d, `SEO score ${seo.score} below ${cfg.quality.minSeo}: ${seo.failed.join(', ')}`);
-    return 'held';
+    // SEO is not a safety problem: after 2 automatic fixes the article goes on
+    await autoLog('warn', `SEO score ${seo.score} (target ${cfg.quality.minSeo}) after 2 automatic fixes — continuing: ${seo.failed.join(', ')}`, job.id);
   }
   return 'images';
 };
@@ -478,24 +492,42 @@ const images: Stage = async (job, d, cfg) => {
   }
   if (d.picIndex >= d.picPlan.length) return 'publish';
 
-  const spec = d.picPlan[d.picIndex];
-  const res = await producePicture(spec, { topic: a.title, focusKeyword: a.focusKeyword || d.focusKeyword, variant: hashCode(job.id) + d.picIndex * 7, jobId: job.id }, cfg);
-  d.picIndex++;
-  if (res.ok) {
-    if (spec.kind === 'cover') {
-      d.cover = res.url;
-      d.ogImage = res.ogUrl;
-    } else d.figures.push({ afterH2: spec.afterH2, html: figureHtml({ url: res.url, alt: res.alt, width: res.width, height: res.height }) });
-    (d.pictures ||= []).push({ kind: spec.kind, url: res.url, sharpness: res.sharpness, realism: res.realism, attempts: res.attempts });
-  } else {
-    const reason = (res as { reason: string }).reason;
-    (d.pictureFailures ||= []).push(`${spec.kind}: ${reason}`);
-    if (cfg.images.onFail === 'hold' || spec.kind === 'cover') {
-      await hold(job.id, d, `Picture failed the quality checks (${spec.kind}): ${reason}`);
-      return 'held';
+  // all remaining pictures are made at the same time (several minutes faster than one by one)
+  const start = d.picIndex;
+  const specs = d.picPlan.slice(start);
+  const results = await Promise.all(specs.map((spec: any, k: number) => producePicture(spec, { topic: a.title, focusKeyword: a.focusKeyword || d.focusKeyword, variant: hashCode(job.id) + (start + k) * 7 + Number(d.coverRounds || 0) * 13, jobId: job.id }, cfg)));
+  d.picIndex = d.picPlan.length;
+  let coverFailed = '';
+  results.forEach((res, k) => {
+    const spec = specs[k];
+    if (res.ok) {
+      if (spec.kind === 'cover') {
+        d.cover = res.url;
+        d.ogImage = res.ogUrl;
+      } else d.figures.push({ afterH2: spec.afterH2, html: figureHtml({ url: res.url, alt: res.alt, width: res.width, height: res.height }) });
+      (d.pictures ||= []).push({ kind: spec.kind, url: res.url, sharpness: res.sharpness, realism: res.realism, attempts: res.attempts });
+    } else {
+      const reason = (res as { reason: string }).reason;
+      (d.pictureFailures ||= []).push(`${spec.kind}: ${reason}`);
+      if (spec.kind === 'cover') coverFailed = reason;
     }
+  });
+  if (coverFailed) {
+    // one more full round with new scenes before asking a human
+    d.coverRounds = Number(d.coverRounds || 0) + 1;
+    if (d.coverRounds < 2) {
+      // only the cover is made again (inline results are kept); new scenes through a different variant
+      d.picPlan = d.picPlan.filter((p: any) => p.kind === 'cover').map((p: any) => ({ ...p, hint: undefined }));
+      d.picIndex = 0;
+      await autoLog('info', `Cover failed the checks — trying a new set of scenes`, job.id);
+      return 'images';
+    }
+    await hold(job.id, d, `Picture failed the quality checks (cover): ${coverFailed}`);
+    return 'held';
   }
-  return d.picIndex >= d.picPlan.length ? 'publish' : 'images';
+  // an inline picture that failed is simply left out — the article keeps its cover and text
+  if (d.pictureFailures?.length) await autoLog('info', `Left out ${d.pictureFailures.filter((f: string) => f.startsWith('inline')).length} inline picture(s) that failed the checks`, job.id);
+  return 'publish';
 };
 
 function hashCode(s: string) {
@@ -517,8 +549,9 @@ const publish: Stage = async (job, d, cfg) => {
     return 'done';
   }
   const { m } = await missionOf(d);
-  const mode = d.manual || !m ? 'review' : m.publishMode === 'publish' ? 'publish' : 'review';
-  if (mode === 'publish') {
+  // "Write one article now" follows the mission's mode too, and is not held back by the publishing slots
+  const mode = !m ? 'review' : m.publishMode === 'publish' ? 'publish' : 'review';
+  if (mode === 'publish' && !d.manual) {
     const slot = await nextSlot(cfg);
     if (slot > Date.now() + 30_000) {
       await save(job.id, { publishAt: new Date(slot) });

@@ -16,7 +16,7 @@ export function LanguageTabs({ entityId, value, onChange, entity = 'post' }: { e
     if (!entityId) return;
     const load = () => api<{ rows: any[] }>(`/api/admin/translations?entity=${entity}&id=${entityId}`).then((d) => setRows(d.rows)).catch(() => {});
     load();
-    const t = setInterval(load, 6000);
+    const t = setInterval(() => document.visibilityState === 'visible' && load(), 6000);
     return () => clearInterval(t);
   }, [entityId, entity]);
   return (

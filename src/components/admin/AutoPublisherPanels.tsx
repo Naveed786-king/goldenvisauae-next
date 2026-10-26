@@ -31,7 +31,7 @@ export function LiveJobs({ enabled }: { enabled: boolean }) {
   const load = useCallback(() => api<any>('/api/admin/autopublisher/jobs').then(setD).catch(() => null), []);
   useEffect(() => {
     load();
-    const t = setInterval(load, 5000);
+    const t = setInterval(() => document.visibilityState === 'visible' && load(), 5000);
     return () => clearInterval(t);
   }, [load]);
   useEffect(() => {
@@ -42,7 +42,7 @@ export function LiveJobs({ enabled }: { enabled: boolean }) {
     setBusy(action + (extra.jobId || ''));
     try {
       const r = await api<any>('/api/admin/autopublisher/jobs', 'POST', { action, ...extra });
-      const msg: Record<string, string> = { off: 'Publisher is off', idle: 'Nothing to do right now', locked: 'Another step is running — try again shortly', backoff: 'Waiting for the AI provider (rate limit)', budget: 'Daily AI budget reached', no_key: 'Add an API key first', scheduled: 'New article job created', error: 'Step failed — see Logs' };
+      const msg: Record<string, string> = { off: 'Publisher is off', idle: 'Nothing to do right now', locked: 'Another step is running — try again shortly', backoff: 'Waiting for the AI provider (rate limit)', budget: 'Daily AI budget reached', no_key: 'Add an API key first', scheduled: 'New article job created', error: 'Step failed — see Logs', started: 'Started — progress shows below' };
       toast(r.did?.startsWith('stage:') ? `Step done: ${STAGE_LABEL[r.did.slice(6)] || r.did.slice(6)}` : msg[r.did] || 'Done', r.did === 'error' ? 'error' : 'success');
       load();
     } catch (e: any) {
@@ -60,7 +60,7 @@ export function LiveJobs({ enabled }: { enabled: boolean }) {
       actions={
         <div className="flex flex-wrap items-center gap-2">
           <Btn size="sm" variant="outline" onClick={() => run('step')} loading={busy === 'step'}>
-            <Play className="h-3.5 w-3.5" /> Run one step now
+            <Play className="h-3.5 w-3.5" /> Continue now
           </Btn>
           {d.missions.length > 0 && (
             <>
@@ -81,7 +81,7 @@ export function LiveJobs({ enabled }: { enabled: boolean }) {
     >
       <p className="border-b border-gray-100 px-5 py-2.5 text-xs text-gray-500">
         {d.queued ? `${d.queued} replacement/refresh jobs queued (one runs at a time). ` : ''}
-        {enabled ? 'Runs automatically: one small step every few minutes. "Write one article now" always goes to the review queue.' : 'The publisher is off: nothing runs automatically. You can still test with "Write one article now" and "Run one step now" (it goes to the review queue).'}
+        {enabled ? 'Runs automatically. Each article is researched, written, checked, fixed by the AI editor, given pictures and published — usually within 10 minutes. "Write one article now" starts one right away and follows the mission\'s publishing mode.' : 'The publisher is off: nothing runs on its own. "Write one article now" still writes one right away and follows the mission\'s publishing mode.'}
       </p>
       {!d.active.length && !d.recent.length ? (
         <Empty text={d.missions.length ? 'No articles in progress.' : 'Create a mission first (Missions tab).'} />
@@ -150,7 +150,7 @@ const EMPTY_MISSION = {
   markets: ['AE', 'IN', 'PK', 'GB'],
   languages: [],
   postsPerWeek: 7,
-  publishMode: 'review',
+  publishMode: 'publish',
   category: '',
   minWords: 1500,
   maxWords: 2500,
@@ -305,8 +305,8 @@ export function MissionsTab() {
               <div>
                 <label className="admin-label">After writing</label>
                 <select className="admin-input" value={edit.publishMode} onChange={(e) => set('publishMode', e.target.value)}>
-                  <option value="review">Send to review queue</option>
                   <option value="publish">Publish automatically</option>
+                  <option value="review">Save as draft for my approval</option>
                 </select>
               </div>
               <div>

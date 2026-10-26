@@ -16,7 +16,7 @@ if (process.env.DISABLE_AUTO_TRANSLATE !== '1' && !process.env.VERCEL) {
   }, 20_000);
 }
 
-// Auto Publisher: one small step every 2 minutes when switched on in the admin (never on Vercel —
+// Auto Publisher: checks for work every minute when switched on in the admin (never on Vercel —
 // there /api/cron/autopublish is called instead). DISABLE_AUTOPUBLISHER=1 turns the ticker off.
 if (process.env.DISABLE_AUTOPUBLISHER !== '1' && !process.env.VERCEL) {
   const g = globalThis as unknown as { __apTicker?: NodeJS.Timeout };
@@ -28,7 +28,7 @@ if (process.env.DISABLE_AUTOPUBLISHER !== '1' && !process.env.VERCEL) {
       } catch (e) {
         console.error('[autopublisher] tick failed:', (e as Error).message);
       }
-    }, 120_000);
+    }, 60_000);
     g.__apTicker.unref?.();
   }
 }

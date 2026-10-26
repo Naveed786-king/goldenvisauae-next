@@ -54,12 +54,16 @@ export default function Slider3D({
       const mid = box.left + box.width / 2;
       let best = 0;
       let bestD = Infinity;
-      Array.from(el.children).forEach((c, i) => {
-        const r = (c as HTMLElement).getBoundingClientRect();
-        const d = Math.max(-1.6, Math.min(1.6, (r.left + r.width / 2 - mid) / r.width));
-        (c as HTMLElement).style.setProperty('--s3d', d.toFixed(3));
-        if (Math.abs(d) < bestD) {
-          bestD = Math.abs(d);
+      // all reads first, then all writes (no forced layout per card while scrolling)
+      const kids = Array.from(el.children) as HTMLElement[];
+      const ds = kids.map((c) => {
+        const r = c.getBoundingClientRect();
+        return r.width ? Math.max(-1.6, Math.min(1.6, (r.left + r.width / 2 - mid) / r.width)) : 0;
+      });
+      kids.forEach((c, i) => {
+        c.style.setProperty('--s3d', ds[i].toFixed(3));
+        if (Math.abs(ds[i]) < bestD) {
+          bestD = Math.abs(ds[i]);
           best = i;
         }
       });

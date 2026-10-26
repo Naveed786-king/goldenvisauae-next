@@ -38,7 +38,8 @@ export async function GET(req: Request, { params }: Ctx) {
   }
   const delegate = (prisma as any)[cfg.model];
   const [items, total] = await Promise.all([
-    delegate.findMany({ where, orderBy: cfg.orderBy, skip: (page - 1) * take, take, ...(cfg.select ? { select: cfg.select } : {}) }),
+    // the posts list never shows the article text — leaving it out makes the list ~10x smaller
+    delegate.findMany({ where, orderBy: cfg.orderBy, skip: (page - 1) * take, take, ...(cfg.select ? { select: cfg.select } : resource === 'posts' ? { omit: { content: true } } : {}) }),
     delegate.count({ where }),
   ]);
   return ok({ items, total, page, pages: Math.ceil(total / take) });

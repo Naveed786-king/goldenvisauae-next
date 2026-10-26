@@ -40,17 +40,22 @@ export default function DesignEffects() {
       threshold: 0,
     });
 
-    for (const el of blocks) {
-      if (off || onScreen(el)) el.classList.add('in');
+    // read every position first (one layout pass), then change classes — reading after each write
+    // forced a fresh layout of the whole page for every element (hundreds on long pages)
+    const h = vh() * 1.02;
+    const blockVisible = blocks.map((el) => off || el.getBoundingClientRect().top < h);
+    const revealVisible = reveals.map((el) => off || el.getBoundingClientRect().top < h);
+    blocks.forEach((el, i) => {
+      if (blockVisible[i]) el.classList.add('in');
       else pending.add(el);
-    }
-    for (const el of reveals) {
-      if (off || onScreen(el)) el.dataset.rv = 'in';
+    });
+    reveals.forEach((el, i) => {
+      if (revealVisible[i]) el.dataset.rv = 'in';
       else {
         el.dataset.rv = 'wait';
         pending.add(el);
       }
-    }
+    });
     root.setAttribute('data-anim-ready', '');
     pending.forEach((el) => io.observe(el));
 
@@ -59,7 +64,8 @@ export default function DesignEffects() {
       if (raf) return;
       raf = requestAnimationFrame(() => {
         raf = 0;
-        pending.forEach((el) => onScreen(el, 1.1) && show(el));
+        const due = Array.from(pending).filter((el) => onScreen(el, 1.1));
+        due.forEach(show);
       });
     };
     window.addEventListener('scroll', onScroll, { passive: true });
