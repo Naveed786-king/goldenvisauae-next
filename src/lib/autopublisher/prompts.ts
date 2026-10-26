@@ -97,7 +97,9 @@ QUESTIONS PEOPLE ASK: ${(ctx.questions || []).join(' | ') || '—'}
 RELATED SEARCHES: ${(ctx.related || []).join(' | ') || '—'}
 TARGET MARKETS: ${(ctx.markets || []).join(', ')}
 MISSION: ${ctx.missionFocus || '—'} · tone: ${ctx.tone || 'expert, warm'} · length ${ctx.minWords}-${ctx.maxWords} words
-${ctx.customTitle ? `REQUIRED TITLE: ${ctx.customTitle}` : ''}
+${ctx.kind === 'refresh' ? `THIS IS A REFRESH of our own existing article "${ctx.topicTitle}". Keep its topic and promise, expand it to full depth, fix anything outdated, improve structure and usefulness. Keep the title unless a clearer one serves the same search.\nOUR EXISTING TEXT (ours — you may reuse and improve it):\n${ctx.existingText || ''}` : ''}
+${ctx.kind === 'replace' ? `THIS IS A REPLACEMENT: write a completely new, original article on the topic "${ctx.topicTitle}" from your own expertise and the research below. Do not imitate any existing page; use a fresh structure and angle.` : ''}
+${ctx.customTitle && ctx.kind !== 'refresh' ? `REQUIRED TITLE: ${ctx.customTitle}` : ''}
 ${ctx.category ? `CATEGORY: ${ctx.category}` : `CATEGORY: choose one of: ${ctx.categories.join(', ')}`}
 
 FRESH NEWS (may be used, with "as of" dates):
@@ -176,5 +178,18 @@ ARTICLE (JSON):
 ${JSON.stringify(article)}
 
 ${ARTICLE_JSON}`;
+  return { system, prompt };
+}
+
+/** Native rewrite: adapts (not translates word for word) an article for readers in one language/market */
+export function nativePrompt(cfg: AutoConfig, article: any, locale: { code: string; name: string }) {
+  const system = `You are a native ${locale.name} editor and UAE visa expert at ${SITE}. You adapt articles for ${locale.name}-speaking readers so they read as if written in ${locale.name} from the start.
+Rules: keep every fact, number, warning and internal link exactly; do not add new facts or numbers; never promise approval; natural, idiomatic ${locale.name}; keep the HTML structure (h2/h3/p/ul/ol/table/a, figures unchanged); no external links.`;
+  const prompt = `Adapt this article into natural ${locale.name} (${locale.code}) for readers from ${locale.name}-speaking countries. Adapt examples and phrasing to them where useful, without changing facts.
+
+ARTICLE (JSON):
+${JSON.stringify({ title: article.title, seoTitle: article.seoTitle, metaDescription: article.metaDescription, excerpt: article.excerpt, quickAnswer: article.quickAnswer, contentHtml: article.contentHtml, faq: article.faq, category: article.category, tags: article.tags })}
+
+Return JSON only with the same keys: {"title":"","seoTitle":"","metaDescription":"","excerpt":"","quickAnswer":"","contentHtml":"","faq":[{"q":"","a":""}],"category":"","tags":[""]}`;
   return { system, prompt };
 }

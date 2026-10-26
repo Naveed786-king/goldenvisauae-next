@@ -24,6 +24,7 @@ export type CompleteOpts = {
   provider?: ProviderId; // force a provider (used by the Test buttons)
   timeoutMs?: number;
   skipBudget?: boolean;
+  images?: { mime: string; data: string }[]; // base64 pictures for vision checks
 };
 
 export const isFakeAi = () => process.env.AUTOPUBLISHER_FAKE_AI === '1';
@@ -133,7 +134,7 @@ export async function embed(text: string, cfg?: AutoConfig): Promise<number[] | 
 
 // ---------------------------------------------------------------- providers
 
-async function http(url: string, init: RequestInit, timeoutMs: number, who: string) {
+export async function http(url: string, init: RequestInit, timeoutMs: number, who: string) {
   const res = await fetch(url, { ...init, signal: AbortSignal.timeout(timeoutMs), cache: 'no-store' });
   const text = await res.text();
   if (!res.ok) {
@@ -158,7 +159,7 @@ async function callGemini(key: string, model: string, o: CompleteOpts, temperatu
   const base = process.env.GEMINI_API_BASE || 'https://generativelanguage.googleapis.com';
   const body: any = {
     systemInstruction: { parts: [{ text: o.system }] },
-    contents: [{ role: 'user', parts: [{ text: o.prompt }] }],
+    contents: [{ role: 'user', parts: [{ text: o.prompt }, ...(o.images || []).map((im) => ({ inlineData: { mimeType: im.mime, data: im.data } }))] }],
     generationConfig: { temperature, maxOutputTokens: maxTokens, ...(o.json ? { responseMimeType: 'application/json' } : {}) },
   };
   const j = await http(`${base}/v1beta/models/${encodeURIComponent(model)}:generateContent`, { method: 'POST', headers: { 'content-type': 'application/json', 'x-goog-api-key': key }, body: JSON.stringify(body) }, timeoutMs, 'Gemini');
@@ -174,7 +175,7 @@ async function callClaude(key: string, model: string, o: CompleteOpts, temperatu
     max_tokens: maxTokens,
     temperature,
     system: o.system + (o.json ? '\n\nReturn valid JSON only.' : ''),
-    messages: [{ role: 'user', content: o.prompt }],
+    messages: [{ role: 'user', content: o.images?.length ? [...o.images.map((im) => ({ type: 'image', source: { type: 'base64', media_type: im.mime, data: im.data } })), { type: 'text', text: o.prompt }] : o.prompt }],
   };
   const j = await http('https://api.anthropic.com/v1/messages', { method: 'POST', headers: { 'x-api-key': key, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' }, body: JSON.stringify(body) }, timeoutMs, 'Claude');
   const out = (j?.content || []).filter((c: any) => c.type === 'text').map((c: any) => c.text).join('').trim();
@@ -191,7 +192,7 @@ async function callOpenAiCompatible(id: ProviderId, key: string, model: string, 
     model,
     messages: [
       { role: 'system', content: o.system },
-      { role: 'user', content: o.prompt },
+      { role: 'user', content: o.images?.length ? [{ type: 'text', text: o.prompt }, ...o.images.map((im) => ({ type: 'image_url', image_url: { url: `data:${im.mime};base64,${im.data}` } }))] : o.prompt },
     ],
     ...(reasoning ? {} : { temperature }),
     ...(isOpenAi ? { max_completion_tokens: maxTokens } : { max_tokens: maxTokens }),
@@ -215,8 +216,34 @@ function fakeAnswer(o: CompleteOpts): string {
   if (/connection test/i.test(o.system)) return JSON.stringify({ ok: true, message: 'Golden Visa UAE publisher connected (fake mode)' });
   if (!o.json) return 'Fake AI answer for a dry run.';
   if (/content strategist/i.test(o.system)) return JSON.stringify({ intent: 'informational', reader: { who: 'family', country: 'AE', fears: 'rejection', wants: 'clear steps' }, angle: 'checklist with mistakes', title: FAKE_ARTICLE.title, outline: [{ h2: 'What this sample shows', h3: [], notes: '' }], quickAnswer: 'sample', table: '', companyFacts: [], faq: ['Is this a real article?'], internalLinks: FAKE_ARTICLE.internalLinks, cta: 'Talk to us', imagePlan: [{ purpose: 'cover' }], category: 'Process' });
-  if (/strict senior human editor/i.test(o.system)) return JSON.stringify({ article: FAKE_ARTICLE, quality: { score: 90, helpfulness: 90, originality: 90, accuracy: 90, readability: 90, eeat: 90, reasons: ['Fake mode sample'] }, unsupportedClaims: [] });
-  return JSON.stringify(FAKE_ARTICLE);
+  if (/picture quality inspector/i.test(o.system)) return JSON.stringify({ ok: true, realism: 9, issues: [] });
+  if (/native .* editor/i.test(o.system)) return JSON.stringify({ ...FAKE_ARTICLE, title: `${FAKE_ARTICLE.title} (native sample)`, contentHtml: FAKE_ARTICLE.contentHtml.replace('sample shows', 'native sample shows') });
+  if (/strict senior human editor/i.test(o.system)) return JSON.stringify({ article: parseJsonLoose((o.prompt.split('ARTICLE (JSON):')[1] || '').split('\n\nReturn JSON only')[0]) || FAKE_ARTICLE, quality: { score: 90, helpfulness: 90, originality: 90, accuracy: 90, readability: 90, eeat: 90, reasons: ['Fake mode sample'] }, unsupportedClaims: [] });
+  return JSON.stringify(fakeVariant(o.prompt));
+}
+
+/** Fake article whose wording depends on the prompt, so dry runs of different topics are not near-copies */
+function fakeVariant(prompt: string) {
+  const kw = (prompt.match(/FOCUS KEYWORD: ([^\n(]+)/) || prompt.match(/topic "([^"]+)"/) || [])[1]?.trim() || 'golden visa document checklist';
+  let h = 0;
+  for (let i = 0; i < prompt.length; i++) h = (h * 31 + prompt.charCodeAt(i)) >>> 0;
+  // synthetic filler words seeded by the prompt: different topics never share wording
+  const syl = ['ka', 'lo', 'mi', 'ten', 'ra', 'vu', 'sel', 'do', 'pri', 'na', 'zu', 'bel', 'ost', 'ver', 'qui', 'man'];
+  let seed = h || 1;
+  const rnd = () => ((seed = (seed * 1103515245 + 12345) >>> 0) % 65536) / 65536;
+  const word = () => Array.from({ length: 2 + Math.floor(rnd() * 2) }, () => syl[Math.floor(rnd() * syl.length)]).join('');
+  const pick = (n: number, _k: number) => Array.from({ length: n }, word).join(' ');
+  const para = (k: number) => `<p>${kw} ${pick(14, k)}. ${pick(12, k + 50)} ${kw}.</p>`;
+  const sections = ['Overview', 'Documents', 'Costs and timing', 'Mistakes to avoid', 'Next steps'];
+  const title = `${kw.charAt(0).toUpperCase()}${kw.slice(1)}: a practical guide (sample ${h % 1000})`;
+  return {
+    ...FAKE_ARTICLE,
+    title,
+    seoTitle: `${title}`.slice(0, 60),
+    focusKeyword: kw,
+    slug: kw.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+    contentHtml: sections.map((s, i) => `<h2>${i === 1 ? kw + ' — ' : ''}${s}</h2>${para(i)}${para(i + 9)}`).join('') + '<p>See <a href="/services/golden-visa">Golden Visa services</a>, the <a href="/services/golden-visa-cost">cost calculator</a> and <a href="/apply">apply online</a>.</p>',
+  };
 }
 
 export const FAKE_ARTICLE = {

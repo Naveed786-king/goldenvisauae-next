@@ -23,7 +23,7 @@ const nextConfig = {
   async rewrites() {
     return { beforeFiles: [{ source: '/.well-known/acme-challenge/:token', destination: '/api/acme-challenge/:token' }] };
   },
-  serverExternalPackages: ['@prisma/client', 'bcryptjs', 'nodemailer'],
+  serverExternalPackages: ['@prisma/client', 'bcryptjs', 'nodemailer', 'sharp'],
   experimental: {
     serverActions: { bodySizeLimit: '20mb' },
     // pages already opened or loaded on hover are reused for a while: back/forward and repeat visits are instant

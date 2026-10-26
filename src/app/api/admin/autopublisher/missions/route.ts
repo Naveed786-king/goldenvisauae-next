@@ -23,6 +23,7 @@ function clean(b: any) {
     keywords: str(b.keywords, 5000),
     markets: JSON.stringify(markets.length ? markets : ['AE']),
     languages: JSON.stringify(languages),
+    nativeLanguages: JSON.stringify((Array.isArray(b.nativeLanguages) ? b.nativeLanguages : []).map(String).filter((x: string) => languages.includes(x) || codes.includes(x)).filter((x: string) => x !== 'en')),
     postsPerWeek: int(b.postsPerWeek, 21, 0, 70),
     publishMode: b.publishMode === 'publish' ? 'publish' : 'review',
     category: str(b.category, 60),
@@ -37,7 +38,7 @@ function clean(b: any) {
 export async function GET() {
   if (!(await requireAdmin())) return fail('Admins only', 403);
   const items = await prisma.autoMission.findMany({ orderBy: { createdAt: 'asc' } });
-  return ok({ items: items.map((m) => ({ ...m, markets: JSON.parse(m.markets || '[]'), languages: JSON.parse(m.languages || '[]'), stopRule: JSON.parse(m.stopRule || '{}') })), markets: MARKETS });
+  return ok({ items: items.map((m) => ({ ...m, markets: JSON.parse(m.markets || '[]'), languages: JSON.parse(m.languages || '[]'), nativeLanguages: JSON.parse(m.nativeLanguages || '[]'), stopRule: JSON.parse(m.stopRule || '{}') })), markets: MARKETS });
 }
 
 export async function POST(req: Request) {

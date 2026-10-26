@@ -317,10 +317,62 @@ function AiTab({ cfg, patch, providers, act }: { cfg: any; patch: (fn: (c: any) 
           <div className="md:col-span-2">
             <label className="admin-label">House photo style</label>
             <textarea rows={3} className="admin-input" placeholder="e.g. bright, calm, premium; warm natural light; modern Dubai interiors; subtle gold accents" value={cfg.images.houseStyle} onChange={(e) => patch((c) => ((c.images.houseStyle = e.target.value), c))} />
-            <p className="mt-1.5 text-xs text-gray-500">Picture generation, quality checks and the "Test picture" button arrive in Phase 3.</p>
           </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="admin-label">Minimum sharpness</label>
+              <input type="number" min={0} className="admin-input" value={cfg.images.minSharpness} onChange={(e) => patch((c) => ((c.images.minSharpness = Number(e.target.value)), c))} />
+              <p className="mt-1 text-xs text-gray-500">Blurry pictures score low. 60 is a safe start.</p>
+            </div>
+            <div>
+              <label className="admin-label">Minimum realism (0–10)</label>
+              <input type="number" min={0} max={10} className="admin-input" value={cfg.images.minRealism} onChange={(e) => patch((c) => ((c.images.minRealism = Number(e.target.value)), c))} />
+              <p className="mt-1 text-xs text-gray-500">From the AI vision check.</p>
+            </div>
+          </div>
+          <TestPicture />
         </div>
       </Card>
+    </div>
+  );
+}
+
+function TestPicture() {
+  const [busy, setBusy] = useState(false);
+  const [res, setRes] = useState<any>(null);
+  async function run() {
+    setBusy(true);
+    setRes(null);
+    try {
+      setRes(await api<any>('/api/admin/autopublisher', 'POST', { action: 'testPicture' }));
+    } catch (e: any) {
+      setRes({ error: e.message });
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <div className="rounded-xl bg-gray-50 p-4 md:col-span-2">
+      <div className="flex flex-wrap items-center gap-3">
+        <Btn size="sm" variant="dark" onClick={run} loading={busy}>
+          <FlaskConical className="h-3.5 w-3.5" /> Test picture
+        </Btn>
+        <span className="text-xs text-gray-500">Save first. Generates one sample with all quality checks (takes up to a minute, uses 1–3 picture credits) and adds it to the Media library.</span>
+      </div>
+      {res?.error && <p className="mt-3 rounded-lg bg-red-50 p-3 text-xs text-red-700">{res.error}</p>}
+      {res?.url && (
+        <div className="mt-3 grid gap-3 md:grid-cols-[2fr_1fr]">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={res.url} alt={res.alt} className="w-full rounded-xl ring-1 ring-gray-200" />
+          <ul className="space-y-1 text-xs text-gray-600">
+            <li>Sharpness: <b>{res.sharpness}</b></li>
+            <li>Realism: <b>{res.realism}/10</b></li>
+            <li>Attempts: <b>{res.attempts}</b></li>
+            <li>Size: <b>{res.width}×{res.height}</b> WebP</li>
+            <li>Time: <b>{Math.round(res.ms / 1000)} s</b></li>
+          </ul>
+        </div>
+      )}
     </div>
   );
 }
@@ -363,6 +415,14 @@ function QualityTab({ cfg, patch }: { cfg: any; patch: (fn: (c: any) => any) => 
           {num('activeFrom', 'Active from (hour, Dubai)', 'Publishing window start.', 1, 0, 23)}
           {num('activeTo', 'Active until (hour, Dubai)', 'Publishing window end.', 1, 1, 24)}
           {num('maxAiCallsPerDay', 'Max AI calls per day', 'Hard cost limit. When reached, it pauses until tomorrow. 0 = no limit.', 1, 0, 5000)}
+          <div>
+            <label className="admin-label">Refreshed & replaced posts</label>
+            <select className="admin-input" value={q.refreshMode} onChange={(e) => patch((c) => ((c.quality.refreshMode = e.target.value), c))}>
+              <option value="review">Wait for my approval (review queue)</option>
+              <option value="publish">Update the live post directly</option>
+            </select>
+            <p className="mt-1 text-xs text-gray-500">The old version is always kept and can be restored with one click.</p>
+          </div>
         </div>
       </Card>
       <Card title={<span className="flex items-center gap-2"><ListChecks className="h-4 w-4" /> Banned phrases</span>} className="xl:col-span-2">
@@ -402,6 +462,20 @@ function CopiedTab() {
     }
   }
 
+  async function replaceAll() {
+    if (!confirmDialog(`Queue a completely new, original article for each copied post (same URL)? They are written one at a time in the background — about ${d.summary.total * 6} AI calls plus pictures in total — and follow the "Refreshed & replaced posts" setting in Quality & SEO.`)) return;
+    setBusy('replace');
+    try {
+      const r = await api<any>('/api/admin/autopublisher/copied', 'POST', { action: 'replace' });
+      toast(`${r.created} replacement jobs queued`);
+      load();
+    } catch (e: any) {
+      toast(e.message, 'error');
+    } finally {
+      setBusy('');
+    }
+  }
+
   if (!d) return <Spinner />;
   return (
     <Card
@@ -414,7 +488,7 @@ function CopiedTab() {
           <Btn size="sm" variant="ghost" onClick={() => run('publish')} loading={busy === 'publish'} disabled={!d.summary.draft}>
             <Undo2 className="h-3.5 w-3.5" /> Undo (publish again)
           </Btn>
-          <Btn size="sm" variant="outline" disabled title="Available in Phase 3, when the writer and picture generator are installed">
+          <Btn size="sm" variant="outline" onClick={replaceAll} loading={busy === 'replace'}>
             <Sparkles className="h-3.5 w-3.5" /> Replace with original articles
           </Btn>
         </div>
@@ -422,7 +496,7 @@ function CopiedTab() {
     >
       <div className="border-b border-gray-100 px-5 py-3 text-sm text-gray-600">
         These {d.summary.total} posts were reworded from goldenvisauae.net. <b>{d.summary.published}</b> published · <b>{d.summary.draft}</b> draft
-        {d.summary.missing ? ` · ${d.summary.missing} not in the database` : ''}. They are no longer added by the starter content. "Replace with original articles" (Phase 3) writes a completely new article on the same topic — the AI never sees the old text — and keeps the same URL.
+        {d.summary.missing ? ` · ${d.summary.missing} not in the database` : ''}{d.summary.replaceJobs ? ` · ${d.summary.replaceJobs} replacements waiting/in progress` : ''}{d.summary.replaced ? ` · ${d.summary.replaced} replaced` : ''}. They are no longer added by the starter content. "Replace with original articles" writes a completely new article on the same topic — the AI never sees the old text — with new pictures, and keeps the same URL.
       </div>
       {!d.items.length ? (
         <Empty text="No copied posts." />

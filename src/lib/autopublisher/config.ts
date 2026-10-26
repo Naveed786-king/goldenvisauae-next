@@ -34,6 +34,8 @@ export type AutoConfig = {
     inline: number; // inline pictures per article
     houseStyle: string;
     onFail: 'hold' | 'skip'; // a picture that fails QC: hold the article, or publish without that inline picture
+    minSharpness: number; // Laplacian variance on a 512px grey copy; lower = blurry
+    minRealism: number; // 0-10 from the vision check
   };
   quality: {
     minQuality: number;
@@ -51,6 +53,7 @@ export type AutoConfig = {
     embeddings: 'off' | 'gemini' | 'openai'; // meaning check (uses that provider's key)
     embedModelGemini: string;
     embedModelOpenai: string;
+    refreshMode: 'review' | 'publish'; // refreshed / replaced posts: wait for approval, or update the live post directly
   };
   knowledge: { about: string; services: string; prices: string; timelines: string; cases: string; mistakes: string; rules: string; cta: string };
 };
@@ -67,7 +70,7 @@ export const DEFAULT_CONFIG: AutoConfig = {
     openrouter: { key: '', model: 'anthropic/claude-sonnet-5.5' },
   },
   useTranslationGeminiKey: true,
-  images: { provider: 'openai', openaiModel: 'gpt-image-1', geminiModel: 'gemini-2.5-flash-image', quality: 'high', inline: 2, houseStyle: '', onFail: 'hold' },
+  images: { provider: 'openai', openaiModel: 'gpt-image-1', geminiModel: 'gemini-2.5-flash-image', quality: 'high', inline: 2, houseStyle: '', onFail: 'hold', minSharpness: 60, minRealism: 8 },
   quality: {
     minQuality: 80,
     minSeo: 80,
@@ -84,6 +87,7 @@ export const DEFAULT_CONFIG: AutoConfig = {
     embeddings: 'off',
     embedModelGemini: 'text-embedding-004',
     embedModelOpenai: 'text-embedding-3-small',
+    refreshMode: 'review',
   },
   knowledge: {
     about: '',
@@ -115,6 +119,8 @@ export async function saveAutoConfig(incoming: Partial<AutoConfig>): Promise<Aut
   const next = deepMerge(current, clean);
   next.quality = sanitizeQuality(next.quality);
   next.images.inline = clamp(Math.round(Number(next.images.inline) || 0), 0, 6);
+  next.images.minSharpness = clamp(Number(next.images.minSharpness) || 0, 0, 5000);
+  next.images.minRealism = clamp(Number(next.images.minRealism) || 0, 0, 10);
   const value = JSON.stringify(next);
   await prisma.setting.upsert({ where: { key: KEY }, update: { value }, create: { key: KEY, value } });
   return next;
@@ -148,5 +154,6 @@ function sanitizeQuality(q: AutoConfig['quality']): AutoConfig['quality'] {
     embeddings: (['off', 'gemini', 'openai'] as const).includes(q.embeddings as any) ? q.embeddings : 'off',
     embedModelGemini: String(q.embedModelGemini || D.embedModelGemini).trim(),
     embedModelOpenai: String(q.embedModelOpenai || D.embedModelOpenai).trim(),
+    refreshMode: q.refreshMode === 'publish' ? 'publish' : 'review',
   };
 }

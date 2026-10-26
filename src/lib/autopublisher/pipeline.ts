@@ -1,5 +1,6 @@
 // The article pipeline. Each tick advances ONE job by ONE stage and saves it.
-// research → brief → write → edit → check → images → publish → done   (or held / failed)
+// research → brief → write → edit → check → images → publish → native → done   (or held / failed)
+// Job kinds: new (missions), refresh (improve an old post), replace (new original article for a copied post).
 import { prisma } from '@/lib/db';
 import { refreshSite } from '@/lib/api';
 import { postPath } from '@/lib/utils';
@@ -11,11 +12,14 @@ import { acquireLock, aiCallsToday, autoLog, getBackoff } from './log';
 import { dayKey, parseCustomTitle } from './pure';
 import { clusterFor, freshRelevant, googleNews, researchMission } from './research';
 import { checkArticle, checkTopic, fingerprintPost, rebuildFingerprints } from './similarity';
-import { companyFacts, linkTargets, briefPrompt, writePrompt, editPrompt, fixPrompt } from './prompts';
-import { bannedFound, cleanArticleHtml, escapeHtml, guaranteeFound, normalize, seoScore, slugify, stripHtml, terms, unsupportedNumbers, words } from './text';
+import { companyFacts, linkTargets, briefPrompt, writePrompt, editPrompt, fixPrompt, nativePrompt } from './prompts';
+import { insertFigures, bannedFound, cleanArticleHtml, escapeHtml, guaranteeFound, jaccard, normalize, seoScore, shingles, slugify, stripHtml, terms, topicTerms, unsupportedNumbers, words } from './text';
+import { figureHtml, fingerprintExistingImages, producePicture } from './images';
+import { COPIED_SLUGS } from './copied-slugs';
+import { hashItems, source } from '@/lib/i18n/content';
 
-export const ACTIVE_STAGES = ['research', 'brief', 'write', 'edit', 'check', 'images', 'publish'] as const;
-export const STAGE_ORDER = ['research', 'brief', 'write', 'edit', 'check', 'images', 'publish', 'done'];
+export const ACTIVE_STAGES = ['research', 'brief', 'write', 'edit', 'check', 'images', 'publish', 'native'] as const;
+export const STAGE_ORDER = ['research', 'brief', 'write', 'edit', 'check', 'images', 'publish', 'native', 'done'];
 const MAX_TRIES = 4;
 const MAX_IN_FLIGHT = 4;
 const TICK_LIMIT_MS = 4 * 60_000;
@@ -56,11 +60,14 @@ export async function tick(opts: { manual?: boolean; jobId?: string } = {}): Pro
       return { did: `stage:${job.stage}`, jobId: job.id };
     }
     if (cfg.enabled) {
-      const created = await scheduleMissions(cfg);
+      const created = (await scheduleMissions(cfg)) || (await scheduleUpkeep(cfg));
       if (created) return { did: 'scheduled', jobId: created };
     }
-    // idle: keep fingerprints of existing posts up to date (no AI unless embeddings are on)
-    if (Date.now() - started < TICK_LIMIT_MS / 2) await rebuildFingerprints(20, cfg);
+    // idle: keep fingerprints of existing posts and pictures up to date (no AI unless embeddings are on)
+    if (Date.now() - started < TICK_LIMIT_MS / 2) {
+      await rebuildFingerprints(20, cfg);
+      await fingerprintExistingImages(20).catch(() => 0);
+    }
     return { did: 'idle' };
   } catch (e: any) {
     await autoLog('error', `Tick failed: ${e?.message || e}`);
@@ -71,7 +78,12 @@ export async function tick(opts: { manual?: boolean; jobId?: string } = {}): Pro
 }
 
 async function nextJob(jobId?: string) {
-  if (jobId) return prisma.autoJob.findUnique({ where: { id: jobId } });
+  if (jobId) {
+    const j = await prisma.autoJob.findUnique({ where: { id: jobId } });
+    // "run this step now" on a queued replace/refresh job starts it
+    if (j?.stage === 'queued') return prisma.autoJob.update({ where: { id: j.id }, data: { stage: 'research' } });
+    return j && [...ACTIVE_STAGES].includes(j.stage as any) ? j : null;
+  }
   const now = new Date();
   const jobs = await prisma.autoJob.findMany({ where: { stage: { in: [...ACTIVE_STAGES] } }, orderBy: { updatedAt: 'asc' }, take: 30 });
   return (
@@ -143,6 +155,52 @@ async function scheduleMissions(cfg: AutoConfig): Promise<string | null> {
   return null;
 }
 
+/**
+ * Old posts: at most ONE refresh/replace job runs at a time. Queued "replace" jobs (copied posts) go first,
+ * then up to `refreshPerWeek` refreshes of the weakest posts.
+ */
+async function scheduleUpkeep(cfg: AutoConfig): Promise<string | null> {
+  const running = await prisma.autoJob.count({ where: { kind: { in: ['refresh', 'replace'] }, stage: { in: [...ACTIVE_STAGES] } } });
+  if (running) return null;
+  const queued = await prisma.autoJob.findFirst({ where: { stage: 'queued' }, orderBy: { createdAt: 'asc' } });
+  if (queued) {
+    await prisma.autoJob.update({ where: { id: queued.id }, data: { stage: 'research' } });
+    await autoLog('info', `Started ${queued.kind} job: ${queued.topic}`, queued.id);
+    return queued.id;
+  }
+  const perWeek = cfg.quality.refreshPerWeek;
+  if (perWeek <= 0) return null;
+  const now = Date.now();
+  const recent = await prisma.autoJob.findMany({ where: { kind: 'refresh', createdAt: { gte: new Date(now - 7 * 86_400_000) } }, orderBy: { createdAt: 'desc' }, select: { createdAt: true } });
+  if (recent.length >= perWeek) return null;
+  if (recent[0] && now - recent[0].createdAt.getTime() < (7 * 86_400_000) / perWeek) return null;
+  const post = await weakestPost();
+  if (!post) return null;
+  return createUpkeepJob('refresh', post, false);
+}
+
+/** The weakest published post that was not refreshed in the last 90 days (short and old first) */
+async function weakestPost() {
+  const posts = await prisma.post.findMany({ where: { status: 'published', slug: { notIn: COPIED_SLUGS } }, select: { id: true, title: true, slug: true, content: true, updatedAt: true } });
+  const busy = new Set((await prisma.autoJob.findMany({ where: { OR: [{ stage: { notIn: ['done', 'failed'] } }, { kind: { in: ['refresh', 'replace'] }, createdAt: { gte: new Date(Date.now() - 90 * 86_400_000) } }] }, select: { postId: true } })).map((j) => j.postId));
+  const scored = posts
+    .filter((p) => !busy.has(p.id))
+    .map((p) => {
+      const wc = words(stripHtml(p.content)).length;
+      const ageDays = (Date.now() - p.updatedAt.getTime()) / 86_400_000;
+      return { p, weak: Math.max(0, 1500 - wc) / 15 + Math.min(100, ageDays / 3) };
+    })
+    .sort((a, b) => b.weak - a.weak);
+  return scored[0]?.p || null;
+}
+
+/** Creates a refresh or replace job for a post (queued = waits its turn) */
+export async function createUpkeepJob(kind: 'refresh' | 'replace', post: { id: string; title: string; slug: string }, queued: boolean): Promise<string> {
+  const job = await prisma.autoJob.create({ data: { kind, stage: queued ? 'queued' : 'research', topic: post.title, postId: post.id, data: JSON.stringify({ targetPostId: post.id, targetSlug: post.slug }) } });
+  if (!queued) await autoLog('info', `New ${kind} job: ${post.title}`, job.id);
+  return job.id;
+}
+
 function stopped(m: { stopRule: string; total: number; customTitles: string }): boolean {
   const r = parse(m.stopRule);
   if (r.type === 'date' && r.value && new Date(r.value) < new Date()) return true;
@@ -179,7 +237,7 @@ async function missionOf(d: JobData) {
 }
 
 const research: Stage = async (job, d, cfg) => {
-  if (job.kind !== 'new') throw new AiError('config', 'Refresh and replace jobs arrive in Phase 3.');
+  if (job.kind === 'refresh' || job.kind === 'replace') return researchUpkeep(job, d, cfg);
   const { m, markets } = await missionOf(d);
   if (!m) throw new AiError('config', 'Mission not found');
 
@@ -231,6 +289,29 @@ const research: Stage = async (job, d, cfg) => {
   return 'brief';
 };
 
+/** Refresh / replace: the topic is the existing post. A replace NEVER sees the old text. */
+async function researchUpkeep(job: { id: string; kind: string }, d: JobData, cfg: AutoConfig) {
+  const post = await prisma.post.findUnique({ where: { id: d.targetPostId } });
+  if (!post) throw new AiError('config', 'The post to update no longer exists');
+  const fp = await prisma.autoFingerprint.findUnique({ where: { kind_refId: { kind: 'post', refId: post.id } } }).catch(() => null);
+  d.focusKeyword = fp?.focusKeyword || topicTerms(post.title).slice(0, 5).join(' ') || normalize(post.title);
+  d.customTitle = job.kind === 'refresh' ? post.title : undefined; // refresh keeps the URL; the title may be improved by the writer
+  d.topicTitle = post.title;
+  d.customCategory = post.category;
+  d.postId = post.id;
+  // backup of the current version (restorable with one click)
+  d.backup = { title: post.title, excerpt: post.excerpt, content: post.content, cover: post.cover, category: post.category, tags: post.tags, metaTitle: post.metaTitle, metaDescription: post.metaDescription, status: post.status, savedAt: new Date().toISOString() };
+  if (job.kind === 'refresh') d.existingText = stripHtml(post.content).slice(0, 7000);
+  const markets = ['AE', 'IN', 'GB'];
+  const cl = await clusterFor(d.focusKeyword, markets);
+  d.questions = cl.questions;
+  d.related = cl.related;
+  d.news = freshRelevant(await googleNews(post.title, markets[0]), terms(d.focusKeyword), 45).slice(0, 5);
+  d.markets = markets;
+  await save(job.id, { topic: post.title, focusKeyword: d.focusKeyword, postId: post.id });
+  return 'brief';
+}
+
 const brief: Stage = async (job, d, cfg) => {
   const { m, markets } = await missionOf(d);
   const facts = await companyFacts(cfg);
@@ -247,6 +328,9 @@ const brief: Stage = async (job, d, cfg) => {
     minWords: m?.minWords || 1500,
     maxWords: m?.maxWords || 2500,
     customTitle: d.customTitle,
+    topicTitle: d.topicTitle,
+    kind: job.kind,
+    existingText: d.existingText,
     category: d.customCategory || m?.category,
     categories: cats,
     news: d.news,
@@ -294,9 +378,10 @@ const edit: Stage = async (job, d, cfg) => {
   return 'held';
 };
 
-/** Builds the final post HTML in the site's conventions */
-export function assemble(a: any): string {
-  const body = cleanArticleHtml(a.contentHtml || '');
+/** Builds the final post HTML in the site's conventions (+ inline pictures after the N-th H2 section's first paragraph) */
+export function assemble(a: any, figures: { afterH2: number; html: string }[] = []): string {
+  let body = cleanArticleHtml(a.contentHtml || '');
+  if (figures.length) body = insertFigures(body, figures);
   const qa = a.quickAnswer ? `<div class="quick-answer"><p><strong>Quick answer</strong></p><p>${escapeHtml(stripHtml(a.quickAnswer))}</p></div>\n` : '';
   const faq = Array.isArray(a.faq) && a.faq.length ? `\n<section class="post-faq"><h2>Frequently asked questions</h2>${a.faq.filter((f: any) => f?.q && f?.a).map((f: any) => `<h3>${escapeHtml(stripHtml(f.q))}</h3><p>${escapeHtml(stripHtml(f.a))}</p>`).join('')}</section>` : '';
   return `${qa}${body}${faq}`;
@@ -322,7 +407,7 @@ const check: Stage = async (job, d, cfg) => {
   }
 
   // 2) similarity with our posts and with the texts we researched
-  const sim = await checkArticle(a.title, html, cfg, { webTexts: (d.news || []).map((n: any) => `${n.title} ${n.snippet}`) });
+  const sim = await checkArticle(a.title, html, cfg, { excludePostId: d.targetPostId || d.postId, webTexts: (d.news || []).map((n: any) => `${n.title} ${n.snippet}`) });
   d.similarity = sim;
   if (!sim.ok) {
     if (!d.fixed.sim && !isFakeAi()) {
@@ -338,7 +423,7 @@ const check: Stage = async (job, d, cfg) => {
   }
 
   // 3) honesty: banned phrases, guarantees, numbers that are not in our research or knowledge
-  const allowedPool = [facts.text, ...(d.news || []).map((n: any) => `${n.title} ${n.snippet}`), (d.questions || []).join(' '), (d.related || []).join(' '), d.customTitle || ''].join('\n');
+  const allowedPool = [facts.text, ...(d.news || []).map((n: any) => `${n.title} ${n.snippet}`), (d.questions || []).join(' '), (d.related || []).join(' '), d.customTitle || '', d.existingText || ''].join('\n');
   const banned = bannedFound(html, cfg.quality.bannedPhrases);
   const guarantees = guaranteeFound(html);
   const numbers = unsupportedNumbers(html, allowedPool);
@@ -367,13 +452,70 @@ const check: Stage = async (job, d, cfg) => {
   return 'images';
 };
 
-/** Pictures arrive in Phase 3 — until then the article keeps an admin-supplied image or none */
-const images: Stage = async (_job, d) => {
-  d.cover = d.customImage || d.cover || null;
-  return 'publish';
+/** Pictures: cover + N inline, one picture per tick (each with up to 3 attempts and full quality control) */
+const images: Stage = async (job, d, cfg) => {
+  const a = d.article;
+  if (!d.picPlan) {
+    const plan: any[] = [];
+    const ai = Array.isArray(a.imagePlan) ? a.imagePlan : [];
+    const h2s = [...String(a.contentHtml || '').matchAll(/<h2[^>]*>([\s\S]*?)<\/h2>/gi)].map((m) => stripHtml(m[1]));
+    const keepCover = !!d.customImage || (job.kind === 'refresh' && d.backup?.cover);
+    if (keepCover) d.cover = d.customImage || d.backup.cover;
+    else {
+      const c = ai.find((p: any) => /cover/i.test(p?.placement || p?.purpose || '')) || ai[0] || {};
+      plan.push({ kind: 'cover', purpose: c.purpose || `cover picture for "${a.title}"`, hint: c.prompt, alt: c.alt || `${a.focusKeyword || d.focusKeyword} — ${a.title}` });
+    }
+    const inline = ai.filter((p: any) => !/cover/i.test(p?.placement || '')).slice(0, cfg.images.inline);
+    for (let i = 0; i < cfg.images.inline && h2s.length > 1; i++) {
+      const p = inline[i] || {};
+      const m = String(p.placement || '').match(/(\d+)/);
+      const afterH2 = m ? Number(m[1]) : Math.min(h2s.length, 2 + i * 2);
+      plan.push({ kind: 'inline', purpose: p.purpose || `illustration for the section "${h2s[afterH2 - 1] || h2s[0]}"`, hint: p.prompt, alt: p.alt || `${h2s[afterH2 - 1] || a.title}`, afterH2 });
+    }
+    d.picPlan = plan;
+    d.figures = d.figures || [];
+    d.picIndex = 0;
+  }
+  if (d.picIndex >= d.picPlan.length) return 'publish';
+
+  const spec = d.picPlan[d.picIndex];
+  const res = await producePicture(spec, { topic: a.title, focusKeyword: a.focusKeyword || d.focusKeyword, variant: hashCode(job.id) + d.picIndex * 7, jobId: job.id }, cfg);
+  d.picIndex++;
+  if (res.ok) {
+    if (spec.kind === 'cover') {
+      d.cover = res.url;
+      d.ogImage = res.ogUrl;
+    } else d.figures.push({ afterH2: spec.afterH2, html: figureHtml({ url: res.url, alt: res.alt, width: res.width, height: res.height }) });
+    (d.pictures ||= []).push({ kind: spec.kind, url: res.url, sharpness: res.sharpness, realism: res.realism, attempts: res.attempts });
+  } else {
+    const reason = (res as { reason: string }).reason;
+    (d.pictureFailures ||= []).push(`${spec.kind}: ${reason}`);
+    if (cfg.images.onFail === 'hold' || spec.kind === 'cover') {
+      await hold(job.id, d, `Picture failed the quality checks (${spec.kind}): ${reason}`);
+      return 'held';
+    }
+  }
+  return d.picIndex >= d.picPlan.length ? 'publish' : 'images';
 };
 
+function hashCode(s: string) {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
+
 const publish: Stage = async (job, d, cfg) => {
+  // refresh / replace: update the existing post (keeps URL and publish date), or wait for approval
+  if (job.kind === 'refresh' || job.kind === 'replace') {
+    if (cfg.quality.refreshMode === 'publish') {
+      await applyUpdate(d, job.kind);
+      await autoLog('info', `${job.kind === 'refresh' ? 'Refreshed' : 'Replaced'} live post: /blog/${d.targetSlug}`, job.id);
+    } else {
+      d.pending = true;
+      await autoLog('info', `${job.kind === 'refresh' ? 'Refresh' : 'Replacement'} ready for review: /blog/${d.targetSlug}`, job.id);
+    }
+    return 'done';
+  }
   const { m } = await missionOf(d);
   const mode = d.manual || !m ? 'review' : m.publishMode === 'publish' ? 'publish' : 'review';
   if (mode === 'publish') {
@@ -391,10 +533,102 @@ const publish: Stage = async (job, d, cfg) => {
   if (m) await prisma.autoMission.update({ where: { id: m.id }, data: { total: { increment: 1 } } });
   if (d.keywordId) await prisma.autoKeyword.update({ where: { id: d.keywordId }, data: { postId: post.id } }).catch(() => null);
   await autoLog('info', `${mode === 'publish' ? 'Published' : 'Saved for review'}: "${post.title}" (/blog/${post.slug})`, job.id);
-  return 'done';
+  // native rewrites for the mission's chosen languages
+  const native: string[] = m ? parseList(m.nativeLanguages) : [];
+  d.nativeTodo = native.filter((l) => l !== 'en');
+  return d.nativeTodo.length ? 'native' : 'done';
 };
 
-const STAGES = { research, brief, write, edit, check, images, publish } as const;
+function parseList(s?: string | null): string[] {
+  try {
+    const v = JSON.parse(s || '[]');
+    return Array.isArray(v) ? v.map(String) : [];
+  } catch {
+    return [];
+  }
+}
+
+const LOCALE_NAMES: Record<string, string> = { ar: 'Arabic', ru: 'Russian', tr: 'Turkish', zh: 'Chinese (Simplified)', fr: 'French', de: 'German', es: 'Spanish', ro: 'Romanian', hi: 'Hindi' };
+
+/** One native (adapted) language version per tick, saved as the post's translation so the auto-translator keeps it */
+const native: Stage = async (job, d, cfg) => {
+  const todo: string[] = d.nativeTodo || [];
+  const code = todo[0];
+  if (!code) return 'done';
+  d.nativeDone = d.nativeDone || {};
+  const { system, prompt } = nativePrompt(cfg, d.article, { code, name: LOCALE_NAMES[code] || code });
+  const t = await completeJson<any>({ system, prompt, temperature: 0.5, maxTokens: 16000, timeoutMs: 230_000 });
+  const html = assemble({ ...d.article, ...t, quickAnswer: t.quickAnswer || '' }, d.figures || []).replace('<strong>Quick answer</strong>', `<strong>${escapeHtml(t.quickAnswerLabel || 'Quick answer')}</strong>`);
+  // checks on the native version: no promises of approval, and not a near-copy of another post in this language
+  const promises = /garant|гарант|ضمان|पक्की|保证/i.test(stripHtml(html)) && guaranteeFound(html).length > 0;
+  const clash = await nativeClash(code, d.postId, html);
+  if (promises || clash > cfg.quality.maxTextSimilarity || !t.contentHtml) {
+    d.nativeDone[code] = `skipped (${!t.contentHtml ? 'empty' : promises ? 'promise found' : `similar ${Math.round(clash * 100)}%`}) — automatic translation used instead`;
+    await autoLog('warn', `Native ${code} ${d.nativeDone[code]}`, job.id);
+  } else {
+    await saveNativeTranslation(d.postId, code, { title: t.title, excerpt: t.excerpt, content: html, category: t.category, tags: Array.isArray(t.tags) ? t.tags.join(', ') : t.tags, metaTitle: t.seoTitle || t.title, metaDescription: t.metaDescription });
+    d.nativeDone[code] = 'saved';
+    await autoLog('info', `Native ${code} version saved`, job.id);
+  }
+  d.nativeTodo = todo.slice(1);
+  if (!d.nativeTodo.length) {
+    refreshSite();
+    return 'done';
+  }
+  return 'native';
+};
+
+async function nativeClash(locale: string, postId: string, html: string): Promise<number> {
+  const mine = shingles(stripHtml(html), 4, 3, 1500);
+  const others = await prisma.translation.findMany({ where: { entity: 'post', locale, NOT: { entityId: postId } }, select: { data: true }, take: 400 });
+  let max = 0;
+  for (const o of others) {
+    try {
+      const sh = shingles(stripHtml(JSON.parse(o.data).content || ''), 4, 3, 1500);
+      max = Math.max(max, jaccard(mine, sh));
+    } catch {
+      /* ignore */
+    }
+  }
+  return max;
+}
+
+export async function saveNativeTranslation(postId: string, locale: string, obj: Record<string, any>) {
+  const src = await source('post', postId);
+  const hash = src ? hashItems(src.items) : '';
+  const data = JSON.stringify(obj);
+  await prisma.translation.upsert({
+    where: { entity_entityId_locale: { entity: 'post', entityId: postId, locale } },
+    update: { data, status: 'edited', sourceHash: `${hash}:native` },
+    create: { entity: 'post', entityId: postId, locale, data, status: 'edited', sourceHash: `${hash}:native` },
+  });
+}
+
+const STAGES = { research, brief, write, edit, check, images, publish, native } as const;
+
+/** Applies a finished refresh/replace to the live post. Old version stays in the job as a backup. */
+export async function applyUpdate(d: JobData, kind: string) {
+  const status = kind === 'replace' ? 'published' : (d.backup?.status as 'published' | 'draft') || 'published';
+  const post = await savePost({ ...d, postId: d.targetPostId }, status, undefined, { keepSlug: true });
+  d.pending = false;
+  d.applied = new Date().toISOString();
+  d.postId = post.id;
+  return post;
+}
+
+/** Puts the backed-up version back (one click in the admin) */
+export async function restoreBackup(d: JobData) {
+  const b = d.backup;
+  if (!b || !d.targetPostId) throw new Error('No backup in this job');
+  const post = await prisma.post.update({ where: { id: d.targetPostId }, data: { title: b.title, excerpt: b.excerpt, content: b.content, cover: b.cover, category: b.category, tags: b.tags, metaTitle: b.metaTitle, metaDescription: b.metaDescription, status: b.status } });
+  const cfg = await getAutoConfig();
+  await fingerprintPost(post, undefined, cfg).catch(() => null);
+  if (post.status === 'published') await afterPublish(post.id, post.slug);
+  else refreshSite();
+  d.applied = null;
+  d.restored = new Date().toISOString();
+  return post;
+}
 
 async function hold(jobId: string, d: JobData, reason: string) {
   d.heldReason = reason;
@@ -434,9 +668,9 @@ async function uniqueSlug(base: string, keepId?: string) {
 }
 
 /** Creates (or updates, when the job already has a post) the blog post from the job's article */
-export async function savePost(d: JobData, status: 'published' | 'draft', jobId?: string) {
+export async function savePost(d: JobData, status: 'published' | 'draft', jobId?: string, opts: { keepSlug?: boolean } = {}) {
   const a = d.article;
-  const html = assemble(a);
+  const html = assemble(a, d.figures || []);
   const existing = d.postId ? await prisma.post.findUnique({ where: { id: d.postId } }) : null;
   const slug = existing ? existing.slug : await uniqueSlug(slugify(a.slug || a.title));
   const tags = (Array.isArray(a.tags) ? a.tags : String(a.tags || '').split(',')).map((t: string) => String(t).trim()).filter(Boolean);

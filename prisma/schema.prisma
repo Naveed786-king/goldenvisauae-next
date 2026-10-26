@@ -252,6 +252,7 @@ model AutoMission {
   keywords     String    @default("") // seed keywords (lines or commas)
   markets      String    @default("[]") // JSON array of country codes
   languages    String    @default("[]") // JSON array of locales ([] = site setting)
+  nativeLanguages String @default("[]") // JSON array of locales that get a native (adapted) rewrite
   postsPerWeek Int       @default(21)
   publishMode  String    @default("review") // publish | review
   category     String    @default("") // "" = AI picks from existing categories

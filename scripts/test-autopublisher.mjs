@@ -120,3 +120,27 @@ test('topic terms ignore site-wide words and stem lightly', () => {
   assert.equal(stem('families'), 'family');
   assert.ok(titleSimilarity('How to check your Golden Visa status online', 'How to check your UAE Golden Visa eligibility online') < 0.6);
 });
+
+import { insertFigures } from '../src/lib/autopublisher/text.ts';
+import { sharpness, dhash, hamming } from '../src/lib/autopublisher/imaging.ts';
+import sharp from 'sharp';
+
+test('inline figures go after the first paragraph of the chosen section', () => {
+  const html = '<p>intro</p><h2>A</h2><p>a1</p><p>a2</p><h2>B</h2><p>b1</p>';
+  const out = insertFigures(html, [{ afterH2: 2, html: '<figure>F2</figure>' }, { afterH2: 1, html: '<figure>F1</figure>' }]);
+  assert.equal(out, '<p>intro</p><h2>A</h2><p>a1</p><figure>F1</figure><p>a2</p><h2>B</h2><p>b1</p><figure>F2</figure>');
+  assert.ok(insertFigures(html, [{ afterH2: 9, html: '<figure>X</figure>' }]).includes('<figure>X</figure>'));
+});
+
+test('picture checks: sharpness, dHash and distance', async () => {
+  const svg = (blur) => Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400"><rect width="600" height="400" fill="#f4e7c5"/>${Array.from({ length: 60 }, (_, i) => `<rect x="${(i * 37) % 600}" y="${(i * 53) % 400}" width="6" height="60" fill="#222"/>`).join('')}</svg>`);
+  const crisp = await sharp(svg()).png().toBuffer();
+  const blurry = await sharp(crisp).blur(8).png().toBuffer();
+  assert.ok((await sharpness(crisp)) > (await sharpness(blurry)) * 5, 'blur lowers sharpness a lot');
+  const h1 = await dhash(crisp);
+  const h2 = await dhash(await sharp(crisp).resize(300).png().toBuffer());
+  const other = await dhash(await sharp(crisp).flop().png().toBuffer());
+  assert.equal(h1.length, 16);
+  assert.ok(hamming(h1, h2) <= 6, 'same picture resized stays close');
+  assert.ok(hamming(h1, other) > 10, 'a different picture is far');
+});

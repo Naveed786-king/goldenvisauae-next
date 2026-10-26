@@ -265,3 +265,19 @@ export function cleanArticleHtml(html: string, ownHosts: string[] = ['goldenvisa
 export function escapeHtml(s: string): string {
   return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
+
+/** Puts inline <figure>s after the first paragraph of the N-th H2 section */
+export function insertFigures(html: string, figures: { afterH2: number; html: string }[]) {
+  const parts = html.split(/(?=<h2[\s>])/i); // parts[0] = intro, parts[n] = n-th H2 section
+  for (const f of [...figures].sort((x, y) => y.afterH2 - x.afterH2)) {
+    const i = Math.min(Math.max(1, f.afterH2), parts.length - 1);
+    if (i < 1 || !parts[i]) {
+      parts[parts.length - 1] += f.html;
+      continue;
+    }
+    const sec = parts[i];
+    const end = sec.search(/<\/p>/i);
+    parts[i] = end >= 0 ? sec.slice(0, end + 4) + f.html + sec.slice(end + 4) : sec + f.html;
+  }
+  return parts.join('');
+}
