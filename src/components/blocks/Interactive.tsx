@@ -320,7 +320,7 @@ export function ReviewGrid({ items, limit }: { items: { id: string; name: string
             <blockquote className="mt-5 flex-1 text-[0.98rem] leading-relaxed">{r.text}</blockquote>
             <figcaption className="mt-6 border-t border-black/[0.06] pt-5">
               <p className="font-display text-sm font-semibold">{r.name}</p>
-              {(r.role || r.country) && <p className="muted mt-0.5 text-xs">{[r.role, r.country].filter(Boolean).join(', ')}</p>}
+              {(r.role || r.country) && <p className="muted mt-0.5 text-xs">{[r.role === 'Google review' ? t('Google review') : r.role, r.country].filter(Boolean).join(', ')}</p>}
             </figcaption>
           </figure>
         ))}

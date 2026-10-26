@@ -23,7 +23,7 @@ export const allPages = [
       "label": "Check my eligibility",
       "href": "/apply"
      },
-     "trust": "DET approved consultancy, Dubai\n4.9 Google rating, verified by Trust Index",
+     "trust": "DET approved consultancy, Dubai\n4.8 Google rating from 38 reviews",
      "left": "Ease of doing business\nTax-free income\nBest education & infrastructure\nSponsor family members",
      "right": "10 years residency\nSelf-sponsored status\nOn-arrival travel benefits\nStability & security",
      "cardEyebrow": "United Arab Emirates",
@@ -124,7 +124,7 @@ export const allPages = [
       },
       {
        "icon": "star",
-       "value": "4.9",
+       "value": "4.8",
        "label": "Google rating"
       },
       {
@@ -671,7 +671,7 @@ export const allPages = [
     "data": {
      "label": "Real people, real results",
      "heading": "Investors, doctors, founders and families",
-     "lead": "Thousands of clients now hold long-term UAE residency through our desk. Reviews verified by Trust Index on Google.",
+     "lead": "Real reviews from our clients, published on our Google Business profile.",
      "limit": 6,
      "theme": "sand"
     }
@@ -769,7 +769,7 @@ export const allPages = [
      "imageAlt": "Business Bay skyline, Dubai — home of the Golden Visa UAE office",
      "floats": [
       {
-       "value": "4.9",
+       "value": "4.8",
        "label": "Google rating"
       },
       {
@@ -859,7 +859,7 @@ export const allPages = [
       },
       {
        "icon": "star",
-       "value": "4.9",
+       "value": "4.8",
        "label": "Google rating"
       },
       {
@@ -1112,7 +1112,7 @@ export const allPages = [
      "body": "Golden Visas, business setup, PRO services, Emirates ID and immigration support are all handled under one roof, with most procedures completed in a single visit — or entirely online.",
      "stats": [
       {
-       "value": "4.9",
+       "value": "4.8",
        "label": "Google rating"
       },
       {
@@ -1324,7 +1324,7 @@ export const allPages = [
       {
        "tag": "General",
        "q": "Why should you trust us with your visa or investment goals?",
-       "a": "Brightlink Management Consultancy L.L.C is licensed by the Dubai Department of Economy and Tourism (License No. 1053387) and rated 4.9/5 on Google. You get one named consultant from start to finish, fixed itemised fees and WhatsApp updates at every government stage. We are an independent consultancy, not a government authority."
+       "a": "Brightlink Management Consultancy L.L.C is licensed by the Dubai Department of Economy and Tourism (License No. 1053387) and rated 4.8/5 on Google. You get one named consultant from start to finish, fixed itemised fees and WhatsApp updates at every government stage. We are an independent consultancy, not a government authority."
       },
       {
        "tag": "Online & documents",
@@ -13033,30 +13033,246 @@ export const faqRecords = [
 ];
 export const testimonialRecords = [
  {
-  "name": "Georgios Chamilothoris",
-  "role": "Investor",
-  "country": "Greece",
-  "text": "Great service and a quick turnaround. Everything was explained before it happened, which is rare here.",
+  "name": "Mary A",
+  "role": "Google review",
+  "country": null,
+  "text": "Brightlink assisted with my Golden Visa - the service was prompt and professional, everything was done on time and with great communication every step of the way. Would recommend the team. The service is also competitively priced.",
   "rating": 5,
   "order": 1,
   "active": true
  },
  {
-  "name": "Deepak Kohli",
-  "role": "Business owner",
-  "country": "India",
-  "text": "Excellent service, very prompt responses and a fast processing time on the Golden Visa application.",
+  "name": "PINAR AKA",
+  "role": "Google review",
+  "country": null,
+  "text": "Excellent service from start to finish! Our family visa and Emirates ID process was handled very smoothly, professionally, and efficiently. The team was always responsive and kept us updated throughout the entire process. Special thanks to Abbas for his great support, quick responses, and for making everything so easy and stress-free for us. Highly recommended!",
   "rating": 5,
   "order": 2,
   "active": true
  },
  {
-  "name": "Anu Batija",
-  "role": "Property owner",
-  "country": "Dubai",
-  "text": "Our visa was secured in a very short period, with no hidden cost and no surprises. Highly recommended.",
+  "name": "Andrew Ghisoni",
+  "role": "Google review",
+  "country": null,
+  "text": "Without a doubt the most professional and fast Golden Visa processing in UAE.",
   "rating": 5,
   "order": 3,
+  "active": true
+ },
+ {
+  "name": "Ummad Jatala",
+  "role": "Google review",
+  "country": null,
+  "text": "Abbas and the whole team was exceptional, I was recommended the service bright Link management there over exceeded my expectations in all aspects of PRO. Customer experience seems to be at the heart of the companies core values. Thank you. It’s safe to say I won’t be using or recommending anyone else for PRO work.",
+  "rating": 5,
+  "order": 4,
+  "active": true
+ },
+ {
+  "name": "Hakan TEKERCIOGLU",
+  "role": "Google review",
+  "country": null,
+  "text": "Our family's Golden Visa application process was completed smoothly, on time, and at reasonable prices. I would definitely recommend this service to anyone who needs it.",
+  "rating": 5,
+  "order": 5,
+  "active": true
+ },
+ {
+  "name": "M J",
+  "role": "Google review",
+  "country": null,
+  "text": "Excellent service with prompt response and follow up action. Used their service for Golden visa which took three days to process from start to finish.",
+  "rating": 5,
+  "order": 6,
+  "active": true
+ },
+ {
+  "name": "Tausif Ahmad",
+  "role": "Google review",
+  "country": null,
+  "text": "Excellent service.. very Honest and helpful team. Got all paperwork done in a week with no hidden charges. Especially thanks to mr. Abbas",
+  "rating": 5,
+  "order": 7,
+  "active": true
+ },
+ {
+  "name": "Tony Neri",
+  "role": "Google review",
+  "country": null,
+  "text": "I highly recommend it, very professional and effective. In the past I used various visa agencies for obtaining visas for members of my family, this one is the best",
+  "rating": 5,
+  "order": 8,
+  "active": true
+ },
+ {
+  "name": "ZeeShan Butt",
+  "role": "Google review",
+  "country": null,
+  "text": "Brightlink management deserved 100/100. Muhammad bilal saleem & his team is amazing ,and they prove with work. Golden Visa and nationality change service A 2 Z completed in less then 36 hours. Entire process was smooth and stress fres. Its really VIP service ( Super Sonic Team ). Thank you for your professionalism",
+  "rating": 5,
+  "order": 9,
+  "active": true
+ },
+ {
+  "name": "Muhammad",
+  "role": "Google review",
+  "country": null,
+  "text": "Great experience working with Brightlink Team for my Golden Visa. They were professional, responsive, and handled the entire process smoothly. Got the visa within 2 days. Highly recommended for anyone looking for fast and smooth golden visa process handling.",
+  "rating": 5,
+  "order": 10,
+  "active": true
+ },
+ {
+  "name": "Ritik Gupta",
+  "role": "Google review",
+  "country": null,
+  "text": "Hi, I got my 2 year residency visa done through Brightlink Management Consultancy and they were thoroughly professional and got it done in 4 business days that too during Ramadan with shortened working hours. Highly recommend using there VIP package if you want to get the residency done within a few days.",
+  "rating": 5,
+  "order": 11,
+  "active": true
+ },
+ {
+  "name": "pascky999 m",
+  "role": "Google review",
+  "country": null,
+  "text": "Great service, fees are reasonable and job is done in a matter of hours even over the week end. I would definitely recommend Brightlink over all of the competitors.",
+  "rating": 5,
+  "order": 12,
+  "active": true
+ },
+ {
+  "name": "Ausman Abdul",
+  "role": "Google review",
+  "country": null,
+  "text": "I would like to sincerely thank BRIGHTLINK for securing my Golden Visa in record time! Everything was perfectly organized from start to finish — from my medical appointment to the fingerprint process. The entire journey was smooth, efficient, and completely stress-free. The support provided by Mr. Bilal and Mr. Abbas was outstanding. They were professional, responsive, and extremely well-organized throughout the whole process. A well-deserved 5/5 ⭐️ You can truly trust this dynamic and talented team. I will definitely be using your services again in the future. Thank you once again for your professionalism — keep up the excellent work!",
+  "rating": 5,
+  "order": 13,
+  "active": true
+ },
+ {
+  "name": "Sina Behfard",
+  "role": "Google review",
+  "country": null,
+  "text": "The team is working very efficient, professional and transparent. They were very supportive to quickly takeover my application which had got stuck for days with another company and took care of each step with great care to ensure the process gets completed within my short time limits and they made it happen. I am very thankful to Abbas and team for their great service and professionalism in their work.",
+  "rating": 5,
+  "order": 14,
+  "active": true
+ },
+ {
+  "name": "Amin K",
+  "role": "Google review",
+  "country": null,
+  "text": "The service provided by Brightlink Management Consultancy was nothing but excellent! My application process from getting details and a price quote for the Golden Visa / Emirates ID to fulfillment of my Emirates ID in hand was a seamless and expeditious process. Their communication through WhatsApp was prompt, transparent and honest! Their pickup / drop off service for the medical and biometrics appointments were first class with timely pickups and no waiting. From start to finish I had my physical ID in hand within 5 days from the start of my medical appointment, with an expedited service package. Thank you Mr. Bilal, Mr. Abbas and the entire team at Brightlink Management Consultancy.",
+  "rating": 5,
+  "order": 15,
+  "active": true
+ },
+ {
+  "name": "Clay Mullens",
+  "role": "Google review",
+  "country": null,
+  "text": "Abbas and the Brightlink team were amazing!! From my initial contact they were extremely helpful and responded swiftly. They delivered exactly what I was after and I’m very thankful for their service!! I highly recommend them to anyone looking for fast golden visa service or anything to do with what they offer. Thanks again guys!",
+  "rating": 5,
+  "order": 16,
+  "active": true
+ },
+ {
+  "name": "Manaqib Ashraf",
+  "role": "Google review",
+  "country": null,
+  "text": "I recently processed my family visa through Brightlink, and I couldn’t be happier with the service. The entire process was handled very quickly and professionally. Thanks to their efficient support, I’m now able to live with my family here in the UAE. Highly recommended for anyone looking for reliable visa services!",
+  "rating": 5,
+  "order": 17,
+  "active": true
+ },
+ {
+  "name": "Ahmed Ullah",
+  "role": "Google review",
+  "country": null,
+  "text": "Just wanted to say a big thank you for the amazing support in getting my wife’s visa done — and that too in just 2 days! I really appreciate how smoothly and quickly everything was handled. Your team’s professionalism and efficiency truly stood out. Keep up the great work — I’ll definitely be recommending Brightlink to others!",
+  "rating": 5,
+  "order": 18,
+  "active": true
+ },
+ {
+  "name": "Scott Francies",
+  "role": "Google review",
+  "country": null,
+  "text": "Very responsive and can not fault their attention to detail.",
+  "rating": 5,
+  "order": 19,
+  "active": true
+ },
+ {
+  "name": "Mariah Stone",
+  "role": "Google review",
+  "country": null,
+  "text": "Very efficient and great experience! I would highly recommend",
+  "rating": 5,
+  "order": 20,
+  "active": true
+ },
+ {
+  "name": "Dana Saleh",
+  "role": "Google review",
+  "country": null,
+  "text": "Amazing service ! And very fast responding",
+  "rating": 5,
+  "order": 21,
+  "active": true
+ },
+ {
+  "name": "Numan Shabbir",
+  "role": "Google review",
+  "country": null,
+  "text": "Loved the whole experience. Got our visas in just 3 days. Their whole team is very experienced and provide updates at all the steps. Would recommend to anyone looking to setup business in dubai or get golden visas. 💯",
+  "rating": 5,
+  "order": 22,
+  "active": true
+ },
+ {
+  "name": "Dina Siraeva",
+  "role": "Google review",
+  "country": null,
+  "text": "Guys are professionals and know what they doing , which is really rare in UAE for PRO and documentation work. I am very satisfied with all info and service they provide almost 2 years 👍🏼 most like how responsive they are , good job than you",
+  "rating": 5,
+  "order": 23,
+  "active": true
+ },
+ {
+  "name": "turaab electronics",
+  "role": "Google review",
+  "country": null,
+  "text": "Had an amazing experience with them for processing our employee's visa and my family visa. Very Fast Service. Would recommend 100%",
+  "rating": 5,
+  "order": 24,
+  "active": true
+ },
+ {
+  "name": "Hippo Apps",
+  "role": "Google review",
+  "country": null,
+  "text": "Experience was amazing , they did really fast visa ,",
+  "rating": 5,
+  "order": 25,
+  "active": true
+ },
+ {
+  "name": "Сергей Волков",
+  "role": "Google review",
+  "country": null,
+  "text": "I have a good result in minimum spend my time! Thanks team of Brightlink Management!",
+  "rating": 5,
+  "order": 26,
+  "active": true
+ },
+ {
+  "name": "Валерий",
+  "role": "Google review",
+  "country": null,
+  "text": "I registered a company in a free zone. Everything is great. (Translated by Google from Russian)",
+  "rating": 5,
+  "order": 27,
   "active": true
  }
 ];

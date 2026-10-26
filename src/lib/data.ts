@@ -70,6 +70,24 @@ export async function getPosts(opts: { take?: number; skip?: number; category?: 
   }
 }
 
+/** Every published post as light card data (no body) — powers instant blog search and category tabs */
+export async function getPostIndex(locale?: string) {
+  try {
+    const items = await prisma.post.findMany({ where: { status: 'published' }, orderBy: { publishedAt: 'desc' } });
+    const map = await getTranslationsFor('post', items.map((i) => i.id), await loc(locale));
+    const words = (h: string) => Math.max(1, Math.round((h || '').replace(/<[^>]+>/g, ' ').split(/\s+/).filter(Boolean).length / 220));
+    return mergeList(items, map).map((p: any) => {
+      const src = items.find((i) => i.id === p.id)!;
+      return {
+        id: p.id, slug: p.slug, title: p.title, excerpt: p.excerpt, category: p.category, cat: src.category || 'Other',
+        cover: p.cover, publishedAt: p.publishedAt, views: p.views || 0, minutes: words(p.content), tags: src.tags || '',
+      };
+    });
+  } catch {
+    return [];
+  }
+}
+
 export async function getServices(category?: string) {
   try {
     const items = await prisma.service.findMany({

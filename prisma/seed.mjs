@@ -48,6 +48,7 @@ async function main() {
   // 3) Content
   await applyPageUpgrades();
   await applyContentUpgrades();
+  await applyReviewUpgrade();
   const pageCount = await prisma.page.count();
   if (pageCount > 0 && !force) {
     console.log('✔ Database already has content — skipping content seed (use "npm run seed:reset" to restore the original content).');
@@ -148,6 +149,56 @@ async function removeStats() {
       } catch {}
     }
   }
+}
+
+/* Once per website: show the real Google reviews (prisma/google-reviews.json) instead of the sample ones,
+   and correct the Google rating shown on pages to the real figure (4.8 from 38 reviews). */
+const REVIEW_UPGRADE = 'upgrade:2026-10-google-reviews';
+const RATING_FIXES = [
+  ['4.9 Google rating, verified by Trust Index', '4.8 Google rating from 38 reviews'],
+  ['rated 4.9/5 on Google', 'rated 4.8/5 on Google'],
+  ['"value":"4.9"', '"value":"4.8"'],
+  ['Thousands of clients now hold long-term UAE residency through our desk. Reviews verified by Trust Index on Google.', 'Real reviews from our clients, published on our Google Business profile.'],
+];
+/* Small blog categories folded into the main ones so the blog tabs stay tidy */
+const CATEGORY_MERGE = { 'Family Visa': 'Family', Relocation: 'Family', Policy: 'Golden Visa' };
+async function applyReviewUpgrade() {
+  if ((await prisma.page.count()) === 0) return;
+  if (await prisma.setting.findUnique({ where: { key: REVIEW_UPGRADE } })) return;
+  const file = path.join(__dirname, 'google-reviews.json');
+  if (existsSync(file)) {
+    const reviews = JSON.parse(readFileSync(file, 'utf8'));
+    await prisma.testimonial.updateMany({ data: { active: false } });
+    for (const [i, r] of reviews.entries()) {
+      const found = await prisma.testimonial.findFirst({ where: { name: r.name, role: 'Google review' } });
+      const data = { name: r.name, role: 'Google review', country: null, rating: 5, text: r.text, order: i + 1, active: true };
+      if (found) await prisma.testimonial.update({ where: { id: found.id }, data });
+      else await prisma.testimonial.create({ data });
+    }
+    console.log(`✔ Showing ${reviews.length} Google reviews`);
+  }
+  const fix = (s) => RATING_FIXES.reduce((acc, [a, b]) => acc.split(a).join(b), s);
+  for (const page of await prisma.page.findMany()) {
+    const next = fix(page.blocks || '');
+    if (next === page.blocks) continue;
+    await prisma.page.update({ where: { id: page.id }, data: { blocks: next } });
+    // automatic translations of this page are rebuilt from the corrected English
+    await prisma.translation.deleteMany({ where: { entity: 'page', entityId: page.id, status: 'auto' } });
+  }
+  for (const f of await prisma.faq.findMany()) {
+    const q = fix(f.question), a = fix(f.answer);
+    if (q !== f.question || a !== f.answer) {
+      await prisma.faq.update({ where: { id: f.id }, data: { question: q, answer: a } });
+      await prisma.translation.deleteMany({ where: { entity: 'faq', entityId: f.id, status: 'auto' } });
+    }
+  }
+  for (const [from, to] of Object.entries(CATEGORY_MERGE)) {
+    const posts = await prisma.post.findMany({ where: { category: from }, select: { id: true } });
+    if (!posts.length) continue;
+    await prisma.post.updateMany({ where: { category: from }, data: { category: to } });
+    await prisma.translation.deleteMany({ where: { entity: 'post', entityId: { in: posts.map((p) => p.id) }, status: 'auto' } });
+  }
+  await prisma.setting.create({ data: { key: REVIEW_UPGRADE, value: new Date().toISOString() } });
 }
 
 async function applyContentUpgrades() {

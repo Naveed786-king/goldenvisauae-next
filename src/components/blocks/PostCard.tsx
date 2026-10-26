@@ -30,7 +30,7 @@ export default function PostCard({ post, priority }: { post: any; dark?: boolean
             <time dateTime={new Date(post.publishedAt).toISOString()} suppressHydrationWarning>
               {formatDate(post.publishedAt, undefined, localeInfo(locale).htmlLang)}
             </time>{' '}
-            · {readingTime(post.content)} <T>min read</T>
+            · {post.minutes ?? readingTime(post.content)} <T>min read</T>
             {post.views > 0 && (
               <span className="ms-2 inline-flex items-center gap-1 align-middle" title="Views">
                 <Eye className="h-3.5 w-3.5" />
