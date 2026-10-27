@@ -7,6 +7,8 @@ import type { ChatWidgetConfig } from './ChatLoader';
 
 type Msg = { role: 'user' | 'bot'; text: string; wa?: string };
 const STORE = 'gv-chat-v1';
+const TEASER = 'gv-chat-teaser'; // when the visitor last closed the greeting bubble
+const TEASER_PAUSE = 24 * 3_600_000;
 
 function load(): { sessionId?: string; visitorId: string; messages: Msg[] } {
   try {
@@ -23,6 +25,22 @@ function persist(v: { sessionId?: string; visitorId: string; messages: Msg[] }) 
     localStorage.setItem(STORE, JSON.stringify({ ...v, messages: v.messages.slice(-40) }));
   } catch {
     /* ignore */
+  }
+}
+
+function teaserAllowed(): boolean {
+  try {
+    return Date.now() - Number(localStorage.getItem(TEASER) || 0) > TEASER_PAUSE;
+  } catch {
+    return true; // storage blocked: still greet once per page view
+  }
+}
+
+function rememberTeaserClosed() {
+  try {
+    localStorage.setItem(TEASER, String(Date.now()));
+  } catch {
+    /* storage blocked: the bubble simply shows again next time */
   }
 }
 
@@ -51,7 +69,52 @@ export default function ChatWidget({ cfg }: { cfg: ChatWidgetConfig }) {
   const [state, setState] = useState(load);
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
+  const [teaser, setTeaser] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
+
+  // A chat the team deleted in the admin disappears here too (checked on load, on opening and on return)
+  useEffect(() => {
+    let stop = false;
+    const check = async () => {
+      const cur = load();
+      if (!cur.sessionId) return;
+      try {
+        const r = await fetch(`/api/chat?sessionId=${encodeURIComponent(cur.sessionId)}&visitorId=${encodeURIComponent(cur.visitorId)}`, { cache: 'no-store' });
+        if (!r.ok) return; // offline or rate-limited: keep the chat as it is
+        const d = await r.json();
+        if (stop || d.active !== false) return;
+        const fresh = { visitorId: cur.visitorId, messages: [] as Msg[] };
+        persist(fresh);
+        setState(fresh);
+      } catch (e) {
+        console.warn('[chat] could not check the saved chat:', e instanceof Error ? e.message : e);
+      }
+    };
+    check();
+    const onShow = () => document.visibilityState === 'visible' && check();
+    document.addEventListener('visibilitychange', onShow);
+    return () => {
+      stop = true;
+      document.removeEventListener('visibilitychange', onShow);
+    };
+  }, [open]);
+
+  // New visitors: a small "Can I help you?" bubble next to the chat button after a few seconds
+  useEffect(() => {
+    if (open || state.messages.length || !teaserAllowed()) return;
+    const id = window.setTimeout(() => setTeaser(true), 4000);
+    return () => window.clearTimeout(id);
+  }, [open, state.messages.length]);
+
+  const openChat = () => {
+    setTeaser(false);
+    rememberTeaserClosed();
+    setOpen(true);
+  };
+  const closeTeaser = () => {
+    setTeaser(false);
+    rememberTeaserClosed();
+  };
 
   useEffect(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: 'smooth' });
@@ -73,7 +136,8 @@ export default function ChatWidget({ cfg }: { cfg: ChatWidgetConfig }) {
       const v = { ...next, sessionId: d.sessionId || next.sessionId, messages: [...shown, bot] };
       setState(v);
       persist(v);
-    } catch {
+    } catch (e) {
+      console.warn('[chat] message failed:', e instanceof Error ? e.message : e);
       setState({ ...next, messages: [...next.messages, { role: 'bot', text: t('Sorry, something went wrong. Please try again.') }] });
     } finally {
       setBusy(false);
@@ -150,8 +214,25 @@ export default function ChatWidget({ cfg }: { cfg: ChatWidgetConfig }) {
           </form>
         </div>
       )}
-      <button type="button" onClick={() => setOpen((v) => !v)} aria-expanded={open} aria-label={open ? t('Close') : t('Ask our AI assistant')} className="grid h-14 w-14 place-items-center rounded-full text-white shadow-[0_14px_34px_-10px_rgba(0,0,0,.55)] transition-transform hover:scale-105 active:scale-95" style={{ background: cfg.color, animation: 'pop .35s cubic-bezier(.2,.8,.2,1) both' }}>
+      {teaser && !open && (
+        <div className="relative w-[min(260px,calc(100vw-96px))] rounded-2xl rounded-ee-md bg-white p-3.5 pe-9 text-sm shadow-[0_20px_50px_-20px_rgba(0,0,0,.45)] ring-1 ring-black/5 rtl:rounded-ee-2xl rtl:rounded-es-md" style={{ animation: 'pop .4s cubic-bezier(.2,.8,.2,1) both' }}>
+          <button type="button" onClick={openChat} className="flex items-start gap-2.5 text-start">
+            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-white" style={{ background: cfg.color }}>
+              <Sparkles className="h-4 w-4" />
+            </span>
+            <span>
+              <span className="block font-semibold text-black/90">{t('Hi! 👋 Can I help you?')}</span>
+              <span className="mt-0.5 block text-xs leading-snug text-black/55">{t('Ask me about visas, costs or documents — I reply instantly.')}</span>
+            </span>
+          </button>
+          <button type="button" onClick={closeTeaser} aria-label={t('Close')} className="absolute end-2 top-2 grid h-6 w-6 place-items-center rounded-full text-black/40 hover:bg-black/5 hover:text-black/70">
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
+      <button type="button" onClick={() => (open ? setOpen(false) : openChat())} aria-expanded={open} aria-label={open ? t('Close') : t('Ask our AI assistant')} className="relative grid h-14 w-14 place-items-center rounded-full text-white shadow-[0_14px_34px_-10px_rgba(0,0,0,.55)] transition-transform hover:scale-105 active:scale-95" style={{ background: cfg.color, animation: 'pop .35s cubic-bezier(.2,.8,.2,1) both' }}>
         {open ? <X className="h-6 w-6" /> : <MessageCircle className="h-6 w-6" />}
+        {teaser && !open && <span className="absolute -end-0.5 -top-0.5 h-3.5 w-3.5 rounded-full bg-[#ff3b30] ring-2 ring-white" aria-hidden />}
       </button>
     </div>
   );

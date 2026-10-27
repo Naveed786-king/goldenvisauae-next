@@ -9,6 +9,7 @@ import ViewPing from './ViewPing';
 import LeadForm from '@/components/blocks/LeadForm';
 import T from '@/components/ui/T';
 import { dirhamHtml } from '@/components/ui/Dirham';
+import { safeArticleHtml } from '@/lib/sanitize';
 import Particles from './Particles';
 
 const strip = (h: string) => h.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
@@ -106,7 +107,7 @@ export default function PostView({ post, related, site, lang = 'en-GB', url }: {
       <div className="container-x grid max-w-6xl gap-12 pb-20 pt-6 lg:grid-cols-[1fr_320px]">
         <div className="min-w-0">
           {post.excerpt && <p className="mb-10 border-s-2 border-gold ps-5 text-[1.15rem] leading-relaxed text-[#3a3a3c]">{post.excerpt}</p>}
-          <div className="rte" dangerouslySetInnerHTML={{ __html: dirhamHtml(post.content) }} />
+          <div className="rte" dangerouslySetInnerHTML={{ __html: dirhamHtml(safeArticleHtml(post.content)) }} />
           {post.tags && (
             <div className="mt-10 flex flex-wrap gap-2">
               {post.tags

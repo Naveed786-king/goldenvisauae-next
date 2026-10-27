@@ -18,6 +18,7 @@ import { insertFigures, bannedFound, cleanArticleHtml, escapeHtml, guaranteeFoun
 import { figureHtml, fingerprintExistingImages, producePicture } from './images';
 import { COPIED_SLUGS } from './copied-slugs';
 import { hashItems, source } from '@/lib/i18n/content';
+import { safeArticleHtml } from '@/lib/sanitize';
 
 export const ACTIVE_STAGES = ['research', 'brief', 'write', 'edit', 'check', 'images', 'publish', 'native'] as const;
 export const STAGE_ORDER = ['research', 'brief', 'write', 'edit', 'check', 'images', 'publish', 'native', 'done'];
@@ -80,7 +81,7 @@ export async function tick(opts: { manual?: boolean; jobId?: string } = {}): Pro
     // idle: keep fingerprints of existing posts and pictures up to date (no AI unless embeddings are on)
     if (Date.now() - started < TICK_LIMIT_MS / 2) {
       await rebuildFingerprints(20, cfg);
-      await fingerprintExistingImages(20).catch(() => 0);
+      await fingerprintExistingImages(20).catch((e) => autoLog('warn', `Picture fingerprints failed: ${e instanceof Error ? e.message : e}`));
     }
     return { did: 'idle' };
   } catch (e: any) {
@@ -398,7 +399,8 @@ export function assemble(a: any, figures: { afterH2: number; html: string }[] = 
   if (figures.length) body = insertFigures(body, figures);
   const qa = a.quickAnswer ? `<div class="quick-answer"><p><strong>Quick answer</strong></p><p>${escapeHtml(stripHtml(a.quickAnswer))}</p></div>\n` : '';
   const faq = Array.isArray(a.faq) && a.faq.length ? `\n<section class="post-faq"><h2>Frequently asked questions</h2>${a.faq.filter((f: any) => f?.q && f?.a).map((f: any) => `<h3>${escapeHtml(stripHtml(f.q))}</h3><p>${escapeHtml(stripHtml(f.a))}</p>`).join('')}</section>` : '';
-  return `${qa}${body}${faq}`;
+  // what the AI wrote (from researched web text) is stored only after the allowlist sanitizer
+  return safeArticleHtml(`${qa}${body}${faq}`);
 }
 
 const check: Stage = async (job, d, cfg) => {
@@ -655,7 +657,7 @@ export async function restoreBackup(d: JobData) {
   if (!b || !d.targetPostId) throw new Error('No backup in this job');
   const post = await prisma.post.update({ where: { id: d.targetPostId }, data: { title: b.title, excerpt: b.excerpt, content: b.content, cover: b.cover, category: b.category, tags: b.tags, metaTitle: b.metaTitle, metaDescription: b.metaDescription, status: b.status } });
   const cfg = await getAutoConfig();
-  await fingerprintPost(post, undefined, cfg).catch(() => null);
+  await fingerprintPost(post, undefined, cfg).catch((e) => autoLog('warn', `Fingerprint failed for /blog/${post.slug}: ${e instanceof Error ? e.message : e}`));
   if (post.status === 'published') await afterPublish(post.id, post.slug);
   else refreshSite();
   d.applied = null;
@@ -680,8 +682,9 @@ async function nextSlot(cfg: AutoConfig): Promise<number> {
   const startToday = new Date(`${dayKey(now)}T00:00:00+04:00`).getTime();
   const done = await prisma.autoJob.findMany({ where: { stage: 'done', updatedAt: { gte: new Date(startToday) } }, select: { data: true, updatedAt: true }, orderBy: { updatedAt: 'desc' } });
   const publishedToday = done.filter((j) => parse(j.data).publishedMode === 'publish');
-  const windowH = Math.max(1, q.activeTo - q.activeFrom);
-  const gapMs = (windowH * 3_600_000) / q.dailyCap;
+  // a finished article goes out as soon as it is ready (inside the active hours and the daily cap),
+  // with only a short gap after the previous one — no more waiting hours for an evenly spread slot
+  const gapMs = 30 * 60_000;
   const tomorrowStart = startToday + 86_400_000 + q.activeFrom * 3_600_000;
   if (publishedToday.length >= q.dailyCap) return tomorrowStart;
   if (hourDubai < q.activeFrom) return startToday + q.activeFrom * 3_600_000;
@@ -724,7 +727,7 @@ export async function savePost(d: JobData, status: 'published' | 'draft', jobId?
     ? await prisma.post.update({ where: { id: existing.id }, data: fields })
     : await prisma.post.create({ data: { ...fields, slug, author: 'Golden Visa UAE', publishedAt } });
   const cfg = await getAutoConfig();
-  await fingerprintPost(post, a.focusKeyword || d.focusKeyword, cfg).catch(() => null);
+  await fingerprintPost(post, a.focusKeyword || d.focusKeyword, cfg).catch((e) => autoLog('warn', `Fingerprint failed for /blog/${post.slug}: ${e instanceof Error ? e.message : e}`, jobId));
   if (status === 'published') await afterPublish(post.id, post.slug);
   return post;
 }
@@ -733,8 +736,9 @@ export async function savePost(d: JobData, status: 'published' | 'draft', jobId?
 export async function afterPublish(postId: string, slug: string) {
   try {
     await onContentSaved('post', postId);
-  } catch {
-    /* translation is optional */
+  } catch (e) {
+    // translation is optional: the post is live in English either way
+    await autoLog('warn', `Translations could not be queued for /blog/${slug}: ${e instanceof Error ? e.message : e}`);
   }
   await pingIndexNow([postPath(slug)]).catch(() => false);
   refreshSite();

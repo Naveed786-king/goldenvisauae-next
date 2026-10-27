@@ -32,6 +32,7 @@ export async function DELETE(req: Request) {
   if (!(await requireAdmin())) return fail('Admins only', 403);
   const id = new URL(req.url).searchParams.get('id');
   if (!id) return fail('Missing id');
-  await prisma.chatSession.delete({ where: { id } }).catch(() => null);
-  return ok();
+  // deleteMany: an already deleted chat is fine; a real database error still reports a failure
+  const r = await prisma.chatSession.deleteMany({ where: { id } });
+  return ok({ deleted: r.count });
 }

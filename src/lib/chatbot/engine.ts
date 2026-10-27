@@ -91,7 +91,7 @@ Return JSON only:
 export async function handleMessage(input: { sessionId?: string; visitorId?: string; message: string; locale: string; page: string; ip: string }): Promise<ChatReply> {
   const cfg = await getChatConfig();
   if (!cfg.enabled) throw new Error('Chat is switched off');
-  cleanup(cfg).catch(() => null);
+  cleanup(cfg).catch((e) => console.error('[chat] cleanup of old chats failed:', e instanceof Error ? e.message : e));
 
   const raw = cleanVisitorText(input.message);
   if (!raw) throw new Error('Empty message');
@@ -121,7 +121,7 @@ export async function handleMessage(input: { sessionId?: string; visitorId?: str
     if (handedNow) Object.assign(data, { status: 'handed', handedAt: new Date(), handover: reason });
     const saved = await prisma.chatSession.update({ where: { id: session!.id }, data });
     // a Lead as soon as there is something to follow up (handover or contact details)
-    if (handedNow || contact.phone || contact.email) await upsertLead(saved, reason, extra.topic).catch(() => null);
+    if (handedNow || contact.phone || contact.email) await upsertLead(saved, reason, extra.topic).catch((e) => console.error(`[chat] could not save the lead for chat ${saved.id}:`, e instanceof Error ? e.message : e));
     const url = handedNow ? whatsappLink(waNumber, extra.wa || `Hello, I chatted with your website assistant about: ${saved.summary || 'a UAE visa question'}.`) : null;
     return { sessionId: saved.id, reply, handover: url ? { url, reason: reason! } : null, masked: masked.length > 0 };
   };

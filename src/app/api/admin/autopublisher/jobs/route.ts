@@ -3,6 +3,7 @@ import { ok, fail, refreshSite } from '@/lib/api';
 import { requireAdmin } from '@/lib/auth';
 import { ACTIVE_STAGES, STAGE_ORDER, afterPublish, applyUpdate, assemble, createJob, restoreBackup, savePost, tick } from '@/lib/autopublisher/pipeline';
 import { autoLog } from '@/lib/autopublisher/log';
+import { safeArticleHtml } from '@/lib/sanitize';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300;
@@ -50,7 +51,7 @@ function summary(j: any, withPreview = false) {
     pictures: d.pictures || [],
     pictureFailures: d.pictureFailures || [],
     nativeDone: d.nativeDone || null,
-    ...(withPreview && d.article ? { preview: { html: assemble(d.article, d.figures || []), cover: d.cover || null, meta: { seoTitle: d.article.seoTitle, metaDescription: d.article.metaDescription, slug: d.article.slug } } } : {}),
+    ...(withPreview && d.article ? { preview: { html: safeArticleHtml(assemble(d.article, d.figures || [])), cover: d.cover || null, meta: { seoTitle: d.article.seoTitle, metaDescription: d.article.metaDescription, slug: d.article.slug } } } : {}),
   };
 }
 
@@ -63,7 +64,7 @@ export async function GET(req: Request) {
     const doneDrafts = await prisma.autoJob.findMany({ where: { stage: 'done', postId: { not: null } }, orderBy: { updatedAt: 'desc' }, take: 200 });
     const posts = await prisma.post.findMany({ where: { id: { in: doneDrafts.map((j) => j.postId!) }, status: 'draft' }, select: { id: true, slug: true, title: true, cover: true, content: true } });
     const pm = new Map(posts.map((p) => [p.id, p]));
-    const drafts = doneDrafts.filter((j) => pm.has(j.postId!)).map((j) => ({ ...summary(j), post: { ...pm.get(j.postId!)!, content: undefined }, preview: { html: pm.get(j.postId!)!.content, cover: pm.get(j.postId!)!.cover } }));
+    const drafts = doneDrafts.filter((j) => pm.has(j.postId!)).map((j) => ({ ...summary(j), post: { ...pm.get(j.postId!)!, content: undefined }, preview: { html: safeArticleHtml(pm.get(j.postId!)!.content), cover: pm.get(j.postId!)!.cover } }));
     const pendingJobs = (await prisma.autoJob.findMany({ where: { stage: 'done', kind: { in: ['refresh', 'replace'] } }, orderBy: { updatedAt: 'desc' }, take: 200 })).filter((j) => parse(j.data).pending);
     return ok({ held: held.map((j) => summary(j, true)), drafts, pending: pendingJobs.map((j) => summary(j, true)) });
   }

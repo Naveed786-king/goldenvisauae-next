@@ -6,6 +6,8 @@ export async function POST(req: Request) {
   if (!rateLimit('login:' + clientIp(req), 10, 5 * 60_000)) return fail('Too many attempts. Please wait a few minutes.', 429);
   const { email, password, admin } = await req.json().catch(() => ({}));
   if (!email || !password) return fail('Email and password are required');
+  // also per account: stops guessing one password from many addresses
+  if (!rateLimit('login-acct:' + String(email).toLowerCase().trim(), 20, 15 * 60_000)) return fail('Too many attempts. Please wait a few minutes.', 429);
   const user = await prisma.user.findUnique({ where: { email: String(email).toLowerCase().trim() } });
   if (!user || !(await checkPassword(String(password), user.passwordHash))) return fail('Invalid email or password', 401);
   if (!user.active) return fail('This account is disabled. Please contact support.', 403);

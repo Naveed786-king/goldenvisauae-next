@@ -203,3 +203,25 @@ test('picture prompts carry no figures, prices or chart ideas', () => {
   const head = p.split('Shot on')[0];
   assert.doesNotMatch(head, /\d|AED|price board|fees/i);
 });
+
+import { safeArticleHtml } from '../src/lib/sanitize.ts';
+test('article HTML keeps formatting but never runs code', () => {
+  const evil = [
+    '<img src=x onerror=alert(1)>',
+    "<a href='javascript:alert(1)'>x</a>",
+    '<a href="JaVaScRiPt:alert(1)">x</a>',
+    '<svg><script>alert(1)</script></svg>',
+    '<script>alert(1)</script>',
+    '<iframe src="https://evil.example/x"></iframe>',
+    '<base href="https://evil.example/">',
+    '<meta http-equiv="refresh" content="0;url=https://evil.example">',
+    '<form action="https://evil.example"><input name=p></form>',
+    '<p onclick=\'alert(1)\'>hi</p>',
+    '<img src="javascript:alert(1)">',
+  ].join('');
+  const out = safeArticleHtml(evil);
+  assert.doesNotMatch(out, /onerror|onclick|javascript:|<script|<svg|evil\.example|<base|<meta|<form|<input/i, out);
+  const good = '<div class="quick-answer"><p><strong>Quick answer</strong></p><p>Yes.</p></div><h2 id="a">Costs</h2><figure><img src="/uploads/media/x.webp" alt="Dubai" width="1200" height="800" loading="lazy" decoding="async"></figure><table><tr><th scope="col">Fee</th><td colspan="2">AED</td></tr></table><p><a href="/apply">Apply</a> <a href="https://x.com" target="_blank">x</a></p><iframe src="https://www.youtube.com/embed/abc" allowfullscreen></iframe><section class="post-faq"><h3>Q</h3><p>A</p></section>';
+  const kept = safeArticleHtml(good);
+  for (const bit of ['class="quick-answer"', '<h2 id="a">', 'src="/uploads/media/x.webp"', 'width="1200"', 'colspan="2"', 'href="/apply"', 'rel="noopener noreferrer"', 'youtube.com/embed/abc', 'class="post-faq"']) assert.ok(kept.includes(bit), bit + ' missing in ' + kept);
+});
