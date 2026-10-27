@@ -29,8 +29,16 @@ export function rateLimit(key: string, limit = 10, windowMs = 60_000) {
   return h.count <= limit;
 }
 
+/**
+ * The visitor's IP for rate limits. A visitor can send their own X-Forwarded-For header, so only the
+ * entry added by our own proxy is trusted: the LAST one (xCloud / OpenLiteSpeed append to the list).
+ * Vercel overwrites the header itself, so there the first entry is the real one.
+ */
 export function clientIp(req: Request) {
-  return (req.headers.get('x-forwarded-for') || '').split(',')[0].trim() || req.headers.get('x-real-ip') || 'local';
+  const list = (req.headers.get('x-forwarded-for') || '').split(',').map((x) => x.trim()).filter(Boolean);
+  const hops = Math.max(1, Number(process.env.TRUSTED_PROXY_HOPS) || 1);
+  const fromProxy = process.env.VERCEL ? list[0] : list[list.length - hops] || list[0];
+  return fromProxy || req.headers.get('x-real-ip') || 'local';
 }
 
 export function isEmail(v?: string | null) {

@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/db';
 import { ok, fail } from '@/lib/api';
-import { getSession, checkPassword, hashPassword } from '@/lib/auth';
+import { getSession, checkPassword, hashPassword, startSession } from '@/lib/auth';
 
 export async function PUT(req: Request) {
   const s = await getSession();
@@ -9,6 +9,8 @@ export async function PUT(req: Request) {
   if (!password || String(password).length < 8) return fail('New password must be at least 8 characters');
   const user = await prisma.user.findUnique({ where: { id: s.sub } });
   if (!user || !(await checkPassword(String(current || ''), user.passwordHash))) return fail('Current password is incorrect');
-  await prisma.user.update({ where: { id: s.sub }, data: { passwordHash: await hashPassword(String(password)) } });
+  const updated = await prisma.user.update({ where: { id: s.sub }, data: { passwordHash: await hashPassword(String(password)) } });
+  // every other login with the old password ends; this device stays signed in
+  await startSession(updated);
   return ok();
 }

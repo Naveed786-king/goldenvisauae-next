@@ -1,4 +1,5 @@
 import { ok, fail, rateLimit, clientIp } from '@/lib/api';
+import { prisma } from '@/lib/db';
 import { handleMessage } from '@/lib/chatbot/engine';
 import { LOCALES } from '@/lib/i18n/config';
 
@@ -29,4 +30,19 @@ export async function POST(req: Request) {
     console.error('[chat]', e?.message || e);
     return fail('Sorry, something went wrong. Please try again or message us on WhatsApp.', 500);
   }
+}
+
+/**
+ * Is this chat still kept on the server? The widget asks when a returning visitor opens the site:
+ * a chat the admin deleted is then cleared on the visitor's screen too. Answers only yes / no.
+ */
+export async function GET(req: Request) {
+  if (!rateLimit(`chat-check:${clientIp(req)}`, 60, 60_000)) return fail('Too many requests', 429);
+  const u = new URL(req.url);
+  const sessionId = (u.searchParams.get('sessionId') || '').slice(0, 40);
+  const visitorId = (u.searchParams.get('visitorId') || '').slice(0, 64);
+  if (!sessionId) return ok({ active: false });
+  const s = await prisma.chatSession.findUnique({ where: { id: sessionId }, select: { visitorId: true } });
+  const active = !!s && (!s.visitorId || !visitorId || s.visitorId === visitorId);
+  return ok({ active });
 }

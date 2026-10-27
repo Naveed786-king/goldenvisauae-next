@@ -410,7 +410,7 @@ function QualityTab({ cfg, patch }: { cfg: any; patch: (fn: (c: any) => any) => 
         <div className="grid gap-5 p-5 sm:grid-cols-2">
           {num('dailyCap', 'Posts per day (whole site)', 'No bursts — posts are spread through the active hours.', 1, 0, 50)}
           {num('refreshPerWeek', 'Old posts refreshed per week', 'Weakest posts first; the old version is kept for one-click restore.', 1, 0, 100)}
-          {num('activeFrom', 'Active from (hour, Dubai)', 'Publishing window start.', 1, 0, 23)}
+          {num('activeFrom', 'Active from (hour, Dubai)', 'Publishing window start. 0 and 24 = any time of day. Ready articles publish at once (30 minutes apart).', 1, 0, 23)}
           {num('activeTo', 'Active until (hour, Dubai)', 'Publishing window end.', 1, 1, 24)}
           {num('maxAiCallsPerDay', 'Max AI calls per day', 'Hard cost limit. When reached, it pauses until tomorrow. 0 = no limit.', 1, 0, 5000)}
           <div>

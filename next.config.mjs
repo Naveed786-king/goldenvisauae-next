@@ -20,6 +20,24 @@ const nextConfig = {
   eslint: { ignoreDuringBuilds: true },
   typescript: { ignoreBuildErrors: false },
   // Let's Encrypt SSL check files (free https certificate on xCloud / VPS)
+  // Basic browser protection on every page: no framing by other sites (clickjacking), no MIME sniffing,
+  // HTTPS remembered by the browser, no camera/microphone/location access.
+  async headers() {
+    const https = (process.env.NEXT_PUBLIC_SITE_URL || '').startsWith('https') || !!process.env.VERCEL;
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
+          { key: 'Content-Security-Policy', value: "frame-ancestors 'self'" },
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+          { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(), payment=()' },
+          ...(https ? [{ key: 'Strict-Transport-Security', value: 'max-age=15552000' }] : []),
+        ],
+      },
+    ];
+  },
   async rewrites() {
     return { beforeFiles: [{ source: '/.well-known/acme-challenge/:token', destination: '/api/acme-challenge/:token' }] };
   },

@@ -42,8 +42,28 @@ export async function readStored(rel: string): Promise<Buffer | null> {
   }
 }
 
-function cleanName(name: string) {
-  const ext = path.extname(name).toLowerCase().replace(/[^.a-z0-9]/g, '');
+/** The file extension always follows the checked file type (a "page.html" sent as an image stays an image) */
+const EXT_FOR_TYPE: Record<string, string> = {
+  'image/png': '.png',
+  'image/jpeg': '.jpg',
+  'image/jpg': '.jpg',
+  'image/gif': '.gif',
+  'image/webp': '.webp',
+  'image/svg+xml': '.svg',
+  'image/avif': '.avif',
+  'image/x-icon': '.ico',
+  'image/vnd.microsoft.icon': '.ico',
+  'image/heic': '.heic',
+  'image/heif': '.heif',
+  'video/mp4': '.mp4',
+  'video/webm': '.webm',
+  'application/pdf': '.pdf',
+  'application/msword': '.doc',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': '.docx',
+};
+
+function cleanName(name: string, type?: string) {
+  const ext = (type && EXT_FOR_TYPE[type]) || path.extname(name).toLowerCase().replace(/[^.a-z0-9]/g, '');
   const base = path
     .basename(name, path.extname(name))
     .toLowerCase()
@@ -57,7 +77,7 @@ function cleanName(name: string) {
 export async function savePublicFile(file: File) {
   if (file.size > MAX_UPLOAD) throw new Error(`File too large (max ${MAX_LABEL})`);
   if (!PUBLIC_TYPES.test(file.type)) throw new Error('File type not allowed: ' + file.type);
-  const { base, ext } = cleanName(file.name);
+  const { base, ext } = cleanName(file.name, file.type);
   const now = new Date();
   const sub = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, '0')}`;
   const fname = `${base}-${crypto.randomBytes(3).toString('hex')}${ext}`;
@@ -69,7 +89,7 @@ export async function savePublicFile(file: File) {
 export async function savePrivateFile(file: File, folder: string) {
   if (file.size > MAX_UPLOAD) throw new Error(`File too large (max ${MAX_LABEL})`);
   if (!PRIVATE_TYPES.test(file.type)) throw new Error('Only PDF, JPG, PNG, WEBP, HEIC or Word files are allowed');
-  const { base, ext } = cleanName(file.name);
+  const { base, ext } = cleanName(file.name, file.type);
   const safeFolder = folder.replace(/[^a-zA-Z0-9_-]/g, '');
   const fname = `${base}-${crypto.randomBytes(4).toString('hex')}${ext}`;
   await writeStored(`private/${safeFolder}/${fname}`, Buffer.from(await file.arrayBuffer()), file.type);

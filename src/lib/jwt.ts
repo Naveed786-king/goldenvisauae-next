@@ -6,15 +6,25 @@ export type SessionPayload = {
   role: 'ADMIN' | 'EDITOR' | 'CUSTOMER';
   name: string;
   email: string;
+  /** fingerprint of the password at sign-in: a password change ends every older login */
+  pv?: string;
 };
 
 export const SESSION_COOKIE = 'rgv_session';
 const MAX_AGE = 60 * 60 * 24 * 7; // 7 days
 
+let warned = false;
 function secret() {
-  // Without JWT_SECRET, the (secret) database address is used as key material so sessions stay secure on Vercel.
+  // Without JWT_SECRET, key material that only the server knows is used: the database address (it holds
+  // the DB password on MySQL/Postgres) or the admin password from the server settings. The fixed
+  // development key below is public (it is in the code), so it is only used when nothing else exists.
   const db = process.env.DATABASE_URL || process.env.POSTGRES_PRISMA_URL || process.env.POSTGRES_URL || '';
-  const s = process.env.JWT_SECRET || (/^(postgres|mysql)/.test(db) ? 'rgv-session:' + db : 'dev-secret-change-me-please-32-characters!!');
+  const fallback = /^(postgres|mysql)/.test(db) ? 'rgv-session:' + db : process.env.ADMIN_PASSWORD ? `rgv-session:${process.env.ADMIN_PASSWORD}:${db}` : '';
+  const s = process.env.JWT_SECRET || fallback || 'dev-secret-change-me-please-32-characters!!';
+  if (!process.env.JWT_SECRET && !fallback && process.env.NODE_ENV === 'production' && !warned) {
+    warned = true;
+    console.error('[security] JWT_SECRET is not set — logins use a public development key. Set JWT_SECRET to a long random value.');
+  }
   return new TextEncoder().encode(s);
 }
 

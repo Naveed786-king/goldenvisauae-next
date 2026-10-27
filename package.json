@@ -21,6 +21,7 @@
     "@fontsource-variable/inter": "^5.2.6",
     "@fontsource/noto-kufi-arabic": "^5.2.0",
     "@prisma/client": "^6.16.0",
+    "@types/sanitize-html": "2.16.0",
     "bcryptjs": "^3.0.2",
     "clsx": "^2.1.1",
     "framer-motion": "^12.23.0",
@@ -32,6 +33,7 @@
     "prisma": "^6.16.0",
     "react": "^19.2.1",
     "react-dom": "^19.2.1",
+    "sanitize-html": "2.18.1",
     "sharp": "^0.35.5"
   },
   "devDependencies": {
