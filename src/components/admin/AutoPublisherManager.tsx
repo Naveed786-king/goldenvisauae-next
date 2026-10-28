@@ -1,11 +1,12 @@
 'use client';
 import { useCallback, useEffect, useState } from 'react';
-import { Activity, BookOpen, CirclePause, CirclePlay, ClipboardCheck, FileWarning, FlaskConical, Gauge, ImageIcon, KeyRound, ListChecks, Power, RefreshCw, Save, ScrollText, Search, Sparkles, Target, Trash2, Undo2, Waypoints } from 'lucide-react';
+import { Activity, BookOpen, Images, CirclePause, CirclePlay, ClipboardCheck, FileWarning, FlaskConical, Gauge, ImageIcon, KeyRound, ListChecks, Power, RefreshCw, Save, ScrollText, Search, Sparkles, Target, Trash2, Undo2, Waypoints } from 'lucide-react';
 import { Btn, Card, Empty, PageTitle, Spinner, Toggle, api, confirmDialog, toast } from './ui';
 import { cn } from '@/lib/utils';
 import { KeywordsTab, KnowledgeTab, LiveJobs, MissionsTab, ReportTab, ReviewTab } from './AutoPublisherPanels';
+import PhotoLibraryTab from './PhotoLibrary';
 
-type Tab = 'overview' | 'missions' | 'review' | 'keywords' | 'knowledge' | 'ai' | 'quality' | 'report' | 'copied' | 'logs';
+type Tab = 'overview' | 'missions' | 'review' | 'keywords' | 'knowledge' | 'ai' | 'photos' | 'quality' | 'report' | 'copied' | 'logs';
 const TABS: { id: Tab; label: string; icon: any }[] = [
   { id: 'overview', label: 'Overview', icon: Activity },
   { id: 'missions', label: 'Missions', icon: Target },
@@ -13,6 +14,7 @@ const TABS: { id: Tab; label: string; icon: any }[] = [
   { id: 'keywords', label: 'Keywords', icon: Search },
   { id: 'knowledge', label: 'Company knowledge', icon: BookOpen },
   { id: 'ai', label: 'AI & pictures', icon: KeyRound },
+  { id: 'photos', label: 'Photo library', icon: Images },
   { id: 'quality', label: 'Quality & SEO', icon: Gauge },
   { id: 'report', label: 'Similarity report', icon: Waypoints },
   { id: 'copied', label: 'Copied posts', icon: FileWarning },
@@ -117,6 +119,7 @@ export default function AutoPublisherManager() {
       {tab === 'knowledge' && <KnowledgeTab cfg={cfg} patch={patch} />}
       {tab === 'report' && <ReportTab />}
       {tab === 'ai' && <AiTab cfg={cfg} patch={patch} providers={providers} act={act} />}
+      {tab === 'photos' && <PhotoLibraryTab />}
       {tab === 'quality' && <QualityTab cfg={cfg} patch={patch} />}
       {tab === 'copied' && <CopiedTab />}
       {tab === 'logs' && <LogsTab />}
@@ -262,6 +265,7 @@ function AiTab({ cfg, patch, providers, act }: { cfg: any; patch: (fn: (c: any) 
                   <a href={p.keyUrl} target="_blank" rel="noopener noreferrer" className="mt-1 inline-block text-xs font-bold text-gold-deep underline">
                     Get a key
                   </a>
+                  {keyWarning(p.id, cfg.providers[p.id]?.key || '') && <p className="mt-1 rounded-lg bg-amber-50 p-2 text-xs text-amber-800">{keyWarning(p.id, cfg.providers[p.id]?.key || '')}</p>}
                 </div>
                 <div>
                   <label className="admin-label">Model</label>
@@ -335,14 +339,28 @@ function AiTab({ cfg, patch, providers, act }: { cfg: any; patch: (fn: (c: any) 
   );
 }
 
+/** Catches the most common mistake: pasting a key's ID or another provider's key */
+function keyWarning(provider: string, key: string): string {
+  const k = key.trim();
+  if (!k || k.startsWith('••')) return '';
+  if ((provider === 'openai' || provider === 'openrouter') && /^key_/i.test(k)) return 'This looks like the key ID ("key_…") shown in the dashboard, not the secret key. Create a new secret key: it starts with "sk-" and is shown only once.';
+  if (provider === 'openai' && !k.startsWith('sk-')) return 'OpenAI secret keys start with "sk-" (for example sk-proj-…). Please check that you copied the whole secret key.';
+  if (provider === 'openrouter' && !k.startsWith('sk-or-')) return 'OpenRouter keys start with "sk-or-".';
+  if (provider === 'claude' && !k.startsWith('sk-ant-')) return 'Claude (Anthropic) keys start with "sk-ant-".';
+  if (provider === 'gemini' && !k.startsWith('AIza')) return 'Google Gemini keys usually start with "AIza".';
+  return '';
+}
+
 function TestPicture() {
   const [busy, setBusy] = useState(false);
   const [res, setRes] = useState<any>(null);
+  const [title, setTitle] = useState('How much is a UAE Golden Visa for a family?');
+  const [idea, setIdea] = useState('');
   async function run() {
     setBusy(true);
     setRes(null);
     try {
-      setRes(await api<any>('/api/admin/autopublisher', 'POST', { action: 'testPicture' }));
+      setRes(await api<any>('/api/admin/autopublisher', 'POST', { action: 'testPicture', title, idea }));
     } catch (e: any) {
       setRes({ error: e.message });
     } finally {
@@ -351,11 +369,21 @@ function TestPicture() {
   }
   return (
     <div className="rounded-xl bg-gray-50 p-4 md:col-span-2">
+      <div className="mb-3 grid gap-3 md:grid-cols-2">
+        <div>
+          <label className="admin-label">Article title</label>
+          <input className="admin-input" value={title} onChange={(e) => setTitle(e.target.value)} maxLength={200} />
+        </div>
+        <div>
+          <label className="admin-label">Your picture idea (optional)</label>
+          <input className="admin-input" value={idea} onChange={(e) => setIdea(e.target.value)} maxLength={400} placeholder="e.g. a young family with suitcases arriving at a Dubai villa at sunset" />
+        </div>
+      </div>
       <div className="flex flex-wrap items-center gap-3">
-        <Btn size="sm" variant="dark" onClick={run} loading={busy}>
+        <Btn size="sm" variant="dark" onClick={run} loading={busy} disabled={!title.trim()}>
           <FlaskConical className="h-3.5 w-3.5" /> Test picture
         </Btn>
-        <span className="text-xs text-gray-500">Save first. Generates one sample with all quality checks (takes up to a minute, uses 1–3 picture credits) and adds it to the Media library.</span>
+        <span className="text-xs text-gray-500">Save first. Makes one cover the same way as for a real article (photo library match, AI photo editor, all quality checks). Takes up to 2 minutes, uses 1–4 picture credits, and adds the result to Media.</span>
       </div>
       {res?.error && <p className="mt-3 rounded-lg bg-red-50 p-3 text-xs text-red-700">{res.error}</p>}
       {res?.url && (
@@ -365,6 +393,7 @@ function TestPicture() {
           <ul className="space-y-1 text-xs text-gray-600">
             <li>Sharpness: <b>{res.sharpness}</b></li>
             <li>Realism: <b>{res.realism}/10</b></li>
+            <li>Alt text: <b>{res.alt}</b></li>
             <li>Attempts: <b>{res.attempts}</b></li>
             <li>Size: <b>{res.width}×{res.height}</b> WebP</li>
             <li>Time: <b>{Math.round(res.ms / 1000)} s</b></li>

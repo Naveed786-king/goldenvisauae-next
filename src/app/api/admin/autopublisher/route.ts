@@ -52,9 +52,13 @@ export async function POST(req: Request) {
     try {
       const cfg = await getAutoConfig();
       const t = Date.now();
+      // a title (and optionally the admin's own picture idea) — the same steps as for a real article:
+      // library photo match, AI photo editor scenes, generation and all quality checks
+      const title = String(body.title || 'UAE Golden Visa for families').slice(0, 200);
+      const idea = String(body.idea || '').trim().slice(0, 400);
       const r = await producePicture(
-        { kind: 'inline', purpose: String(body.purpose || 'a family reviewing documents in a bright Dubai apartment').slice(0, 300), alt: 'Test picture — family reviewing documents in Dubai' },
-        { topic: 'UAE Golden Visa for families', focusKeyword: 'golden visa test picture', variant: Math.floor(Math.random() * 1000) },
+        { kind: 'cover', purpose: `cover picture for "${title}"`, idea: idea || undefined, alt: `${title} — test picture` },
+        { topic: title, focusKeyword: title.toLowerCase(), variant: Math.floor(Math.random() * 1000), summary: idea },
         cfg,
       );
       return r.ok ? ok({ ...r, ms: Date.now() - t }) : fail(`Picture failed the checks: ${(r as { reason: string }).reason}`);

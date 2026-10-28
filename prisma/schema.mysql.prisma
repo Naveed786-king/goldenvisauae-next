@@ -323,6 +323,20 @@ model AutoLog {
   @@index([createdAt])
 }
 
+// Photos the admin uploads as inspiration for the publisher's pictures (additive)
+model AutoReference {
+  id         String    @id @default(cuid())
+  url        String
+  caption    String    @default("") @db.VarChar(500) // one-line description written by the vision AI (editable)
+  tags       String    @default("") @db.VarChar(500)
+  active     Boolean   @default(true)
+  uses       Int       @default(0)
+  lastUsedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([active])
+}
+
 // ---------------------------------------------------------------- AI chatbot (additive)
 model ChatSession {
   id        String    @id @default(cuid())

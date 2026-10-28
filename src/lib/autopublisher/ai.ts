@@ -161,13 +161,22 @@ export async function http(url: string, init: RequestInit, timeoutMs: number, wh
       /* keep raw text */
     }
     const kind = res.status === 429 || /quota|rate.?limit|resource.?exhausted|overloaded/i.test(msg) ? 'quota' : res.status === 401 || res.status === 403 ? 'auth' : 'other';
-    throw new AiError(kind, `${who} HTTP ${res.status}: ${msg}`);
+    throw new AiError(kind, `${who} HTTP ${res.status}: ${msg}${providerHint(who, res.status, msg)}`);
   }
   try {
     return JSON.parse(text);
   } catch {
     throw new AiError('bad_output', `${who} returned a non-JSON response`);
   }
+}
+
+/** Plain-language next step for the errors admins hit most */
+function providerHint(who: string, status: number, msg: string): string {
+  if (/^OpenAI/.test(who) && status === 401) return ' — The OpenAI key is wrong. In Auto Publisher → AI & pictures paste a SECRET key from platform.openai.com/api-keys: it starts with "sk-" (e.g. sk-proj-…). A value starting with "key_" is only the key ID.';
+  if (/^OpenAI/.test(who) && status === 403 && /verif/i.test(msg)) return ' — OpenAI asks you to verify your organization before using its picture model (platform.openai.com → Settings → Organization → Verify), or switch "Picture provider" to Google Gemini.';
+  if (/^OpenAI/.test(who) && (status === 429 || /billing|quota|insufficient/i.test(msg))) return ' — Add credit or a payment method at platform.openai.com/settings/organization/billing.';
+  if (/^Gemini/.test(who) && (status === 400 || status === 403) && /api key/i.test(msg)) return ' — The Gemini key is wrong. Create one at aistudio.google.com/apikey (it starts with "AIza").';
+  return '';
 }
 
 async function callGemini(key: string, model: string, o: CompleteOpts, temperature: number, maxTokens: number, timeoutMs: number) {
@@ -235,6 +244,8 @@ function fakeAnswer(o: CompleteOpts): string {
   if (!o.json) return 'Fake AI answer for a dry run.';
   if (/content strategist/i.test(o.system)) return JSON.stringify({ intent: 'informational', reader: { who: 'family', country: 'AE', fears: 'rejection', wants: 'clear steps' }, angle: 'checklist with mistakes', title: FAKE_ARTICLE.title, outline: [{ h2: 'What this sample shows', h3: [], notes: '' }], quickAnswer: 'sample', table: '', companyFacts: [], faq: ['Is this a real article?'], internalLinks: FAKE_ARTICLE.internalLinks, cta: 'Talk to us', imagePlan: [{ purpose: 'cover' }], category: 'Process' });
   if (/picture quality inspector/i.test(o.system)) return JSON.stringify({ ok: true, realism: 9, issues: [] });
+  if (/photo editor/i.test(o.system)) return JSON.stringify({ scenes: ['A family with two suitcases arriving at a bright modern Dubai apartment, seen from behind, warm evening light', 'A closed plain passport and house keys on a marble kitchen counter, Dubai Marina towers through the window', 'A consultant desk in a Business Bay office with closed folders, city view, soft daylight'], alt: 'Family arriving at their new Dubai home (sample)' });
+  if (/picture library/i.test(o.system)) return JSON.stringify({ caption: 'Sample library photo: modern Dubai interior with soft daylight (dry run)', tags: ['dubai', 'interior', 'home', 'daylight', 'visa'] });
   if (/native .* editor/i.test(o.system)) return JSON.stringify({ ...FAKE_ARTICLE, title: `${FAKE_ARTICLE.title} (native sample)`, contentHtml: FAKE_ARTICLE.contentHtml.replace('sample shows', 'native sample shows') });
   if (/strict senior human editor/i.test(o.system)) return JSON.stringify({ article: parseJsonLoose((o.prompt.split('ARTICLE (JSON):')[1] || '').split('\n\nReturn JSON only')[0]) || FAKE_ARTICLE, quality: { score: 90, helpfulness: 90, originality: 90, accuracy: 90, readability: 90, eeat: 90, reasons: ['Fake mode sample'] }, unsupportedClaims: [] });
   return JSON.stringify(fakeVariant(o.prompt));
