@@ -138,8 +138,8 @@ export type PictureResult = { ok: true; url: string; ogUrl?: string; width: numb
  * summary), in the style of the library photo when there is one. Safe for picture models: no readable
  * text or numbers, people only at a natural distance.
  */
-export async function pictureConcept(spec: PictureSpec, ctx: { topic: string; focusKeyword: string; summary?: string }, refCaption: string, cfg: AutoConfig): Promise<{ scenes: string[]; alt: string }> {
-  const r = await completeJson<{ scenes?: string[]; alt?: string }>({
+export async function pictureConcept(spec: PictureSpec, ctx: { topic: string; focusKeyword: string; summary?: string }, refCaption: string, cfg: AutoConfig): Promise<{ scenes: string[]; alts: string[]; alt: string }> {
+  const r = await completeJson<{ scenes?: string[]; alts?: string[]; alt?: string }>({
     system: 'You are the photo editor of a UAE visa and residency consultancy blog. You pick realistic photos that a reader instantly connects with the article.',
     prompt: `ARTICLE TITLE: ${ctx.topic}
 FOCUS KEYWORD: ${ctx.focusKeyword}
@@ -152,13 +152,15 @@ Rules:
 - People are welcome when they help, but at a natural distance (side or back view, or medium shot); never close-up faces or hands.
 - Nothing readable: no text, numbers, prices, logos, signs, screens with content, charts or open documents. Passports only closed with a plain cover; cards blank.
 - Each scene 1-2 sentences, at most 50 words.
-Return JSON only: {"scenes": ["", "", ""], "alt": "short alt text for scene 1 (include the focus keyword if natural)"}`,
+Return JSON only: {"scenes": ["", "", ""], "alts": ["short alt text for scene 1", "for scene 2", "for scene 3"]} (alt texts describe what is visible and include the focus keyword where natural)`,
     temperature: 0.8,
     maxTokens: 1200,
     timeoutMs: 60_000,
   });
-  const scenes = (Array.isArray(r?.scenes) ? r.scenes : []).map((x) => String(x).trim()).filter((x) => x.length > 15).slice(0, 4);
-  return { scenes, alt: String(r?.alt || '').trim().slice(0, 200) };
+  const raw = Array.isArray(r?.scenes) ? r.scenes : [];
+  const rawAlts = Array.isArray(r?.alts) ? r.alts : [];
+  const keep = raw.map((x, i) => ({ scene: String(x).trim(), alt: String(rawAlts[i] || '').trim().slice(0, 200) })).filter((x) => x.scene.length > 15).slice(0, 4);
+  return { scenes: keep.map((x) => x.scene), alts: keep.map((x) => x.alt), alt: keep[0]?.alt || String(r?.alt || '').trim().slice(0, 200) };
 }
 
 /** Problems that make a picture unusable even as a fallback (text, logos, broken hands or faces) */
@@ -186,9 +188,11 @@ export async function producePicture(spec: PictureSpec, ctx: { topic: string; fo
   const concept = await pictureConcept(spec, ctx, ref && refImg ? ref.caption : '', cfg).catch((e) => {
     if (e instanceof AiError && (e.kind === 'quota' || e.kind === 'config')) throw e;
     void autoLog('warn', `Picture idea step failed, using house scenes: ${e instanceof Error ? e.message : e}`, ctx.jobId);
-    return { scenes: [] as string[], alt: '' };
+    return { scenes: [] as string[], alts: [] as string[], alt: '' };
   });
-  if (concept.alt && /—|^cover|illustration for/i.test(spec.alt)) spec = { ...spec, alt: concept.alt };
+  // the alt text must describe the scene that was actually used (attempt k uses scene k)
+  const generic = /—|^cover|illustration for/i.test(spec.alt);
+  const altFor = (attempt: number) => (generic && concept.scenes.length ? concept.alts[(attempt - 1) % concept.scenes.length] || concept.alt : '') || spec.alt;
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     const scene = concept.scenes.length ? concept.scenes[(attempt - 1) % concept.scenes.length] : undefined;
     const prompt = buildImagePrompt({ purpose: spec.purpose, hint: attempt === 1 ? spec.hint : undefined, topic: ctx.topic, houseStyle: cfg.images.houseStyle, variant: ctx.variant + attempt * 5, scene, withReference: !!refImg });
@@ -230,11 +234,11 @@ export async function producePicture(spec: PictureSpec, ctx: { topic: string; fo
       if (clean && v.realism >= Math.max(5, needed - 1) && (!best || v.realism > best.realism)) best = { raw, hash, sharp: sharpScore, realism: v.realism, attempt };
       continue;
     }
-    return savePicture(spec, ctx, raw, hash, sharpScore, v.realism, attempt);
+    return savePicture({ ...spec, alt: altFor(attempt) }, ctx, raw, hash, sharpScore, v.realism, attempt);
   }
   if (best && spec.kind === 'cover') {
     await autoLog('info', `No cover attempt reached ${needed}/10 — using the best clean attempt (realism ${best.realism}, no text, logos, hands or faces).`, ctx.jobId);
-    return savePicture(spec, ctx, best.raw, best.hash, best.sharp, best.realism, maxAttempts);
+    return savePicture({ ...spec, alt: altFor(best.attempt) }, ctx, best.raw, best.hash, best.sharp, best.realism, maxAttempts);
   }
   await autoLog('warn', `Picture failed after ${maxAttempts} attempts (${spec.kind}): ${reasons.join(' · ')}`, ctx.jobId);
   return { ok: false, reason: reasons.join(' · '), attempts: maxAttempts };
