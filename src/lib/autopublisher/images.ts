@@ -8,6 +8,9 @@ import { AiError, completeJson, http, isFakeAi, providerKey } from './ai';
 import { autoLog, countAiCall } from './log';
 import { slugify } from './text';
 import { dhash, hamming, sharpness } from './imaging';
+import { readLocal } from './local-file';
+import { pickReference, referenceImage } from './references';
+export { readLocal };
 
 export { dhash, hamming, sharpness };
 
@@ -18,7 +21,7 @@ export { buildImagePrompt, peopleAllowed } from './image-prompt';
 
 // ---------------------------------------------------------------- generation
 
-export async function generateImage(prompt: string, cfg: AutoConfig): Promise<Buffer> {
+export async function generateImage(prompt: string, cfg: AutoConfig, reference?: Buffer | null): Promise<Buffer> {
   if (isFakeAi()) return fakeImage(prompt);
   const which = cfg.images.provider;
   const key = await providerKey(cfg, which === 'openai' ? 'openai' : 'gemini');
@@ -26,6 +29,20 @@ export async function generateImage(prompt: string, cfg: AutoConfig): Promise<Bu
   await countAiCall();
   if (which === 'openai') {
     const model = cfg.images.openaiModel || 'gpt-image-1';
+    // with a library photo: the edits endpoint takes it as input and paints a new picture inspired by it
+    if (reference && !model.startsWith('dall-e')) {
+      const fd = new FormData();
+      fd.append('model', model);
+      fd.append('prompt', prompt);
+      fd.append('size', '1536x1024');
+      fd.append('quality', cfg.images.quality);
+      fd.append('n', '1');
+      fd.append('image', new Blob([new Uint8Array(reference)], { type: 'image/jpeg' }), 'reference.jpg');
+      const j = await http('https://api.openai.com/v1/images/edits', { method: 'POST', headers: { Authorization: `Bearer ${key}` }, body: fd }, 180_000, 'OpenAI images');
+      const b64 = j?.data?.[0]?.b64_json;
+      if (!b64) throw new AiError('bad_output', 'OpenAI returned no picture');
+      return Buffer.from(b64, 'base64');
+    }
     const body: any = { model, prompt, n: 1, size: model.startsWith('dall-e') ? '1792x1024' : '1536x1024' };
     if (model.startsWith('dall-e')) Object.assign(body, { response_format: 'b64_json', quality: cfg.images.quality === 'high' ? 'hd' : 'standard' });
     else body.quality = cfg.images.quality;
@@ -38,7 +55,7 @@ export async function generateImage(prompt: string, cfg: AutoConfig): Promise<Bu
   const model = cfg.images.geminiModel || 'gemini-2.5-flash-image';
   const j = await http(
     `${base}/v1beta/models/${encodeURIComponent(model)}:generateContent`,
-    { method: 'POST', headers: { 'content-type': 'application/json', 'x-goog-api-key': key }, body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: `${prompt}\nWide 16:9 landscape format.` }] }], generationConfig: { responseModalities: ['IMAGE', 'TEXT'] } }) },
+    { method: 'POST', headers: { 'content-type': 'application/json', 'x-goog-api-key': key }, body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: `${prompt}\nWide 16:9 landscape format.` }, ...(reference ? [{ inlineData: { mimeType: 'image/jpeg', data: reference.toString('base64') } }] : [])] }], generationConfig: { responseModalities: ['IMAGE', 'TEXT'] } }) },
     180_000,
     'Gemini images',
   );
@@ -82,15 +99,16 @@ export function realismNeeded(minRealism: number, kind: 'cover' | 'inline'): num
   return kind === 'inline' ? Math.max(5, minRealism - 1) : minRealism;
 }
 
-export async function visionCheck(buf: Buffer, purpose: string, cfg: AutoConfig, kind: 'cover' | 'inline' = 'cover'): Promise<{ ok: boolean; realism: number; issues: string[] }> {
+export async function visionCheck(buf: Buffer, purpose: string, cfg: AutoConfig, kind: 'cover' | 'inline' = 'cover', title = ''): Promise<{ ok: boolean; realism: number; match: number; issues: string[] }> {
   const small = await sharp(buf).resize(1024, 1024, { fit: 'inside' }).jpeg({ quality: 82 }).toBuffer();
   const r = await completeJson<any>({
     system: 'You are a strict picture quality inspector for a premium consultancy website. Be honest and critical.',
-    prompt: `Check this picture, meant for: "${pictureSafe(purpose) || 'a UAE visa article'}".
+    prompt: `Check this picture, meant for: "${pictureSafe(purpose) || 'a UAE visa article'}"${title ? ` in an article titled "${pictureSafe(title)}"` : ''}.
 Reject it if ANY of these is true: visible text, letters, numbers, logos or watermarks; deformed or extra fingers/hands; warped or uncanny faces; obvious AI artefacts; blurry or low detail; documents with readable details; off-topic or unrealistic scene.
 On-topic for this UAE visa and residency consultancy: closed passports with a plain cover, blank gold or white cards, luggage, airports and planes, UAE landmarks, skylines, homes, offices and coastlines. A plain passport cover or a blank card is fine as long as nothing on it is readable.
 Realism: 9-10 = indistinguishable from a professional photo, 7-8 = convincing photo with tiny flaws, 5-6 = clearly AI-looking, under 5 = broken.
-Return JSON only: {"ok": true|false, "realism": 0-10, "issues": ["…"]}`,
+Match: how clearly a reader connects this picture with the article title, 0-10 (7+ = obviously about this topic, under 5 = generic or unrelated).
+Return JSON only: {"ok": true|false, "realism": 0-10, "match": 0-10, "issues": ["…"]}`,
     images: [{ mime: 'image/jpeg', data: small.toString('base64') }],
     temperature: 0,
     maxTokens: 1500,
@@ -98,7 +116,9 @@ Return JSON only: {"ok": true|false, "realism": 0-10, "issues": ["…"]}`,
   });
   const realism = Math.max(0, Math.min(10, Number(r?.realism) || 0));
   const issues = Array.isArray(r?.issues) ? r.issues.map(String).slice(0, 6) : [];
-  return { ok: !!r?.ok && realism >= realismNeeded(cfg.images.minRealism, kind), realism, issues };
+  const match = r?.match == null ? 10 : Math.max(0, Math.min(10, Number(r.match) || 0));
+  if (title && match < 5) issues.push(`does not fit the article title (match ${match}/10)`);
+  return { ok: !!r?.ok && realism >= realismNeeded(cfg.images.minRealism, kind) && (!title || match >= 5), realism, match, issues };
 }
 
 // ---------------------------------------------------------------- output
@@ -110,8 +130,36 @@ async function saveWebp(buf: Buffer, name: string, alt: string): Promise<{ url: 
   return { url: saved.url, size: saved.size };
 }
 
-export type PictureSpec = { purpose: string; hint?: string; alt: string; kind: 'cover' | 'inline'; placement?: string };
+export type PictureSpec = { purpose: string; hint?: string; alt: string; kind: 'cover' | 'inline'; placement?: string; idea?: string };
 export type PictureResult = { ok: true; url: string; ogUrl?: string; width: number; height: number; alt: string; hash: string; sharpness: number; realism: number; attempts: number } | { ok: false; reason: string; attempts: number };
+
+/**
+ * The AI photo editor: three concrete, realistic scenes that clearly fit this article (title, section,
+ * summary), in the style of the library photo when there is one. Safe for picture models: no readable
+ * text or numbers, people only at a natural distance.
+ */
+export async function pictureConcept(spec: PictureSpec, ctx: { topic: string; focusKeyword: string; summary?: string }, refCaption: string, cfg: AutoConfig): Promise<{ scenes: string[]; alt: string }> {
+  const r = await completeJson<{ scenes?: string[]; alt?: string }>({
+    system: 'You are the photo editor of a UAE visa and residency consultancy blog. You pick realistic photos that a reader instantly connects with the article.',
+    prompt: `ARTICLE TITLE: ${ctx.topic}
+FOCUS KEYWORD: ${ctx.focusKeyword}
+${ctx.summary ? `WHAT THE ARTICLE SAYS: ${String(ctx.summary).slice(0, 600)}\n` : ''}PICTURE FOR: ${spec.kind === 'cover' ? 'the cover (top of the article)' : spec.purpose}
+${refCaption ? `OUR LIBRARY PHOTO TO TAKE STYLE FROM: ${refCaption}\n` : ''}${spec.idea ? `THE ADMIN'S OWN IDEA FOR THIS PICTURE (follow it closely; only change what breaks the rules below): ${spec.idea}\n` : ''}HOUSE STYLE: ${cfg.images.houseStyle || 'bright, calm, premium, natural light, subtle warm gold accents'}
+
+Write 3 different photo scenes for this picture. Each must be a real moment a photographer could shoot in the UAE that clearly shows THIS topic (for a family visa: a family with luggage arriving at a bright Dubai home; for property: a modern villa or apartment with keys on the counter; for costs and fees: a couple at a consultant's desk with closed folders; for renewal or medical: a clean modern clinic or government service centre hall).
+Rules:
+- Photorealistic editorial photo, natural light, believable details. Different place or camera angle in each scene.
+- People are welcome when they help, but at a natural distance (side or back view, or medium shot); never close-up faces or hands.
+- Nothing readable: no text, numbers, prices, logos, signs, screens with content, charts or open documents. Passports only closed with a plain cover; cards blank.
+- Each scene 1-2 sentences, at most 50 words.
+Return JSON only: {"scenes": ["", "", ""], "alt": "short alt text for scene 1 (include the focus keyword if natural)"}`,
+    temperature: 0.8,
+    maxTokens: 1200,
+    timeoutMs: 60_000,
+  });
+  const scenes = (Array.isArray(r?.scenes) ? r.scenes : []).map((x) => String(x).trim()).filter((x) => x.length > 15).slice(0, 4);
+  return { scenes, alt: String(r?.alt || '').trim().slice(0, 200) };
+}
 
 /** Problems that make a picture unusable even as a fallback (text, logos, broken hands or faces) */
 const SERIOUS = /text|letter|number|digit|logo|watermark|brand|finger|hand|face|emblem|sign|caption|readable/i;
@@ -122,16 +170,31 @@ const SERIOUS = /text|letter|number|digit|logo|watermark|brand|finger|hand|face|
  * when it is at most one point under the minimum and has no serious problem (text, logos, hands, faces).
  * Saves WebP files (cover 1600×900 + Open Graph 1200×630, inline 1200 wide).
  */
-export async function producePicture(spec: PictureSpec, ctx: { topic: string; focusKeyword: string; variant: number; jobId?: string }, cfg: AutoConfig): Promise<PictureResult> {
+export async function producePicture(spec: PictureSpec, ctx: { topic: string; focusKeyword: string; variant: number; jobId?: string; summary?: string }, cfg: AutoConfig): Promise<PictureResult> {
   const reasons: string[] = [];
   const maxAttempts = spec.kind === 'cover' ? 4 : 2;
   const needed = realismNeeded(cfg.images.minRealism, spec.kind);
   let best: { raw: Buffer; hash: string; sharp: number; realism: number; attempt: number } | null = null;
+  // a photo from the admin's library (best match for this title/section) as inspiration, if there are any
+  const ref = await pickReference(`${ctx.topic} ${ctx.focusKeyword} ${spec.purpose}`).catch((e) => {
+    void autoLog('warn', `Photo library not available: ${e instanceof Error ? e.message : e}`, ctx.jobId);
+    return null;
+  });
+  const refImg = ref ? await referenceImage(ref.url).catch(() => null) : null;
+  if (ref && refImg) await autoLog('info', `Using library photo as inspiration (${spec.kind}): ${ref.caption || ref.url}`, ctx.jobId);
+  // scenes written for THIS article by the AI photo editor (so the picture fits the title)
+  const concept = await pictureConcept(spec, ctx, ref && refImg ? ref.caption : '', cfg).catch((e) => {
+    if (e instanceof AiError && (e.kind === 'quota' || e.kind === 'config')) throw e;
+    void autoLog('warn', `Picture idea step failed, using house scenes: ${e instanceof Error ? e.message : e}`, ctx.jobId);
+    return { scenes: [] as string[], alt: '' };
+  });
+  if (concept.alt && /—|^cover|illustration for/i.test(spec.alt)) spec = { ...spec, alt: concept.alt };
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-    const prompt = buildImagePrompt({ purpose: spec.purpose, hint: attempt === 1 ? spec.hint : undefined, topic: ctx.topic, houseStyle: cfg.images.houseStyle, variant: ctx.variant + attempt * 5 });
+    const scene = concept.scenes.length ? concept.scenes[(attempt - 1) % concept.scenes.length] : undefined;
+    const prompt = buildImagePrompt({ purpose: spec.purpose, hint: attempt === 1 ? spec.hint : undefined, topic: ctx.topic, houseStyle: cfg.images.houseStyle, variant: ctx.variant + attempt * 5, scene, withReference: !!refImg });
     let raw: Buffer;
     try {
-      raw = await generateImage(prompt, cfg);
+      raw = await generateImage(prompt, cfg, refImg);
     } catch (e: any) {
       if (e instanceof AiError && (e.kind === 'quota' || e.kind === 'config')) throw e;
       reasons.push(`attempt ${attempt}: ${e?.message || e}`);
@@ -148,11 +211,11 @@ export async function producePicture(spec: PictureSpec, ctx: { topic: string; fo
       reasons.push(`attempt ${attempt}: too similar to a picture we used (distance ${near.distance})`);
       continue;
     }
-    let v: { ok: boolean; realism: number; issues: string[] };
+    let v: { ok: boolean; realism: number; match?: number; issues: string[] };
     if (isFakeAi()) v = { ok: true, realism: 9, issues: [] };
     else {
       try {
-        v = await visionCheck(raw, spec.purpose, cfg, spec.kind);
+        v = await visionCheck(raw, scene || spec.purpose, cfg, spec.kind, ctx.topic);
       } catch (e: any) {
         // budget / missing key stop the job as before; a garbled or failed answer from the checker is not a
         // verdict on the picture — it already passed sharpness and duplicate checks, so keep it and say so
@@ -163,7 +226,7 @@ export async function producePicture(spec: PictureSpec, ctx: { topic: string; fo
     }
     if (!v.ok) {
       reasons.push(`attempt ${attempt}: vision check failed (realism ${v.realism}${v.issues.length ? `: ${v.issues.join(', ')}` : ''})`);
-      const clean = !v.issues.some((i) => SERIOUS.test(i));
+      const clean = !v.issues.some((i) => SERIOUS.test(i)) && (v.match ?? 10) >= 5;
       if (clean && v.realism >= Math.max(5, needed - 1) && (!best || v.realism > best.realism)) best = { raw, hash, sharp: sharpScore, realism: v.realism, attempt };
       continue;
     }
@@ -219,21 +282,6 @@ export async function fingerprintExistingImages(limit = 40): Promise<number> {
     }
   }
   return n;
-}
-
-async function readLocal(url: string): Promise<Buffer | null> {
-  const { readStored } = await import('@/lib/upload');
-  if (url.startsWith('/uploads/')) return readStored(url);
-  if (url.startsWith('/')) {
-    const { promises: fs } = await import('fs');
-    const path = await import('path');
-    try {
-      return await fs.readFile(path.join(process.cwd(), 'public', url));
-    } catch {
-      return null;
-    }
-  }
-  return null;
 }
 
 /** <figure> markup for an inline picture */

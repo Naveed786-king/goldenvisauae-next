@@ -225,3 +225,15 @@ test('article HTML keeps formatting but never runs code', () => {
   const kept = safeArticleHtml(good);
   for (const bit of ['class="quick-answer"', '<h2 id="a">', 'src="/uploads/media/x.webp"', 'width="1200"', 'colspan="2"', 'href="/apply"', 'rel="noopener noreferrer"', 'youtube.com/embed/abc', 'class="post-faq"']) assert.ok(kept.includes(bit), bit + ' missing in ' + kept);
 });
+
+import { aiTells } from '../src/lib/autopublisher/text.ts';
+test('machine-sounding text is caught, natural text passes', () => {
+  const ai = '<h2>Overview</h2>' + Array.from({ length: 6 }, () => '<p>In today\'s ever-evolving landscape, the UAE Golden Visa plays a crucial role for investors — it is not just a visa, but a gateway to opportunity. Furthermore, applicants must navigate the intricate requirements with meticulous care. Additionally, the process is seamless, robust and efficient for families. This means that you can embark on your journey with peace of mind.</p>').join('');
+  const human = '<h2>What it costs</h2><p>Most families pay two kinds of fees. There are the government fees, and there is our fee for doing the work.</p><p>The government part depends on how many people you add. A spouse and two children cost more than a single applicant, mostly because each person needs their own medical test and Emirates ID.</p><p>Keep it simple.</p><p>Before you pay anything, check that the name on your passport matches your title deed exactly. If one has a middle name and the other does not, the file usually comes back and you lose about a week. We see this more than any other mistake.</p><h2>How long it takes</h2><p>If your documents are in order, the approval itself is quick. The medical test and biometrics are what take time, because they need appointments.</p><p>Plan for a few weeks from first upload to the stamped residence. Book the medical as soon as you get the entry permit, since slots fill up in busy months.</p><p>Short answer? Start early.</p><p>One more thing: if you are applying from abroad, you will need to enter the UAE on the entry permit before the residence can be stamped, so check your travel dates before you book anything.</p>';
+  const a = aiTells(ai);
+  const h = aiTells(human);
+  assert.ok(a.score >= 3, 'AI text score ' + a.score);
+  assert.ok(a.problems.some((p) => /crucial|landscape/.test(p)));
+  assert.ok(a.problems.some((p) => /dash/.test(p)));
+  assert.ok(h.score < 3, 'human text score ' + h.score + ' ' + h.problems.join(' | '));
+});

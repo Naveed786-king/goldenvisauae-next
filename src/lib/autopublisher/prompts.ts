@@ -60,12 +60,26 @@ export async function linkTargets(topicTerms: string[]) {
   return { related, fixed };
 }
 
+export const HUMAN_VOICE = `HUMAN VOICE (the reader must feel one of our consultants wrote this, not a machine)
+- Write the way our consultant explains it to a client across the desk in Business Bay: "we" for us, "you" for the reader, contractions (you'll, it's, don't), plain everyday words.
+- Uneven rhythm on purpose: some sentences of 4-7 words, some of 25+. Paragraphs of 1 to 4 sentences, not all the same. Not every section needs a list.
+- Lead with the answer, then the detail. No warm-up lines ("In today's...", "Let's dive in", "Here's what you need to know", "Are you dreaming of...").
+- Be concrete: name the actual document, office, portal or step, the order things happen in, and where files usually get stuck (only from COMPANY FACTS, research or well-known public rules).
+- Give real judgement where we can stand behind it, e.g. "If your salary certificate and bank statement don't match, fix that before you apply."
+- Never use: delve, tapestry, landscape (abstract), navigate (figurative), crucial, pivotal, robust, seamless, leverage, unlock, embark, journey, realm, testament, vibrant, showcase, underscore, highlight (as a verb), meticulous, ever-evolving, game-changer, rest assured, hassle-free, peace of mind, comprehensive guide, look no further, "whether you're", "it's important to note", "it's worth noting", "in conclusion", "in summary", and sentences that start with Furthermore, Moreover, Additionally or Overall.
+- No "not just X but Y" or "it's not X, it's Y" contrasts. State the point directly.
+- No em dashes or en dashes. Use commas, colons, full stops or brackets.
+- No lists of three by habit. Use three items only when there really are three.
+- No closing line that restates the section ("This means...", "The bottom line...", "Ultimately..."). End on the last useful fact or the next step. No motivational send-off at the end.
+- Bold at most a few key terms in the whole article. Do not start every list item with a bold label. Headings in sentence case, no emojis.
+- Never invent anecdotes, client stories, quotes, names or numbers to sound human. Real detail comes only from COMPANY FACTS (including REAL ANONYMISED CASES) and the research.`;
+
 const STYLE = (cfg: AutoConfig) => `STYLE
 - Write for people first. Every paragraph must teach something specific or help a decision.
-- Plain, confident, warm. Mix short and long sentences. Active voice. Paragraphs of at most 3–4 sentences.
-- Show experience: practical steps, the real documents involved, what usually goes wrong, decision tables and checklists.
-- No fluff, no clichés, no rhetorical openings ("Are you dreaming of…"), no "In conclusion".
+- Show experience: practical steps, the real documents involved, what usually goes wrong, decision tables and checklists where they help.
 - Never use these phrases: ${cfg.quality.bannedPhrases.join('; ')}.
+
+${HUMAN_VOICE}
 
 ACCURACY (non-negotiable)
 - Facts about our company, prices, timelines and cases come ONLY from COMPANY FACTS. If something is not there, stay general.
@@ -147,11 +161,11 @@ export function editPrompt(cfg: AutoConfig, ctx: any) {
   const system = `You are a strict senior human editor at ${SITE}. You turn a draft into an article a careful expert would be proud to sign.
 ${STYLE(cfg)}`;
   const prompt = `Edit this article. Do all of this:
-1. Remove every cliché and every banned phrase. Vary sentence length and rhythm. Short paragraphs.
+1. Make it read like our consultant wrote it (see HUMAN VOICE): remove every cliché, banned phrase, machine-sounding word, em dash, "not X but Y" contrast, habit triad and restating closer. Vary sentence and paragraph length. Keep all facts.
 2. Add concrete examples and specific numbers ONLY if they appear in RESEARCH or COMPANY FACTS below.
 3. List every claim that is not supported by RESEARCH, COMPANY FACTS or well-known public rules, then remove or soften it.
 4. Keep the HTML conventions and all internal links (fix any that are not in the allowed list).
-5. Score the final article honestly.
+5. Score the final article honestly. "readability" also means: would a reader believe a person wrote it? Mark it down for any pattern listed in HUMAN VOICE.
 
 ALLOWED INTERNAL LINKS: ${ctx.allowedLinks.join(', ')}
 RESEARCH:

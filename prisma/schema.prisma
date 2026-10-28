@@ -329,6 +329,20 @@ model AutoLog {
   @@index([createdAt])
 }
 
+// Photos the admin uploads as inspiration for the publisher's pictures (additive)
+model AutoReference {
+  id         String    @id @default(cuid())
+  url        String
+  caption    String  @default("") // one-line description written by the vision AI (editable)
+  tags       String  @default("")
+  active     Boolean   @default(true)
+  uses       Int       @default(0)
+  lastUsedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([active])
+}
+
 // ---------------------------------------------------------------- AI chatbot (additive)
 // One website chat. Messages are kept as a JSON array (personal ID numbers are masked before saving).
 model ChatSession {

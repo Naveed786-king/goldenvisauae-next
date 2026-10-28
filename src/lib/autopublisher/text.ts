@@ -281,3 +281,83 @@ export function insertFigures(html: string, figures: { afterH2: number; html: st
   }
   return parts.join('');
 }
+
+// ---------------------------------------------------------------- human voice check
+
+/** Words and phrases language models use far more often than people (after Wikipedia's "Signs of AI writing") */
+export const AI_WORDS = [
+  'delve', 'delves', 'delving', 'tapestry', 'testament', 'pivotal', 'crucial', 'robust', 'seamless', 'seamlessly', 'leverage', 'leveraging',
+  'unlock', 'unlocking', 'embark', 'realm', 'vibrant', 'showcase', 'showcasing', 'underscore', 'underscores', 'meticulous', 'meticulously',
+  'ever-evolving', 'game-changer', 'navigate the', 'navigating the', 'intricate', 'intricacies', 'bolstered', 'garner', 'interplay',
+  'look no further', "it's important to note", 'it is important to note', "it's worth noting", 'it is worth noting', 'in conclusion',
+  'in summary', 'in today\'s', "let's dive", 'dive into', 'deep dive', "here's what you need to know", 'whether you\'re', 'whether you are',
+  'comprehensive guide', 'ultimate guide', 'the landscape of', 'evolving landscape', 'plays a key role', 'plays a crucial role',
+  'stands as', 'serves as a', 'nestled', 'in the heart of', 'breathtaking', 'rest assured', 'peace of mind', 'hassle-free', 'journey',
+];
+
+export type AiTells = { score: number; problems: string[] };
+
+/**
+ * Finds the patterns that make text read as machine-written. Each problem is written as an
+ * instruction for the editor. Score 0 = reads like a person; the publisher rewrites at 3 or more.
+ */
+export function aiTells(html: string): AiTells {
+  const text = stripHtml(html);
+  const lower = ` ${text.toLowerCase()} `;
+  const problems: string[] = [];
+  let score = 0;
+
+  const found = AI_WORDS.filter((w) => lower.includes(` ${w}`) || lower.includes(`${w} `));
+  if (found.length) {
+    score += Math.min(4, found.length);
+    problems.push(`Replace these machine-sounding words/phrases with plain ones (or cut the sentence): ${found.slice(0, 15).map((w) => `"${w}"`).join(', ')}`);
+  }
+  const dashes = (text.match(/\s[—–]\s|[a-z][—–][a-z]|\s--\s/gi) || []).length;
+  if (dashes > 2) {
+    score += dashes > 8 ? 2 : 1;
+    problems.push(`Remove the ${dashes} em/en dashes: use a comma, colon, full stop or brackets instead`);
+  }
+  const notBut = (text.match(/\bnot (just|only|merely|simply)\b[^.?!]{0,80}\bbut\b|\bit'?s not [^.?!]{1,60}[,;] it'?s\b|\bisn'?t (just|only) [^.?!]{1,60}[,;] it'?s\b/gi) || []).length;
+  if (notBut) {
+    score += Math.min(2, notBut);
+    problems.push(`State the point directly instead of "not just X but Y" / "it's not X, it's Y" contrasts (${notBut} found)`);
+  }
+  const sentences = text.split(/(?<=[.!?])\s+/).map((s) => s.trim()).filter((s) => s.split(/\s+/).length >= 3);
+  if (sentences.length >= 15) {
+    const lens = sentences.map((s) => s.split(/\s+/).length);
+    const mean = lens.reduce((a, b) => a + b, 0) / lens.length;
+    const sd = Math.sqrt(lens.reduce((a, b) => a + (b - mean) ** 2, 0) / lens.length);
+    const short = lens.filter((l) => l <= 7).length / lens.length;
+    if (sd < 5.5 || short < 0.06) {
+      score += 2;
+      problems.push(`Sentences are too even (average ${Math.round(mean)} words, little variation): mix in some short, direct sentences and let a few run longer`);
+    }
+    const starts: Record<string, number> = {};
+    for (const s of sentences) {
+      const w = s.split(/\s+/)[0].toLowerCase().replace(/[^a-z']/g, '');
+      if (['additionally', 'furthermore', 'moreover', 'however', 'overall', 'ultimately', 'importantly', 'notably'].includes(w)) starts[w] = (starts[w] || 0) + 1;
+    }
+    const conn = Object.entries(starts).filter(([, n]) => n >= 1);
+    const connTotal = conn.reduce((a, [, n]) => a + n, 0);
+    if (connTotal >= 3) {
+      score += 1;
+      problems.push(`Too many sentences open with stock connectors (${conn.map(([w, n]) => `${w} ×${n}`).join(', ')}): start with the subject or the action instead`);
+    }
+  }
+  const boldLabels = (html.match(/<li>\s*<strong>[^<]{1,40}:?\s*<\/strong>\s*:?/gi) || []).length;
+  if (boldLabels > 4) {
+    score += 1;
+    problems.push(`${boldLabels} list items start with a bold label: keep the bold only where it really helps, or turn the list into prose`);
+  }
+  const closers = (html.match(/<p>\s*(This (shows|means|is why|matters)|That'?s why|The bottom line|The takeaway|The key takeaway|Ultimately,|Overall,)[^<]{0,140}<\/p>/gi) || []).length;
+  if (closers >= 2) {
+    score += 1;
+    problems.push(`Cut the ${closers} summary/closing lines that only restate the section ("This means…", "Ultimately…"): end each section on the last useful fact or next step`);
+  }
+  const triads = (text.match(/\b\w+, \w+(,)? and \w+\b/g) || []).length;
+  if (sentences.length && triads / sentences.length > 0.25) {
+    score += 1;
+    problems.push('Too many lists of three ("fast, simple and reliable"): keep groups of three only where there really are three things');
+  }
+  return { score, problems };
+}

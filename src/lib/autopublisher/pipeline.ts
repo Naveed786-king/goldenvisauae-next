@@ -13,10 +13,11 @@ import { acquireLock, aiCallsToday, autoLog, getBackoff } from './log';
 import { dayKey, parseCustomTitle } from './pure';
 import { clusterFor, freshRelevant, googleNews, researchMission } from './research';
 import { checkArticle, checkTopic, fingerprintPost, rebuildFingerprints } from './similarity';
-import { companyFacts, linkTargets, briefPrompt, writePrompt, editPrompt, fixPrompt, nativePrompt } from './prompts';
-import { insertFigures, bannedFound, cleanArticleHtml, escapeHtml, guaranteeFound, jaccard, normalize, seoScore, shingles, slugify, stripHtml, terms, topicTerms, unsupportedNumbers, words } from './text';
+import { companyFacts, linkTargets, briefPrompt, writePrompt, editPrompt, fixPrompt, nativePrompt, HUMAN_VOICE } from './prompts';
+import { aiTells, insertFigures, bannedFound, cleanArticleHtml, escapeHtml, guaranteeFound, jaccard, normalize, seoScore, shingles, slugify, stripHtml, terms, topicTerms, unsupportedNumbers, words } from './text';
 import { figureHtml, fingerprintExistingImages, producePicture } from './images';
 import { COPIED_SLUGS } from './copied-slugs';
+import { describeReferences } from './references';
 import { hashItems, source } from '@/lib/i18n/content';
 import { safeArticleHtml } from '@/lib/sanitize';
 
@@ -82,6 +83,8 @@ export async function tick(opts: { manual?: boolean; jobId?: string } = {}): Pro
     if (Date.now() - started < TICK_LIMIT_MS / 2) {
       await rebuildFingerprints(20, cfg);
       await fingerprintExistingImages(20).catch((e) => autoLog('warn', `Picture fingerprints failed: ${e instanceof Error ? e.message : e}`));
+      // photo library: describe newly uploaded photos a few at a time
+      if (cfg.enabled) await describeReferences(cfg, 5).catch((e) => autoLog('warn', `Describing library photos failed: ${e instanceof Error ? e.message : e}`));
     }
     return { did: 'idle' };
   } catch (e: any) {
@@ -461,6 +464,20 @@ const check: Stage = async (job, d, cfg) => {
       return 'held';
     }
   }
+  // 4) human voice: machine-sounding patterns are rewritten (up to 2 rounds), never published as they are
+  const tells = aiTells(html);
+  d.human = { score: tells.score, problems: tells.problems };
+  if (tells.score >= 3 && !isFakeAi()) {
+    if (Number(d.fixed.human || 0) < 2) {
+      d.fixed.human = Number(d.fixed.human || 0) + 1;
+      await autoLog('info', `Reads machine-written (score ${tells.score}) — rewriting in a human voice (round ${d.fixed.human} of 2)`, job.id);
+      const problems = ['Rewrite every part that reads as machine-written. Keep every fact, number, heading topic and internal link.', ...tells.problems];
+      const { system, prompt } = fixPrompt(cfg, a, problems, HUMAN_VOICE);
+      d.article = { ...a, ...(await completeJson({ system, prompt, temperature: 0.8, maxTokens: 16000, timeoutMs: 230_000 })) };
+      return 'check';
+    }
+    await autoLog('warn', `Still some machine-sounding patterns after 2 rewrites (score ${tells.score}): ${tells.problems.join(' | ')}`, job.id);
+  }
   if (seo.score < cfg.quality.minSeo && !isFakeAi()) {
     // SEO is not a safety problem: after 2 automatic fixes the article goes on
     await autoLog('warn', `SEO score ${seo.score} (target ${cfg.quality.minSeo}) after 2 automatic fixes — continuing: ${seo.failed.join(', ')}`, job.id);
@@ -497,7 +514,7 @@ const images: Stage = async (job, d, cfg) => {
   // all remaining pictures are made at the same time (several minutes faster than one by one)
   const start = d.picIndex;
   const specs = d.picPlan.slice(start);
-  const results = await Promise.all(specs.map((spec: any, k: number) => producePicture(spec, { topic: a.title, focusKeyword: a.focusKeyword || d.focusKeyword, variant: hashCode(job.id) + (start + k) * 7 + Number(d.coverRounds || 0) * 13, jobId: job.id }, cfg)));
+  const results = await Promise.all(specs.map((spec: any, k: number) => producePicture(spec, { topic: a.title, focusKeyword: a.focusKeyword || d.focusKeyword, summary: stripHtml(a.quickAnswer || a.excerpt || ''), variant: hashCode(job.id) + (start + k) * 7 + Number(d.coverRounds || 0) * 13, jobId: job.id }, cfg)));
   d.picIndex = d.picPlan.length;
   let coverFailed = '';
   results.forEach((res, k) => {
