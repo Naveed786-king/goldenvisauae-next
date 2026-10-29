@@ -50,7 +50,7 @@ const PEOPLE_RULES = 'People appear at a natural distance (side or back view, or
 
 // banner photos: a real-looking passport usually carries the word PASSPORT, so that one word is allowed
 const NEVER_BANNER =
-  'A passport cover may show a simple gold crest and only the word PASSPORT in gold capitals, spelled exactly; cards blank gold or white. No other text, letters or numbers anywhere: no prices, logos, signs, watermarks, labels or screens. No personal data, names, ID numbers or photos of a person.';
+  'No text, letters or numbers anywhere in the picture: passports only face down or inside a plain leather holder, cards blank, no prices, logos, signs, watermarks, labels, titles or screens. No personal data or photos of a person.';
 
 const NEVER_SYMBOLS =
   'The passport cover may show the UAE national emblem and the words UNITED ARAB EMIRATES and PASSPORT in gold, spelled exactly; a residence card may say GOLDEN VISA. Nothing else readable: no other text, numbers, prices, logos, signs, watermarks or screens. No personal data, names, ID numbers, barcodes or photos of a person on any document.';
@@ -62,7 +62,8 @@ export function buildImagePrompt(o: { purpose: string; hint?: string; topic: str
     const hasPeople = !o.still && (PEOPLE_WORDS.test(o.scene) || peopleAllowed(o.houseStyle));
     return [
       o.withReference ? 'Use the attached photo only as inspiration for its style, light, colours and kind of place. Create a NEW, different photograph with its own composition and details; do not copy it.' : '',
-      o.still ? `Premium still-life product photograph for a designed cover about ${pictureSafe(o.topic) || 'UAE residency'}. The left third of the frame is bright and simple (soft warm haze, pale out-of-focus skyline), the objects on the right. Bright overall, no black or dark areas.` : `Realistic editorial photograph for a UAE visa article about ${pictureSafe(o.topic) || 'UAE residency'}.`,
+      // no topic words for banner photos: picture models tend to print them as text on the image
+      o.still ? 'Premium still-life product photograph for a website header. It must contain no text, titles, captions or lettering at all. The left third of the frame is bright and simple (soft warm haze, pale out-of-focus skyline), the objects on the right. Bright overall, no black or dark areas.' : `Realistic editorial photograph for a UAE visa article about ${pictureSafe(o.topic) || 'UAE residency'}.`,
       `Scene: ${o.scene}`,
       o.still ? 'Shot with a 50 mm lens, shallow depth of field, bright warm golden-hour daylight, gold and black objects, glossy marble reflections, light airy background.' : `Shot on a full-frame camera with a ${v % 2 ? '35 mm' : '50 mm'} lens, ${TIME[(v + 2) % TIME.length]}.`,
       'Sharp focus, true-to-life colours, realistic materials, believable details, premium calm mood.',
