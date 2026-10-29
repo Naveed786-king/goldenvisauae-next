@@ -146,10 +146,10 @@ export async function pictureConcept(spec: PictureSpec, ctx: { topic: string; fo
     ? 'Passports may show the UAE national emblem and the words UNITED ARAB EMIRATES and PASSPORT in gold on the cover (spelled exactly); cards may say GOLDEN VISA. No personal data, names, ID numbers, photos of a person or barcodes.'
     : 'Passports only closed with a plain cover (a simple gold crest, no words); cards blank gold or white.';
   const task = banner
-    ? `Write 3 premium still-life scenes for the RIGHT side of a designed article cover (text will cover the left third, so keep the left third calm and simple, soft background only).
+    ? `Write 3 premium still-life scenes for the RIGHT side of a designed article cover. The left third of the photo fades into a cream background, so it must be bright: soft warm haze or an out-of-focus pale golden skyline, never dark or black.
 Each: real objects on a dark marble or warm stone surface in the foreground right, chosen for THIS topic (visa: a closed passport and a residence card; property: house keys and a small architectural model; relocation or family: a suitcase and a passport; students: a graduation cap; medical: a stethoscope; business or executives: a leather briefcase; retirement: sunglasses and a passport), with the Dubai skyline (Burj Khalifa) or a UAE place that fits the topic softly behind in warm golden-hour light.
 Rules:
-- Photorealistic product photography, shallow depth of field, rich gold and black tones, believable materials and reflections.
+- Photorealistic product photography, bright warm golden-hour light, shallow depth of field, gold and black objects against a light background, believable materials and reflections. No dark rooms or black backgrounds.
 - No people.
 - ${passportRule}
 - No other text, numbers, prices, logos, signs or screens.
