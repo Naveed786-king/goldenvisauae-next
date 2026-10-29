@@ -10,6 +10,9 @@ import { slugify } from './text';
 import { dhash, hamming, sharpness } from './imaging';
 import { readLocal } from './local-file';
 import { pickReference, referenceImage } from './references';
+import { composeCover, watermark, type CoverBrand, type CoverText } from './cover-design';
+import { coverBrand, coverText } from './cover';
+import { companyFacts } from './prompts';
 export { readLocal };
 
 export { dhash, hamming, sharpness };
@@ -99,14 +102,14 @@ export function realismNeeded(minRealism: number, kind: 'cover' | 'inline'): num
   return kind === 'inline' ? Math.max(5, minRealism - 1) : minRealism;
 }
 
-export async function visionCheck(buf: Buffer, purpose: string, cfg: AutoConfig, kind: 'cover' | 'inline' = 'cover', title = ''): Promise<{ ok: boolean; realism: number; match: number; issues: string[] }> {
+export async function visionCheck(buf: Buffer, purpose: string, cfg: AutoConfig, kind: 'cover' | 'inline' = 'cover', title = '', allowSymbols = false): Promise<{ ok: boolean; realism: number; match: number; issues: string[] }> {
   const small = await sharp(buf).resize(1024, 1024, { fit: 'inside' }).jpeg({ quality: 82 }).toBuffer();
   const r = await completeJson<any>({
     system: 'You are a strict picture quality inspector for a premium consultancy website. Be honest and critical.',
     prompt: `Check this picture, meant for: "${pictureSafe(purpose) || 'a UAE visa article'}"${title ? ` in an article titled "${pictureSafe(title)}"` : ''}.
 Reject it if ANY of these is true: visible text, letters, numbers, logos or watermarks; deformed or extra fingers/hands; warped or uncanny faces; obvious AI artefacts; blurry or low detail; documents with readable details; off-topic or unrealistic scene.
 On-topic for this UAE visa and residency consultancy: closed passports with a plain cover, blank gold or white cards, luggage, airports and planes, UAE landmarks, skylines, homes, offices and coastlines. A plain passport cover or a blank card is fine as long as nothing on it is readable.
-Realism: 9-10 = indistinguishable from a professional photo, 7-8 = convincing photo with tiny flaws, 5-6 = clearly AI-looking, under 5 = broken.
+${allowSymbols ? 'Allowed exception: the UAE national emblem and the exact words UNITED ARAB EMIRATES, PASSPORT or GOLDEN VISA on a passport cover or card prop. Reject them if the lettering is misspelled, garbled or invented, or if any personal data, ID number or face appears.\n' : ''}Realism: 9-10 = indistinguishable from a professional photo, 7-8 = convincing photo with tiny flaws, 5-6 = clearly AI-looking, under 5 = broken.
 Match: how clearly a reader connects this picture with the article title, 0-10 (7+ = obviously about this topic, under 5 = generic or unrelated).
 Return JSON only: {"ok": true|false, "realism": 0-10, "match": 0-10, "issues": ["…"]}`,
     images: [{ mime: 'image/jpeg', data: small.toString('base64') }],
@@ -138,7 +141,25 @@ export type PictureResult = { ok: true; url: string; ogUrl?: string; width: numb
  * summary), in the style of the library photo when there is one. Safe for picture models: no readable
  * text or numbers, people only at a natural distance.
  */
-export async function pictureConcept(spec: PictureSpec, ctx: { topic: string; focusKeyword: string; summary?: string }, refCaption: string, cfg: AutoConfig): Promise<{ scenes: string[]; alts: string[]; alt: string }> {
+export async function pictureConcept(spec: PictureSpec, ctx: { topic: string; focusKeyword: string; summary?: string }, refCaption: string, cfg: AutoConfig, banner = false): Promise<{ scenes: string[]; alts: string[]; alt: string }> {
+  const passportRule = cfg.images.officialSymbols
+    ? 'Passports may show the UAE national emblem and the words UNITED ARAB EMIRATES and PASSPORT in gold on the cover (spelled exactly); cards may say GOLDEN VISA. No personal data, names, ID numbers, photos of a person or barcodes.'
+    : 'Passports only closed with a plain cover (a simple gold crest, no words); cards blank gold or white.';
+  const task = banner
+    ? `Write 3 premium still-life scenes for the RIGHT side of a designed article cover (text will cover the left third, so keep the left third calm and simple, soft background only).
+Each: real objects on a dark marble or warm stone surface in the foreground right, chosen for THIS topic (visa: a closed passport and a residence card; property: house keys and a small architectural model; relocation or family: a suitcase and a passport; students: a graduation cap; medical: a stethoscope; business or executives: a leather briefcase; retirement: sunglasses and a passport), with the Dubai skyline (Burj Khalifa) or a UAE place that fits the topic softly behind in warm golden-hour light.
+Rules:
+- Photorealistic product photography, shallow depth of field, rich gold and black tones, believable materials and reflections.
+- No people.
+- ${passportRule}
+- No other text, numbers, prices, logos, signs or screens.
+- Each scene 1-2 sentences, at most 55 words.`
+    : `Write 3 different photo scenes for this picture. Each must be a real moment a photographer could shoot in the UAE that clearly shows THIS topic (for a family visa: a family with luggage arriving at a bright Dubai home; for property: a modern villa or apartment with keys on the counter; for costs and fees: a couple at a consultant's desk with closed folders; for renewal or medical: a clean modern clinic or government service centre hall).
+Rules:
+- Photorealistic editorial photo, natural light, believable details. Different place or camera angle in each scene.
+- People are welcome when they help, but at a natural distance (side or back view, or medium shot); never close-up faces or hands.
+- Nothing readable: no text, numbers, prices, logos, signs, screens with content, charts or open documents. Passports only closed with a plain cover; cards blank.
+- Each scene 1-2 sentences, at most 50 words.`;
   const r = await completeJson<{ scenes?: string[]; alts?: string[]; alt?: string }>({
     system: 'You are the photo editor of a UAE visa and residency consultancy blog. You pick realistic photos that a reader instantly connects with the article.',
     prompt: `ARTICLE TITLE: ${ctx.topic}
@@ -146,12 +167,7 @@ FOCUS KEYWORD: ${ctx.focusKeyword}
 ${ctx.summary ? `WHAT THE ARTICLE SAYS: ${String(ctx.summary).slice(0, 600)}\n` : ''}PICTURE FOR: ${spec.kind === 'cover' ? 'the cover (top of the article)' : spec.purpose}
 ${refCaption ? `OUR LIBRARY PHOTO TO TAKE STYLE FROM: ${refCaption}\n` : ''}${spec.idea ? `THE ADMIN'S OWN IDEA FOR THIS PICTURE (follow it closely; only change what breaks the rules below): ${spec.idea}\n` : ''}HOUSE STYLE: ${cfg.images.houseStyle || 'bright, calm, premium, natural light, subtle warm gold accents'}
 
-Write 3 different photo scenes for this picture. Each must be a real moment a photographer could shoot in the UAE that clearly shows THIS topic (for a family visa: a family with luggage arriving at a bright Dubai home; for property: a modern villa or apartment with keys on the counter; for costs and fees: a couple at a consultant's desk with closed folders; for renewal or medical: a clean modern clinic or government service centre hall).
-Rules:
-- Photorealistic editorial photo, natural light, believable details. Different place or camera angle in each scene.
-- People are welcome when they help, but at a natural distance (side or back view, or medium shot); never close-up faces or hands.
-- Nothing readable: no text, numbers, prices, logos, signs, screens with content, charts or open documents. Passports only closed with a plain cover; cards blank.
-- Each scene 1-2 sentences, at most 50 words.
+${task}
 Return JSON only: {"scenes": ["", "", ""], "alts": ["short alt text for scene 1", "for scene 2", "for scene 3"]} (alt texts describe what is visible and include the focus keyword where natural)`,
     temperature: 0.8,
     maxTokens: 1200,
@@ -172,8 +188,14 @@ const SERIOUS = /text|letter|number|digit|logo|watermark|brand|finger|hand|face|
  * when it is at most one point under the minimum and has no serious problem (text, logos, hands, faces).
  * Saves WebP files (cover 1600×900 + Open Graph 1200×630, inline 1200 wide).
  */
-export async function producePicture(spec: PictureSpec, ctx: { topic: string; focusKeyword: string; variant: number; jobId?: string; summary?: string }, cfg: AutoConfig): Promise<PictureResult> {
+export async function producePicture(spec: PictureSpec, ctx: { topic: string; focusKeyword: string; variant: number; jobId?: string; summary?: string; headings?: string[] }, cfg: AutoConfig): Promise<PictureResult> {
   const reasons: string[] = [];
+  // covers in "banner" style: the AI makes the photo, the title/cards/logo are drawn on top in the site's style
+  const banner = spec.kind === 'cover' && cfg.images.coverStyle === 'banner';
+  const brand = banner || cfg.images.showLogo ? await coverBrand(cfg) : null;
+  const words = banner ? await coverText({ title: ctx.topic, summary: ctx.summary, headings: ctx.headings, facts: (await companyFacts(cfg).catch(() => ({ text: '' }))).text }) : null;
+  const look: Look = { banner: banner && brand && words ? { text: words, brand } : undefined, emblem: cfg.images.showLogo ? brand?.emblem || null : null };
+  const symbols = banner && cfg.images.officialSymbols;
   const maxAttempts = spec.kind === 'cover' ? 4 : 2;
   const needed = realismNeeded(cfg.images.minRealism, spec.kind);
   let best: { raw: Buffer; hash: string; sharp: number; realism: number; attempt: number } | null = null;
@@ -185,7 +207,7 @@ export async function producePicture(spec: PictureSpec, ctx: { topic: string; fo
   const refImg = ref ? await referenceImage(ref.url).catch(() => null) : null;
   if (ref && refImg) await autoLog('info', `Using library photo as inspiration (${spec.kind}): ${ref.caption || ref.url}`, ctx.jobId);
   // scenes written for THIS article by the AI photo editor (so the picture fits the title)
-  const concept = await pictureConcept(spec, ctx, ref && refImg ? ref.caption : '', cfg).catch((e) => {
+  const concept = await pictureConcept(spec, ctx, ref && refImg ? ref.caption : '', cfg, banner).catch((e) => {
     if (e instanceof AiError && (e.kind === 'quota' || e.kind === 'config')) throw e;
     void autoLog('warn', `Picture idea step failed, using house scenes: ${e instanceof Error ? e.message : e}`, ctx.jobId);
     return { scenes: [] as string[], alts: [] as string[], alt: '' };
@@ -195,7 +217,7 @@ export async function producePicture(spec: PictureSpec, ctx: { topic: string; fo
   const altFor = (attempt: number) => (generic && concept.scenes.length ? concept.alts[(attempt - 1) % concept.scenes.length] || concept.alt : '') || spec.alt;
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     const scene = concept.scenes.length ? concept.scenes[(attempt - 1) % concept.scenes.length] : undefined;
-    const prompt = buildImagePrompt({ purpose: spec.purpose, hint: attempt === 1 ? spec.hint : undefined, topic: ctx.topic, houseStyle: cfg.images.houseStyle, variant: ctx.variant + attempt * 5, scene, withReference: !!refImg });
+    const prompt = buildImagePrompt({ purpose: spec.purpose, hint: attempt === 1 ? spec.hint : undefined, topic: ctx.topic, houseStyle: cfg.images.houseStyle, variant: ctx.variant + attempt * 5, scene, withReference: !!refImg, symbols, still: banner });
     let raw: Buffer;
     try {
       raw = await generateImage(prompt, cfg, refImg);
@@ -219,7 +241,7 @@ export async function producePicture(spec: PictureSpec, ctx: { topic: string; fo
     if (isFakeAi()) v = { ok: true, realism: 9, issues: [] };
     else {
       try {
-        v = await visionCheck(raw, scene || spec.purpose, cfg, spec.kind, ctx.topic);
+        v = await visionCheck(raw, scene || spec.purpose, cfg, spec.kind, ctx.topic, symbols);
       } catch (e: any) {
         // budget / missing key stop the job as before; a garbled or failed answer from the checker is not a
         // verdict on the picture — it already passed sharpness and duplicate checks, so keep it and say so
@@ -234,30 +256,40 @@ export async function producePicture(spec: PictureSpec, ctx: { topic: string; fo
       if (clean && v.realism >= Math.max(5, needed - 1) && (!best || v.realism > best.realism)) best = { raw, hash, sharp: sharpScore, realism: v.realism, attempt };
       continue;
     }
-    return savePicture({ ...spec, alt: altFor(attempt) }, ctx, raw, hash, sharpScore, v.realism, attempt);
+    return savePicture({ ...spec, alt: altFor(attempt) }, ctx, raw, hash, sharpScore, v.realism, attempt, look);
   }
   if (best && spec.kind === 'cover') {
     await autoLog('info', `No cover attempt reached ${needed}/10 — using the best clean attempt (realism ${best.realism}, no text, logos, hands or faces).`, ctx.jobId);
-    return savePicture({ ...spec, alt: altFor(best.attempt) }, ctx, best.raw, best.hash, best.sharp, best.realism, maxAttempts);
+    return savePicture({ ...spec, alt: altFor(best.attempt) }, ctx, best.raw, best.hash, best.sharp, best.realism, maxAttempts, look);
   }
   await autoLog('warn', `Picture failed after ${maxAttempts} attempts (${spec.kind}): ${reasons.join(' · ')}`, ctx.jobId);
   return { ok: false, reason: reasons.join(' · '), attempts: maxAttempts };
 }
 
-async function savePicture(spec: PictureSpec, ctx: { topic: string; focusKeyword: string; jobId?: string }, raw: Buffer, hash: string, sharpScore: number, realism: number, attempt: number): Promise<PictureResult> {
+type Look = { banner?: { text: CoverText; brand: CoverBrand }; emblem: Buffer | null };
+
+/** Small logo mark on photos (when "Show logo on pictures" is on) */
+async function marked(buf: Buffer, look: Look, quality: number): Promise<Buffer> {
+  if (!look.emblem) return buf;
+  return sharp(await watermark(buf, look.emblem)).webp({ quality }).toBuffer();
+}
+
+async function savePicture(spec: PictureSpec, ctx: { topic: string; focusKeyword: string; jobId?: string }, raw: Buffer, hash: string, sharpScore: number, realism: number, attempt: number, look: Look = { emblem: null }): Promise<PictureResult> {
   const base = `${slugify(ctx.focusKeyword || ctx.topic, 40)}-${spec.kind}`;
   let out: { url: string }, ogUrl: string | undefined, width: number, height: number;
   if (spec.kind === 'cover') {
-    const [cover, og] = await Promise.all([
-      sharp(raw).resize(1600, 900, { fit: 'cover', position: 'attention' }).webp({ quality: 82 }).toBuffer(),
-      sharp(raw).resize(1200, 630, { fit: 'cover', position: 'attention' }).webp({ quality: 80 }).toBuffer(),
-    ]);
+    const [cover, og] = look.banner
+      ? await Promise.all([composeCover(raw, look.banner.text, look.banner.brand, 1600, 900), composeCover(raw, look.banner.text, look.banner.brand, 1200, 630)])
+      : await Promise.all([
+          sharp(raw).resize(1600, 900, { fit: 'cover', position: 'attention' }).webp({ quality: 82 }).toBuffer().then((b) => marked(b, look, 82)),
+          sharp(raw).resize(1200, 630, { fit: 'cover', position: 'attention' }).webp({ quality: 80 }).toBuffer().then((b) => marked(b, look, 80)),
+        ]);
     out = await saveWebp(cover, base, spec.alt);
     ogUrl = (await saveWebp(og, `${base}-og`, spec.alt)).url;
     width = 1600;
     height = 900;
   } else {
-    const buf = await sharp(raw).resize(1200, undefined, { withoutEnlargement: false }).webp({ quality: 80 }).toBuffer();
+    const buf = await marked(await sharp(raw).resize(1200, undefined, { withoutEnlargement: false }).webp({ quality: 80 }).toBuffer(), look, 80);
     const meta = await sharp(buf).metadata();
     out = await saveWebp(buf, base, spec.alt);
     width = meta.width || 1200;
