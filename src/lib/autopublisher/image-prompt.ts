@@ -48,6 +48,10 @@ export function peopleAllowed(houseStyle?: string): boolean {
 /** Editorial-photo prompt: sharp, realistic, varied, on-brand */
 const PEOPLE_RULES = 'People appear at a natural distance (side or back view, or a medium shot), relaxed and natural; no close-up faces or hands, no extra fingers, no warped faces.';
 
+// banner photos: a real-looking passport usually carries the word PASSPORT, so that one word is allowed
+const NEVER_BANNER =
+  'A passport cover may show a simple gold crest and only the word PASSPORT in gold capitals, spelled exactly; cards blank gold or white. No other text, letters or numbers anywhere: no prices, logos, signs, watermarks, labels or screens. No personal data, names, ID numbers or photos of a person.';
+
 const NEVER_SYMBOLS =
   'The passport cover may show the UAE national emblem and the words UNITED ARAB EMIRATES and PASSPORT in gold, spelled exactly; a residence card may say GOLDEN VISA. Nothing else readable: no other text, numbers, prices, logos, signs, watermarks or screens. No personal data, names, ID numbers, barcodes or photos of a person on any document.';
 
@@ -63,7 +67,7 @@ export function buildImagePrompt(o: { purpose: string; hint?: string; topic: str
       o.still ? 'Shot with a 50 mm lens, shallow depth of field, bright warm golden-hour daylight, gold and black objects, glossy marble reflections, light airy background.' : `Shot on a full-frame camera with a ${v % 2 ? '35 mm' : '50 mm'} lens, ${TIME[(v + 2) % TIME.length]}.`,
       'Sharp focus, true-to-life colours, realistic materials, believable details, premium calm mood.',
       o.houseStyle ? `House style: ${o.houseStyle}.` : '',
-      o.symbols ? NEVER_SYMBOLS : NEVER,
+      o.symbols ? NEVER_SYMBOLS : o.still ? NEVER_BANNER : NEVER,
       hasPeople ? PEOPLE_RULES : NO_PEOPLE,
     ]
       .filter(Boolean)

@@ -102,14 +102,14 @@ export function realismNeeded(minRealism: number, kind: 'cover' | 'inline'): num
   return kind === 'inline' ? Math.max(5, minRealism - 1) : minRealism;
 }
 
-export async function visionCheck(buf: Buffer, purpose: string, cfg: AutoConfig, kind: 'cover' | 'inline' = 'cover', title = '', allowSymbols = false): Promise<{ ok: boolean; realism: number; match: number; issues: string[] }> {
+export async function visionCheck(buf: Buffer, purpose: string, cfg: AutoConfig, kind: 'cover' | 'inline' = 'cover', title = '', propText: 'none' | 'passport' | 'official' = 'none'): Promise<{ ok: boolean; realism: number; match: number; issues: string[] }> {
   const small = await sharp(buf).resize(1024, 1024, { fit: 'inside' }).jpeg({ quality: 82 }).toBuffer();
   const r = await completeJson<any>({
     system: 'You are a strict picture quality inspector for a premium consultancy website. Be honest and critical.',
     prompt: `Check this picture, meant for: "${pictureSafe(purpose) || 'a UAE visa article'}"${title ? ` in an article titled "${pictureSafe(title)}"` : ''}.
 Reject it if ANY of these is true: visible text, letters, numbers, logos or watermarks; deformed or extra fingers/hands; warped or uncanny faces; obvious AI artefacts; blurry or low detail; documents with readable details; off-topic or unrealistic scene.
 On-topic for this UAE visa and residency consultancy: closed passports with a plain cover, blank gold or white cards, luggage, airports and planes, UAE landmarks, skylines, homes, offices and coastlines. A plain passport cover or a blank card is fine as long as nothing on it is readable.
-${allowSymbols ? 'Allowed exception: the UAE national emblem and the exact words UNITED ARAB EMIRATES, PASSPORT or GOLDEN VISA on a passport cover or card prop. Reject them if the lettering is misspelled, garbled or invented, or if any personal data, ID number or face appears.\n' : ''}Realism: 9-10 = indistinguishable from a professional photo, 7-8 = convincing photo with tiny flaws, 5-6 = clearly AI-looking, under 5 = broken.
+${propText === 'official' ? 'Allowed exception: the UAE national emblem and the exact words UNITED ARAB EMIRATES, PASSPORT or GOLDEN VISA on a passport cover or card prop. Reject them if the lettering is misspelled, garbled or invented, or if any personal data, ID number or face appears.\n' : propText === 'passport' ? 'Allowed exception: a simple crest and the single word PASSPORT, spelled exactly, on a passport cover. Any other lettering, or PASSPORT misspelled or garbled, still counts as visible text.\n' : ''}Realism: 9-10 = indistinguishable from a professional photo, 7-8 = convincing photo with tiny flaws, 5-6 = clearly AI-looking, under 5 = broken.
 Match: how clearly a reader connects this picture with the article title, 0-10 (7+ = obviously about this topic, under 5 = generic or unrelated).
 Return JSON only: {"ok": true|false, "realism": 0-10, "match": 0-10, "issues": ["…"]}`,
     images: [{ mime: 'image/jpeg', data: small.toString('base64') }],
@@ -144,7 +144,7 @@ export type PictureResult = { ok: true; url: string; ogUrl?: string; width: numb
 export async function pictureConcept(spec: PictureSpec, ctx: { topic: string; focusKeyword: string; summary?: string }, refCaption: string, cfg: AutoConfig, banner = false): Promise<{ scenes: string[]; alts: string[]; alt: string }> {
   const passportRule = cfg.images.officialSymbols
     ? 'Passports may show the UAE national emblem and the words UNITED ARAB EMIRATES and PASSPORT in gold on the cover (spelled exactly); cards may say GOLDEN VISA. No personal data, names, ID numbers, photos of a person or barcodes.'
-    : 'Passports only closed with a plain cover (a simple gold crest, no words); cards blank gold or white.';
+    : 'Passports closed; the cover may show a simple gold crest and only the word PASSPORT in gold capitals, spelled exactly. Cards blank gold or white.';
   const task = banner
     ? `Write 3 premium still-life scenes for the RIGHT side of a designed article cover. The left third of the photo fades into a cream background, so it must be bright: soft warm haze or an out-of-focus pale golden skyline, never dark or black.
 Each: real objects on a dark marble or warm stone surface in the foreground right, chosen for THIS topic (visa: a closed passport and a residence card; property: house keys and a small architectural model; relocation or family: a suitcase and a passport; students: a graduation cap; medical: a stethoscope; business or executives: a leather briefcase; retirement: sunglasses and a passport), with the Dubai skyline (Burj Khalifa) or a UAE place that fits the topic softly behind in warm golden-hour light.
@@ -241,7 +241,7 @@ export async function producePicture(spec: PictureSpec, ctx: { topic: string; fo
     if (isFakeAi()) v = { ok: true, realism: 9, issues: [] };
     else {
       try {
-        v = await visionCheck(raw, scene || spec.purpose, cfg, spec.kind, ctx.topic, symbols);
+        v = await visionCheck(raw, scene || spec.purpose, cfg, spec.kind, ctx.topic, symbols ? 'official' : banner ? 'passport' : 'none');
       } catch (e: any) {
         // budget / missing key stop the job as before; a garbled or failed answer from the checker is not a
         // verdict on the picture — it already passed sharpness and duplicate checks, so keep it and say so
