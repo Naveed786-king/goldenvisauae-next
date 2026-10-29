@@ -119,10 +119,11 @@ export type CoverBrand = {
 };
 
 const FONT_DIR = path.join(process.cwd(), 'assets', 'fonts');
+// Unique family names inside the bundled files, so the server never swaps in another font
 const FONT = {
-  display: { file: path.join(FONT_DIR, 'CormorantGaramond-Bold.ttf'), name: 'Cormorant Garamond Bold' },
-  sans: { file: path.join(FONT_DIR, 'Inter-SemiBold.ttf'), name: 'Inter SemiBold' },
-  sansMedium: { file: path.join(FONT_DIR, 'Inter-Medium.ttf'), name: 'Inter Medium' },
+  display: { file: path.join(FONT_DIR, 'CormorantGaramond-Bold.ttf'), name: 'GVSerif, Bold' },
+  sans: { file: path.join(FONT_DIR, 'Inter-SemiBold.ttf'), name: 'GVSans,' },
+  sansMedium: { file: path.join(FONT_DIR, 'Inter-Medium.ttf'), name: 'GVSansText,' },
 };
 
 const esc = (s: string) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -194,7 +195,7 @@ export async function composeCover(photo: Buffer, text: CoverText, brand: CoverB
   const photoW = Math.round(W * 0.58);
   const photoImg = await sharp(photo).resize(photoW, bodyH, { fit: 'cover', position: 'attention' }).toBuffer();
   const fade = Buffer.from(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="${photoW}" height="${bodyH}"><defs><linearGradient id="f" x1="0" x2="1" y1="0" y2="0"><stop offset="0" stop-color="${sand}" stop-opacity="1"/><stop offset=".26" stop-color="${sand}" stop-opacity=".85"/><stop offset=".5" stop-color="${sand}" stop-opacity="0"/></linearGradient></defs><rect width="100%" height="100%" fill="url(#f)"/></svg>`,
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${photoW}" height="${bodyH}"><defs><linearGradient id="f" x1="0" x2="1" y1="0" y2="0"><stop offset="0" stop-color="${sand}" stop-opacity="1"/><stop offset=".22" stop-color="${sand}" stop-opacity=".92"/><stop offset=".42" stop-color="${sand}" stop-opacity=".45"/><stop offset=".62" stop-color="${sand}" stop-opacity="0"/></linearGradient></defs><rect width="100%" height="100%" fill="url(#f)"/></svg>`,
   );
   const layers: OverlayOptions[] = [
     { input: photoImg, left: W - photoW, top: 0 },
