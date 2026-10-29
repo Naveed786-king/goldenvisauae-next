@@ -315,6 +315,23 @@ function AiTab({ cfg, patch, providers, act }: { cfg: any; patch: (fn: (c: any) 
             <label className="admin-label">If a picture fails the quality checks</label>
             <p className="rounded-lg bg-gray-50 p-3 text-xs leading-relaxed text-gray-600">The AI fixes it itself: a cover gets up to 8 attempts with new scenes (the best clean one is used if none is perfect); an inside picture that still fails is left out. An article only stops if no usable cover can be made.</p>
           </div>
+          <div>
+            <label className="admin-label">Cover style</label>
+            <select className="admin-input" value={cfg.images.coverStyle || 'banner'} onChange={(e) => patch((c) => ((c.images.coverStyle = e.target.value), c))}>
+              <option value="banner">Designed banner: title, 4 info cards, icons, feature bar and logo</option>
+              <option value="photo">Photo only</option>
+            </select>
+            <p className="mt-1 text-xs text-gray-500">Banner colours and fonts come from your website theme automatically (Site settings → Brand colours). The AI makes only the photo; all words are drawn by the site, so they are always spelled right.</p>
+          </div>
+          <div className="space-y-3">
+            <Toggle checked={cfg.images.showLogo !== false} onChange={(v) => patch((c) => ((c.images.showLogo = v), c))} label="Show our logo on every picture" />
+            <div>
+              <label className="admin-label">Text in the banner's gold ribbon</label>
+              <input className="admin-input" maxLength={40} placeholder="e.g. GoldenVisaUAE.ai (empty = website address)" value={cfg.images.ribbonText || ''} onChange={(e) => patch((c) => ((c.images.ribbonText = e.target.value), c))} />
+            </div>
+            <Toggle checked={!!cfg.images.officialSymbols} onChange={(v) => patch((c) => ((c.images.officialSymbols = v), c))} label="Real UAE emblem and wording on passports/cards in covers" />
+            <p className="text-xs leading-relaxed text-amber-800">Off by default. Using the UAE national emblem in advertising usually needs official approval; when off, passports and cards look real but carry a plain gold crest and no wording. Never shows personal data or ID numbers.</p>
+          </div>
           <div className="md:col-span-2">
             <label className="admin-label">House photo style</label>
             <textarea rows={3} className="admin-input" placeholder="e.g. bright, calm, premium; warm natural light; modern Dubai interiors; subtle gold accents" value={cfg.images.houseStyle} onChange={(e) => patch((c) => ((c.images.houseStyle = e.target.value), c))} />

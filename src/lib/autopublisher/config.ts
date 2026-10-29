@@ -36,6 +36,10 @@ export type AutoConfig = {
     onFail: 'hold' | 'skip'; // a picture that fails QC: hold the article, or publish without that inline picture
     minSharpness: number; // Laplacian variance on a 512px grey copy; lower = blurry
     minRealism: number; // 0-10 from the vision check
+    coverStyle: 'banner' | 'photo'; // banner = designed cover with title, info cards, icons and logo
+    showLogo: boolean; // site logo on every picture (banner: top left + ribbon; photos: small corner mark)
+    ribbonText: string; // text in the banner's gold ribbon; empty = the site address
+    officialSymbols: boolean; // allow the real UAE emblem / wording on passports and cards in banner photos
   };
   quality: {
     minQuality: number;
@@ -70,7 +74,7 @@ export const DEFAULT_CONFIG: AutoConfig = {
     openrouter: { key: '', model: 'anthropic/claude-sonnet-5.5' },
   },
   useTranslationGeminiKey: true,
-  images: { provider: 'openai', openaiModel: 'gpt-image-1', geminiModel: 'gemini-2.5-flash-image', quality: 'high', inline: 2, houseStyle: '', onFail: 'skip', minSharpness: 60, minRealism: 7 },
+  images: { provider: 'openai', openaiModel: 'gpt-image-1', geminiModel: 'gemini-2.5-flash-image', quality: 'high', inline: 2, houseStyle: '', onFail: 'skip', minSharpness: 60, minRealism: 7, coverStyle: 'banner', showLogo: true, ribbonText: '', officialSymbols: false },
   quality: {
     minQuality: 80,
     minSeo: 80,
@@ -121,6 +125,10 @@ export async function saveAutoConfig(incoming: Partial<AutoConfig>): Promise<Aut
   next.images.inline = clamp(Math.round(Number(next.images.inline) || 0), 0, 6);
   next.images.minSharpness = clamp(Number(next.images.minSharpness) || 0, 0, 5000);
   next.images.minRealism = clamp(Number(next.images.minRealism) || 0, 0, 10);
+  next.images.coverStyle = next.images.coverStyle === 'photo' ? 'photo' : 'banner';
+  next.images.showLogo = next.images.showLogo !== false;
+  next.images.ribbonText = String(next.images.ribbonText || '').trim().slice(0, 40);
+  next.images.officialSymbols = next.images.officialSymbols === true;
   const value = JSON.stringify(next);
   await prisma.setting.upsert({ where: { key: KEY }, update: { value }, create: { key: KEY, value } });
   return next;

@@ -410,6 +410,21 @@ const check: Stage = async (job, d, cfg) => {
   const a = d.article;
   const facts = await companyFacts(cfg);
   d.fixed = d.fixed || {};
+
+  // 0) one voice pass for every article: a second writer makes it read like our consultant wrote it
+  if (!d.fixed.voice && !isFakeAi()) {
+    d.fixed.voice = 1;
+    const tells = aiTells(assemble(a));
+    const problems = [
+      'Final voice pass: go through the article paragraph by paragraph and rewrite it in the HUMAN VOICE below, the way our consultant would explain it across the desk. Keep every fact, number, heading topic, table and internal link exactly; do not add new facts.',
+      'Vary the rhythm on purpose: break up some long sentences, merge some short ones, let a few paragraphs be a single sentence. Replace generic wording with the concrete detail already in the article.',
+      ...tells.problems,
+    ];
+    const { system, prompt } = fixPrompt(cfg, a, problems, HUMAN_VOICE);
+    d.article = { ...a, ...(await completeJson({ system, prompt, role: 'editor', temperature: 0.85, maxTokens: 16000, timeoutMs: 230_000 })) };
+    await autoLog('info', `Voice pass done (machine-sounding score before: ${tells.score})`, job.id);
+    return 'check';
+  }
   a.slug = slugify(a.slug || a.focusKeyword || a.title);
   a.seoTitle = String(a.seoTitle || a.title).trim();
   a.metaDescription = String(a.metaDescription || a.excerpt || '').trim();
@@ -467,7 +482,7 @@ const check: Stage = async (job, d, cfg) => {
   // 4) human voice: machine-sounding patterns are rewritten (up to 2 rounds), never published as they are
   const tells = aiTells(html);
   d.human = { score: tells.score, problems: tells.problems };
-  if (tells.score >= 3 && !isFakeAi()) {
+  if (tells.score >= 2 && !isFakeAi()) {
     if (Number(d.fixed.human || 0) < 2) {
       d.fixed.human = Number(d.fixed.human || 0) + 1;
       await autoLog('info', `Reads machine-written (score ${tells.score}) — rewriting in a human voice (round ${d.fixed.human} of 2)`, job.id);
@@ -514,7 +529,7 @@ const images: Stage = async (job, d, cfg) => {
   // all remaining pictures are made at the same time (several minutes faster than one by one)
   const start = d.picIndex;
   const specs = d.picPlan.slice(start);
-  const results = await Promise.all(specs.map((spec: any, k: number) => producePicture(spec, { topic: a.title, focusKeyword: a.focusKeyword || d.focusKeyword, summary: stripHtml(a.quickAnswer || a.excerpt || ''), variant: hashCode(job.id) + (start + k) * 7 + Number(d.coverRounds || 0) * 13, jobId: job.id }, cfg)));
+  const results = await Promise.all(specs.map((spec: any, k: number) => producePicture(spec, { topic: a.title, focusKeyword: a.focusKeyword || d.focusKeyword, summary: stripHtml(a.quickAnswer || a.excerpt || ''), headings: [...String(a.contentHtml || '').matchAll(/<h2[^>]*>([\s\S]*?)<\/h2>/gi)].map((m) => stripHtml(m[1])), variant: hashCode(job.id) + (start + k) * 7 + Number(d.coverRounds || 0) * 13, jobId: job.id }, cfg)));
   d.picIndex = d.picPlan.length;
   let coverFailed = '';
   results.forEach((res, k) => {

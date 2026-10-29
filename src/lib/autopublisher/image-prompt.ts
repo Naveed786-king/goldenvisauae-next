@@ -48,19 +48,22 @@ export function peopleAllowed(houseStyle?: string): boolean {
 /** Editorial-photo prompt: sharp, realistic, varied, on-brand */
 const PEOPLE_RULES = 'People appear at a natural distance (side or back view, or a medium shot), relaxed and natural; no close-up faces or hands, no extra fingers, no warped faces.';
 
-export function buildImagePrompt(o: { purpose: string; hint?: string; topic: string; houseStyle?: string; variant: number; scene?: string; withReference?: boolean }) {
+const NEVER_SYMBOLS =
+  'The passport cover may show the UAE national emblem and the words UNITED ARAB EMIRATES and PASSPORT in gold, spelled exactly; a residence card may say GOLDEN VISA. Nothing else readable: no other text, numbers, prices, logos, signs, watermarks or screens. No personal data, names, ID numbers, barcodes or photos of a person on any document.';
+
+export function buildImagePrompt(o: { purpose: string; hint?: string; topic: string; houseStyle?: string; variant: number; scene?: string; withReference?: boolean; symbols?: boolean; still?: boolean }) {
   const v = Math.abs(o.variant);
   // a scene written for this article by the AI photo editor: used as it is (it already follows the rules)
   if (o.scene) {
-    const hasPeople = PEOPLE_WORDS.test(o.scene) || peopleAllowed(o.houseStyle);
+    const hasPeople = !o.still && (PEOPLE_WORDS.test(o.scene) || peopleAllowed(o.houseStyle));
     return [
       o.withReference ? 'Use the attached photo only as inspiration for its style, light, colours and kind of place. Create a NEW, different photograph with its own composition and details; do not copy it.' : '',
-      `Realistic editorial photograph for a UAE visa article about ${pictureSafe(o.topic) || 'UAE residency'}.`,
+      o.still ? `Premium still-life product photograph for a designed cover about ${pictureSafe(o.topic) || 'UAE residency'}. Keep the left third of the frame calm and simple (soft background), the objects on the right.` : `Realistic editorial photograph for a UAE visa article about ${pictureSafe(o.topic) || 'UAE residency'}.`,
       `Scene: ${o.scene}`,
-      `Shot on a full-frame camera with a ${v % 2 ? '35 mm' : '50 mm'} lens, ${TIME[(v + 2) % TIME.length]}.`,
-      'Sharp focus, true-to-life colours, realistic materials and skin, believable everyday details, premium calm mood.',
+      o.still ? 'Shot with a 50 mm lens, shallow depth of field, warm golden-hour light, rich gold and deep black tones, glossy marble reflections.' : `Shot on a full-frame camera with a ${v % 2 ? '35 mm' : '50 mm'} lens, ${TIME[(v + 2) % TIME.length]}.`,
+      'Sharp focus, true-to-life colours, realistic materials, believable details, premium calm mood.',
       o.houseStyle ? `House style: ${o.houseStyle}.` : '',
-      NEVER,
+      o.symbols ? NEVER_SYMBOLS : NEVER,
       hasPeople ? PEOPLE_RULES : NO_PEOPLE,
     ]
       .filter(Boolean)
