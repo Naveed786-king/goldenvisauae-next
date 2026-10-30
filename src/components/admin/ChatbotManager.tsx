@@ -262,7 +262,7 @@ function Settings({ cfg, patch, providers }: { cfg: any; patch: (fn: (c: any) =>
           </div>
           <div className="sm:col-span-2">
             <label className="admin-label">API key (optional)</label>
-            <input type="password" autoComplete="off" className="admin-input font-mono" placeholder={`${p?.keyHint || ''} — empty = use the key from Auto Publisher / server`} value={cfg.key} onChange={(e) => patch((c) => (c.key = e.target.value))} />
+            <input type="password" autoComplete="off" className="admin-input font-mono" placeholder={`${p?.keyHint || ''} — empty = use the key from Auto Publisher / server`} value={cfg.key} onFocus={(e) => e.target.select()} onChange={(e) => patch((c) => (c.key = e.target.value))} />
           </div>
           <div className="flex items-center gap-3 sm:col-span-2">
             <Btn size="sm" variant="dark" onClick={runTest} loading={busy}>

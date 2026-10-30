@@ -291,3 +291,12 @@ test('two-step login codes match the standard (RFC 6238) and cannot be reused', 
   assert.equal(left.length, 7);
   assert.equal(useBackupCode(JSON.stringify(left), codes[2]), null, 'backup code works once');
 });
+
+import { maskKey as mk, unmaskSecrets as um } from '../src/lib/autopublisher/pure.ts';
+test('a new key pasted next to the masked old key replaces it', () => {
+  const stored = { providers: { openai: { key: 'key_OLDOLDOLDruZd' } } };
+  const shown = mk(stored.providers.openai.key);
+  assert.equal(um({ providers: { openai: { key: shown } } }, stored).providers.openai.key, 'key_OLDOLDOLDruZd');
+  assert.equal(um({ providers: { openai: { key: shown + 'sk-proj-NEWNEWNEWNEW123' } } }, stored).providers.openai.key, 'sk-proj-NEWNEWNEWNEW123');
+  assert.equal(um({ providers: { openai: { key: 'sk-proj-ANOTHER1234567' } } }, stored).providers.openai.key, 'sk-proj-ANOTHER1234567');
+});

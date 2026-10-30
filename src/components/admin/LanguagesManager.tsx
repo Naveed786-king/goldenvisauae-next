@@ -155,7 +155,7 @@ export default function LanguagesManager({ isAdmin }: { isAdmin: boolean }) {
                   <>
                     <div>
                       <label className="admin-label">Gemini API key</label>
-                      <input type="password" className="admin-input font-mono" value={cfg.geminiKey || ''} onChange={(e) => setCfg({ ...cfg, geminiKey: e.target.value })} placeholder="AIza…" autoComplete="off" />
+                      <input type="password" className="admin-input font-mono" value={cfg.geminiKey || ''} onFocus={(e) => e.target.select()} onChange={(e) => setCfg({ ...cfg, geminiKey: e.target.value })} placeholder="AIza…" autoComplete="off" />
                       <p className="mt-1.5 text-xs text-gray-500">
                         Create a key at <a className="font-bold text-gold-deep underline" href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer">aistudio.google.com/apikey</a>. Your pages use the built-in professional translations; Gemini translates new blog posts and any new text you add.
                       </p>
@@ -176,7 +176,7 @@ export default function LanguagesManager({ isAdmin }: { isAdmin: boolean }) {
                   <>
                     <div>
                       <label className="admin-label">API key</label>
-                      <input type="password" className="admin-input font-mono" value={cfg.apiKey || ''} onChange={(e) => setCfg({ ...cfg, apiKey: e.target.value })} placeholder={cfg.provider === 'claude' ? 'sk-ant-…' : 'xxxxxxxx-…:fx'} autoComplete="off" />
+                      <input type="password" className="admin-input font-mono" value={cfg.apiKey || ''} onFocus={(e) => e.target.select()} onChange={(e) => setCfg({ ...cfg, apiKey: e.target.value })} placeholder={cfg.provider === 'claude' ? 'sk-ant-…' : 'xxxxxxxx-…:fx'} autoComplete="off" />
                       <p className="mt-1.5 text-xs text-gray-500">
                         {cfg.provider === 'claude' ? (
                           <>Get a key at <a className="font-bold text-gold-deep underline" href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener noreferrer">console.anthropic.com</a> (add a few dollars of credit — translating the whole website costs very little).</>
