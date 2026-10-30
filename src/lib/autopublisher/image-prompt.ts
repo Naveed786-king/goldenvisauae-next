@@ -23,7 +23,7 @@ const ANGLE = ['eye-level shot', 'slightly elevated wide shot', 'wide establishi
 const NEVER =
   'No text, letters, numbers, prices, logos, signs, signage, plaques, screens, charts, whiteboards, price tags, watermarks, captions or banners anywhere. No flags with text. Passports only closed with a completely plain cover (no emblem, no writing); cards only blank; no open documents, visas, stamps or ID cards. No government logos or emblems. No laptops, phones or screens with brand logos. No books, magazines, newspapers, labels or packaging. No real or famous people.';
 const NO_PEOPLE = 'No people, no faces, no hands, no body parts anywhere in the picture.';
-const PEOPLE_WORDS = /\b(people|person|persons|family|families|couple|man|men|woman|women|child|children|kid|kids|parent|parents|consultant|investor|hand|hands|face|faces|someone|client|clients|professional|employee|worker|emirates id|id card|document|documents|paperwork|visa stamp|open passport)\b/i;
+const PEOPLE_WORDS = /\b(people|person|persons|family|families|couple|man|men|woman|women|child|children|kid|kids|parent|parents|consultant|consultants|emirati|traveller|travellers|traveler|travelers|businessman|businesswoman|advisor|adviser|investor|hand|hands|face|faces|someone|client|clients|professional|employee|worker|emirates id|id card|document|documents|paperwork|visa stamp|open passport)\b/i;
 
 // Words that make picture models draw text or numbers (cost articles asked for price signs and charts)
 const TEXT_WORDS = /\b(cost|costs|price|prices|pricing|fee|fees|breakdown|budget|calculator|calculation|chart|charts|graph|graphs|table|tables|infographic|diagram|sign|signs|signage|plaque|plaques|board|whiteboard|screen|screens|display|poster|receipt|invoice|form|forms|certificate|stamp|label|labels|checklist|list|timeline|number|numbers|digits?|aed|dirhams?|usd|dollars?|percent)\b/gi;
@@ -59,13 +59,17 @@ export function buildImagePrompt(o: { purpose: string; hint?: string; topic: str
   const v = Math.abs(o.variant);
   // a scene written for this article by the AI photo editor: used as it is (it already follows the rules)
   if (o.scene) {
-    const hasPeople = !o.still && (PEOPLE_WORDS.test(o.scene) || peopleAllowed(o.houseStyle));
+    const hasPeople = PEOPLE_WORDS.test(o.scene) || peopleAllowed(o.houseStyle);
     return [
       o.withReference ? 'Use the attached photo only as inspiration for its style, light, colours and kind of place. Create a NEW, different photograph with its own composition and details; do not copy it.' : '',
       // no topic words for banner photos: picture models tend to print them as text on the image
-      o.still ? 'Premium still-life product photograph for a website header. It must contain no text, titles, captions or lettering at all. The left third of the frame is bright and simple (soft warm haze, pale out-of-focus skyline), the objects on the right. Bright overall, no black or dark areas.' : `Realistic editorial photograph for a UAE visa article about ${pictureSafe(o.topic) || 'UAE residency'}.`,
+      o.still
+        ? 'Rich, premium wide photograph for a website header, full of meaningful detail. It must contain no text, titles, captions or lettering at all. The main subject fills the RIGHT two thirds of the frame and is large, close and detailed; the left third is bright and simple (soft warm daylight, pale out-of-focus background) with nothing important in it. Bright overall, no black or dark areas.'
+        : `Realistic editorial photograph for a UAE visa article about ${pictureSafe(o.topic) || 'UAE residency'}.`,
       `Scene: ${o.scene}`,
-      o.still ? 'Shot with a 50 mm lens, shallow depth of field, bright warm golden-hour daylight, gold and black objects, glossy marble reflections, light airy background.' : `Shot on a full-frame camera with a ${v % 2 ? '35 mm' : '50 mm'} lens, ${TIME[(v + 2) % TIME.length]}.`,
+      o.still
+        ? `Shot on a full-frame camera with a ${hasPeople ? '35 mm' : '50 mm'} lens, layered depth (detailed foreground, clear middle ground, Dubai skyline behind), bright warm golden-hour daylight, gold, white and black tones, glossy reflections.`
+        : `Shot on a full-frame camera with a ${v % 2 ? '35 mm' : '50 mm'} lens, ${TIME[(v + 2) % TIME.length]}.`,
       'Sharp focus, true-to-life colours, realistic materials, believable details, premium calm mood.',
       o.houseStyle ? `House style: ${o.houseStyle}.` : '',
       o.symbols ? NEVER_SYMBOLS : o.still ? NEVER_BANNER : NEVER,

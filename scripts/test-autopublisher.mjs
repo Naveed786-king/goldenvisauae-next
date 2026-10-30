@@ -237,3 +237,21 @@ test('machine-sounding text is caught, natural text passes', () => {
   assert.ok(a.problems.some((p) => /dash/.test(p)));
   assert.ok(h.score < 3, 'human text score ' + h.score + ' ' + h.problems.join(' | '));
 });
+
+test('banner photos: rich subject on the right, people rules when a scene has people, no words', () => {
+  const desk = buildImagePrompt({ purpose: 'cover', topic: 'UAE Golden Visa to citizenship', variant: 1, still: true, scene: 'A passport in a dark leather holder, a blank gold card and a leather suitcase on a marble desk by a window with the Dubai skyline.' });
+  assert.match(desk, /RIGHT two thirds/);
+  assert.match(desk, /No people/);
+  assert.doesNotMatch(desk, /citizenship/i, 'topic words must not reach the picture model in banner mode');
+  const talk = buildImagePrompt({ purpose: 'cover', topic: 't', variant: 1, still: true, scene: 'An Emirati consultant in a white kandura talking with a couple at a bright office desk.' });
+  assert.match(talk, /natural distance/);
+  assert.doesNotMatch(talk, /No people/);
+});
+
+import { isStaleVersion } from '../src/lib/stale-version.ts';
+test('an admin tab from before a deploy is recognised (it reloads itself)', () => {
+  assert.ok(isStaleVersion({ name: 'ChunkLoadError', message: 'Loading chunk 123 failed.' }));
+  assert.ok(isStaleVersion('Failed to fetch dynamically imported module: /_next/static/chunks/x.js'));
+  assert.ok(!isStaleVersion(new Error('Title is required')));
+  assert.ok(!isStaleVersion(null));
+});

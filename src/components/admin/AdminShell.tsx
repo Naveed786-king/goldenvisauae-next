@@ -3,6 +3,7 @@ import { Coin } from '@/components/site/Logo';
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { isStaleVersion } from '@/lib/stale-version';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   Sparkles,
@@ -117,7 +118,13 @@ export default function AdminShell({ user, siteName, children }: { user: { name:
     let stop = false;
     async function poll() {
       try {
+        if (document.visibilityState !== 'visible' && prev.current) return;
         const r = await fetch('/api/admin/notifications', { cache: 'no-store' });
+        if (r.status === 401) {
+          // signed out elsewhere or the session ended: back to the login, then return here
+          window.location.href = `/admin/login?next=${encodeURIComponent(window.location.pathname)}`;
+          return;
+        }
         if (!r.ok) return;
         const d: Counts = await r.json();
         if (stop) return;
@@ -145,6 +152,29 @@ export default function AdminShell({ user, siteName, children }: { user: { name:
     return () => {
       stop = true;
       clearInterval(t);
+    };
+  }, []);
+
+  // A deploy replaces the script files; an admin tab opened before it reloads itself instead of failing
+  useEffect(() => {
+    const onFail = (e: PromiseRejectionEvent | ErrorEvent) => {
+      const err = 'reason' in e ? e.reason : e.error || e.message;
+      if (!isStaleVersion(err)) return;
+      let last = 0;
+      try {
+        last = Number(sessionStorage.getItem('gv-auto-reload') || 0);
+      } catch {}
+      if (Date.now() - last < 60_000) return;
+      try {
+        sessionStorage.setItem('gv-auto-reload', String(Date.now()));
+      } catch {}
+      window.location.reload();
+    };
+    window.addEventListener('unhandledrejection', onFail);
+    window.addEventListener('error', onFail);
+    return () => {
+      window.removeEventListener('unhandledrejection', onFail);
+      window.removeEventListener('error', onFail);
     };
   }, []);
 

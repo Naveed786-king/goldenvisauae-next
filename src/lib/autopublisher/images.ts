@@ -108,7 +108,7 @@ export async function visionCheck(buf: Buffer, purpose: string, cfg: AutoConfig,
     system: 'You are a strict picture quality inspector for a premium consultancy website. Be honest and critical.',
     prompt: `Check this picture, meant for: "${pictureSafe(purpose) || 'a UAE visa article'}"${title ? ` in an article titled "${pictureSafe(title)}"` : ''}.
 Reject it if ANY of these is true: visible text, letters, numbers, logos or watermarks; deformed or extra fingers/hands; warped or uncanny faces; obvious AI artefacts; blurry or low detail; documents with readable details; off-topic or unrealistic scene.
-On-topic for this UAE visa and residency consultancy: closed passports with a plain cover, blank gold or white cards, luggage, airports and planes, UAE landmarks, skylines, homes, offices and coastlines. A plain passport cover or a blank card is fine as long as nothing on it is readable.
+On-topic for this UAE visa and residency consultancy: closed passports with a plain cover or in a leather holder, blank gold or white cards, luggage, airports and planes, consultants talking with clients in an office, families and travellers, UAE landmarks, skylines, homes, offices and coastlines. A plain passport cover or a blank card is fine as long as nothing on it is readable.
 ${propText === 'official' ? 'Allowed exception: the UAE national emblem and the exact words UNITED ARAB EMIRATES, PASSPORT or GOLDEN VISA on a passport cover or card prop. Reject them if the lettering is misspelled, garbled or invented, or if any personal data, ID number or face appears.\n' : propText === 'passport' ? 'Allowed exception: a simple crest and the single word PASSPORT, spelled exactly, on a passport cover. Any other lettering, or PASSPORT misspelled or garbled, still counts as visible text.\n' : ''}Realism: 9-10 = indistinguishable from a professional photo, 7-8 = convincing photo with tiny flaws, 5-6 = clearly AI-looking, under 5 = broken.
 Match: how clearly a reader connects this picture with the article title, 0-10 (7+ = obviously about this topic, under 5 = generic or unrelated).
 Return JSON only: {"ok": true|false, "realism": 0-10, "match": 0-10, "issues": ["…"]}`,
@@ -144,16 +144,19 @@ export type PictureResult = { ok: true; url: string; ogUrl?: string; width: numb
 export async function pictureConcept(spec: PictureSpec, ctx: { topic: string; focusKeyword: string; summary?: string }, refCaption: string, cfg: AutoConfig, banner = false): Promise<{ scenes: string[]; alts: string[]; alt: string }> {
   const passportRule = cfg.images.officialSymbols
     ? 'Passports may show the UAE national emblem and the words UNITED ARAB EMIRATES and PASSPORT in gold on the cover (spelled exactly); cards may say GOLDEN VISA. No personal data, names, ID numbers, photos of a person or barcodes.'
-    : 'Picture models print garbled words on passport covers, so show a passport only lying face down (plain back cover) or inside a plain dark leather passport holder; cards blank gold or white. Scene 3 must have no passport at all (for example a suitcase, house keys, a blank gold card or a small architectural model).';
+    : 'Picture models print garbled words on passport covers, so a passport is always inside a plain dark leather passport holder or lying face down (plain back cover); visa and residence cards are blank gold or white with no writing.';
   const task = banner
-    ? `Write 3 premium still-life scenes for the RIGHT side of a designed article cover. The left third of the photo fades into a cream background, so it must be bright: soft warm haze or an out-of-focus pale golden skyline, never dark or black.
-Each: real objects on a dark marble or warm stone surface in the foreground right, chosen for THIS topic (visa: a closed passport and a residence card; property: house keys and a small architectural model; relocation or family: a suitcase and a passport; students: a graduation cap; medical: a stethoscope; business or executives: a leather briefcase; retirement: sunglasses and a passport), with the Dubai skyline (Burj Khalifa) or a UAE place that fits the topic softly behind in warm golden-hour light.
+    ? `Write 3 rich, detailed scenes for the photo half of a designed article cover (the title is drawn on the left, so the photo itself carries no words). A reader must see "UAE visa" at a glance and connect it with THIS title. The subject fills the right two thirds of the frame, large and close; the left third stays bright and simple (soft warm daylight, pale out-of-focus background).
+Make the 3 scenes different kinds of picture, each combining several visa elements that fit the title:
+1. A full desk composition: a passport in a dark leather holder, a blank gold visa card, plus 2-3 objects for the topic (travel: a leather suitcase or carry-on and sunglasses; property: house keys and a small villa model; family: a small child's backpack or toy plane next to the suitcase; business or investors: a leather briefcase and a fountain pen; students: a graduation cap; medical: a stethoscope; retirement: a sun hat; renewal or rules: closed document folders and a calendar without numbers), on a marble or warm wood desk by a large window with the Dubai skyline (Burj Khalifa) and an airliner in the sky.
+2. People: a smiling Emirati consultant in a white kandura (or an Emirati woman consultant in a black abaya) at a bright modern consultancy office desk, talking with clients who fit the topic (a couple, a family, an investor, a student), a passport holder and a gold visa card on the desk between them, the Dubai skyline through floor-to-ceiling windows. Medium shot, people seen from the side or three-quarter, natural poses.
+3. Travel and arrival: travellers or a family who fit the topic with suitcases on a trolley at a bright modern Dubai airport terminal or arriving at a Dubai home, a passport holder in hand, an airliner or the skyline visible through tall glass.
 Rules:
-- Photorealistic product photography, bright warm golden-hour light, shallow depth of field, gold and black objects against a light background, believable materials and reflections. No dark rooms or black backgrounds.
-- No people.
+- Photorealistic, bright warm golden-hour light, layered depth (detailed foreground, clear middle ground, skyline behind), gold, white and black tones. Never dark rooms or black backgrounds. Never an almost empty table.
+- People only at a natural distance (medium shot, side or three-quarter view); no close-up faces or hands.
 - ${passportRule}
-- No other text, numbers, prices, logos, signs or screens.
-- Each scene 1-2 sentences, at most 55 words.`
+- No other text, numbers, prices, logos, signs, flags with writing or screens with content.
+- Each scene 2-3 sentences, at most 70 words.`
     : `Write 3 different photo scenes for this picture. Each must be a real moment a photographer could shoot in the UAE that clearly shows THIS topic (for a family visa: a family with luggage arriving at a bright Dubai home; for property: a modern villa or apartment with keys on the counter; for costs and fees: a couple at a consultant's desk with closed folders; for renewal or medical: a clean modern clinic or government service centre hall).
 Rules:
 - Photorealistic editorial photo, natural light, believable details. Different place or camera angle in each scene.
@@ -170,7 +173,7 @@ ${refCaption ? `OUR LIBRARY PHOTO TO TAKE STYLE FROM: ${refCaption}\n` : ''}${sp
 ${task}
 Return JSON only: {"scenes": ["", "", ""], "alts": ["short alt text for scene 1", "for scene 2", "for scene 3"]} (alt texts describe what is visible and include the focus keyword where natural)`,
     temperature: 0.8,
-    maxTokens: 1200,
+    maxTokens: 2000,
     timeoutMs: 60_000,
   });
   const raw = Array.isArray(r?.scenes) ? r.scenes : [];

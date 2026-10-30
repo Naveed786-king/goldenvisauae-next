@@ -5,25 +5,62 @@ import { X, CircleCheck, CircleAlert, LoaderCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 /* ---------- API helper ---------- */
+const BUSY = 'The server is restarting or busy for a moment. Please try again in a few seconds.';
+const OFFLINE = 'No connection to the server. Check your internet and try again.';
+const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
+// 502/503/504 come from the web server while the site restarts (deploy, update); 408/429 are "slow down"
+const passing = (s: number) => s === 502 || s === 503 || s === 504 || s === 408 || s === 429;
+
+/**
+ * Admin requests. Reading (GET) is retried a few times when the server is briefly away
+ * (restart after a deploy, laptop waking up), so short gaps never show as errors.
+ * Saving is never retried automatically (it might run twice); it gets a clear message instead.
+ */
 export async function api<T = any>(url: string, method: 'GET' | 'POST' | 'PUT' | 'DELETE' = 'GET', body?: any): Promise<T> {
-  const r = await fetch(url, {
-    method,
-    headers: body && !(body instanceof FormData) ? { 'Content-Type': 'application/json' } : undefined,
-    body: body ? (body instanceof FormData ? body : JSON.stringify(body)) : undefined,
-    cache: 'no-store',
-  });
-  const d = await r.json().catch(() => ({}));
-  if (r.status === 401) {
-    window.location.href = '/admin/login';
-    throw new Error('Session expired');
+  const tries = method === 'GET' ? 4 : 1;
+  for (let i = 0; ; i++) {
+    let r: Response;
+    try {
+      r = await fetch(url, {
+        method,
+        headers: body && !(body instanceof FormData) ? { 'Content-Type': 'application/json' } : undefined,
+        body: body ? (body instanceof FormData ? body : JSON.stringify(body)) : undefined,
+        cache: 'no-store',
+        credentials: 'same-origin',
+      });
+    } catch {
+      if (i + 1 < tries) {
+        await wait(1500 * (i + 1));
+        continue;
+      }
+      throw new Error(typeof navigator !== 'undefined' && navigator.onLine === false ? OFFLINE : BUSY);
+    }
+    if (passing(r.status) && i + 1 < tries) {
+      await wait(1500 * (i + 1));
+      continue;
+    }
+    // a restarting server can answer with an HTML page instead of JSON
+    const d: any = await r.json().catch(() => ({}));
+    if (r.status === 401) {
+      const next = encodeURIComponent(window.location.pathname + window.location.search);
+      window.location.href = `/admin/login?next=${next}`;
+      throw new Error('Your session ended. Please sign in again.');
+    }
+    if (passing(r.status)) throw new Error(BUSY);
+    if (!r.ok) throw new Error(d?.error || `Request failed (${r.status})`);
+    return d as T;
   }
-  if (!r.ok) throw new Error(d.error || `Request failed (${r.status})`);
-  return d as T;
 }
 
 /* ---------- Toasts ---------- */
 type T = { id: number; msg: string; type: 'success' | 'error' | 'info' };
+const lastShown = new Map<string, number>();
 export function toast(msg: string, type: T['type'] = 'success') {
+  // pages that refresh every few seconds must not stack the same error again and again
+  const key = `${type}:${msg}`;
+  const now = Date.now();
+  if (type === 'error' && now - (lastShown.get(key) || 0) < 15_000) return;
+  lastShown.set(key, now);
   window.dispatchEvent(new CustomEvent('admin-toast', { detail: { msg, type } }));
 }
 export function Toaster() {
