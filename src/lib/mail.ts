@@ -37,9 +37,10 @@ export async function sendMail(opts: { to: string | string[]; subject: string; h
     await transporter.sendMail({
       from: smtp.from || `${site.name} <${smtp.user}>`,
       to: opts.to,
-      subject: opts.subject,
+      // visitor-typed values never carry line breaks into mail headers
+      subject: String(opts.subject || '').replace(/[\r\n]+/g, ' ').slice(0, 250),
       html: wrap(opts.html, site.name),
-      replyTo: opts.replyTo,
+      replyTo: opts.replyTo && /^[^\s@<>,;"]+@[^\s@<>,;"]+\.[^\s@<>,;"]+$/.test(opts.replyTo.trim()) ? opts.replyTo.trim() : undefined,
     });
     lastMailError = '';
     return true;

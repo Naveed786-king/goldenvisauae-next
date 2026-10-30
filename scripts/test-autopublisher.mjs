@@ -255,3 +255,23 @@ test('an admin tab from before a deploy is recognised (it reloads itself)', () =
   assert.ok(!isStaleVersion(new Error('Title is required')));
   assert.ok(!isStaleVersion(null));
 });
+
+import { pickSceneTypes } from '../src/lib/autopublisher/scene-types.ts';
+test('every picture of an article is a different kind, fitted to its title or section', () => {
+  const [cover, a, b] = pickSceneTypes(['Golden Visa for property investors in Dubai', 'Sponsoring your wife and children', 'Medical test and Emirates ID biometrics'], [], 7);
+  assert.equal(new Set([cover[0], a[0], b[0]]).size, 3);
+  assert.equal(a[0], 'family-home');
+  assert.ok(['medical', 'service-hall'].includes(b[0]), b[0]);
+  // a kind used for the last pictures on the blog is pushed back
+  const fresh = pickSceneTypes(['Golden Visa for property investors in Dubai'], [cover[0]], 7)[0][0];
+  assert.notEqual(fresh, cover[0]);
+});
+
+test('flat, contraction-free text without "we" is flagged', () => {
+  const flat = Array.from({ length: 16 }, (_, i) => `<p>The applicant submits the passport copy for review number ${i}. The authority checks the documents carefully. The file then moves to the next stage of the process.</p>`).join('');
+  const t = aiTells(flat);
+  assert.ok(t.problems.some((p) => /contractions/.test(p)));
+  assert.ok(t.problems.some((p) => /"we"/.test(p)));
+  assert.ok(t.problems.some((p) => /start with "the"/.test(p)));
+  assert.ok(t.score >= 3);
+});
