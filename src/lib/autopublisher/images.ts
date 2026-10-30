@@ -121,6 +121,7 @@ export async function visionCheck(buf: Buffer, purpose: string, cfg: AutoConfig,
     system: 'You are a strict picture quality inspector for a premium consultancy website. Be honest and critical.',
     prompt: `Check this picture, meant for: "${pictureSafe(purpose) || 'a UAE visa article'}"${title ? ` in an article titled "${pictureSafe(title)}"` : ''}.
 Reject it if ANY of these is true: visible text, letters, numbers, logos or watermarks; deformed or extra fingers/hands; warped or uncanny faces; obvious AI artefacts; blurry or low detail; documents with readable details; off-topic or unrealistic scene.
+Off-topic too: plants or places that do not exist in the UAE (olive trees, cypresses, European streets, snow).
 On-topic for this UAE visa and residency consultancy: closed passports with a plain cover or in a leather holder, blank gold or white cards, luggage, airports and planes, consultants talking with clients in an office, families and travellers, UAE landmarks, skylines, homes, offices and coastlines. A plain passport cover or a blank card is fine as long as nothing on it is readable.
 ${propText === 'official' ? 'Allowed exception: the UAE national emblem and the exact words UNITED ARAB EMIRATES, PASSPORT or GOLDEN VISA on a passport cover or card prop. Reject them if the lettering is misspelled, garbled or invented, or if any personal data, ID number or face appears.\n' : propText === 'passport' ? 'Allowed exception: a simple crest and the single word PASSPORT, spelled exactly, on a passport cover. Any other lettering, or PASSPORT misspelled or garbled, still counts as visible text.\n' : ''}Realism: 9-10 = indistinguishable from a professional photo, 7-8 = convincing photo with tiny flaws, 5-6 = clearly AI-looking, under 5 = broken.
 Match: how clearly a reader connects this picture with the article title, 0-10 (7+ = obviously about this topic, under 5 = generic or unrelated).
@@ -154,14 +155,22 @@ export type PictureResult = { ok: true; url: string; ogUrl?: string; width: numb
  * summary), in the style of the library photo when there is one. Safe for picture models: no readable
  * text or numbers, people only at a natural distance.
  */
-export async function pictureConcept(spec: PictureSpec, ctx: { topic: string; focusKeyword: string; summary?: string }, refCaption: string, cfg: AutoConfig, banner = false, types: string[] = [], recentAlts: string[] = []): Promise<{ scenes: string[]; alts: string[]; alt: string }> {
+export async function pictureConcept(spec: PictureSpec, ctx: { topic: string; focusKeyword: string; summary?: string }, refCaption: string, cfg: AutoConfig, banner = false, types: string[] = [], recentAlts: string[] = [], backdrop = false): Promise<{ scenes: string[]; alts: string[]; alt: string }> {
   const passportRule = cfg.images.officialSymbols
     ? 'Passports may show the UAE national emblem and the words UNITED ARAB EMIRATES and PASSPORT in gold on the cover (spelled exactly); cards may say GOLDEN VISA. No personal data, names, ID numbers, photos of a person or barcodes.'
     : 'Picture models print garbled words and numbers on documents, so a passport is always inside a closed dark leather passport holder whose front is completely smooth plain leather (no crest, no embossing, no stitching patterns that look like letters); the gold visa card is a smooth plain gold card like a blank metal card, with no chip, numbers, letters or embossing.';
   const kinds = (types.length ? types : ['consult', 'airport', 'desk'])
     .map((id, i) => `${i + 1}. ${sceneType(id)?.brief || id}`)
     .join('\n');
-  const task = banner
+  const task = backdrop
+    ? `Write 3 scenes for the BACKDROP photo of a designed article cover. A gold card graphic is placed on the centre-right of the photo afterwards, so the photo is a clean, beautiful scenic backdrop with nothing important in the centre: skyline, water, sky, the UAE flag or a landmark that fits the title. No desks, documents, passports or cards in the photo; people only small in the distance. Bright warm golden-hour light, left third pale and soft.
+Use these 3 kinds, in this order, as backdrops:
+${kinds}
+Rules:
+- Photorealistic, one real place per scene, real UAE plants and architecture only.
+- No text, numbers, logos or signs.
+- Each scene 1-2 sentences, at most 50 words.`
+    : banner
     ? `Write 3 rich, detailed scenes for the photo half of a designed article cover (the title is drawn on the left, so the photo itself carries no words). A reader must see "UAE visa" at a glance and connect it with THIS title. The subject fills the right two thirds of the frame, large and close; the left third stays bright and simple (soft warm daylight, pale out-of-focus background).
 Make the 3 scenes 3 DIFFERENT kinds of picture, in this order:
 ${kinds}
@@ -236,7 +245,7 @@ async function remember(res: PictureResult, type?: string): Promise<PictureResul
 
 const SAFE_SCENE = [
   'The Dubai skyline with Burj Khalifa at golden hour, seen across the water from a quiet promenade, warm sunlight on glass towers, a few palm trees in the foreground. No people, no documents.',
-  'Modern Dubai Downtown towers and Burj Khalifa against a clear late-afternoon sky, photographed from a terrace with a stone balustrade and potted olive trees in the foreground. No people, no documents.',
+  'Modern Dubai Downtown towers and Burj Khalifa against a clear late-afternoon sky, photographed from a terrace with a sand-coloured stone balustrade and date palms in the foreground. No people, no documents.',
   'Dubai Marina towers and calm water at golden hour, yachts moored along the marina, warm reflections. No people, no documents.',
 ];
 
@@ -255,7 +264,11 @@ export async function producePicture(spec: PictureSpec, ctx: { topic: string; fo
   const banner = spec.kind === 'cover' && cfg.images.coverStyle === 'banner';
   const brand = banner || cfg.images.showLogo ? await coverBrand(cfg) : null;
   const words = banner ? await coverText({ title: ctx.topic, summary: ctx.summary, headings: ctx.headings, facts: (await companyFacts(cfg).catch(() => ({ text: '' }))).text }) : null;
-  const look: Look = { banner: banner && brand && words ? { text: words, brand } : undefined, emblem: cfg.images.showLogo ? brand?.emblem || null : null };
+  // a title about a visa gets the gold UAE GOLDEN VISA card on its cover (drawn by us, so the lettering is exact)
+  // only when the cover designer says the visa itself is the subject, and not on every cover in a row
+  const lastKinds = (await recentPictures().catch(() => ({ types: [] as string[] }))).types.slice(0, 2);
+  const visaCard = !!(banner && cfg.images.visaCard !== 'off' && /\bvisas?\b/i.test(ctx.topic) && words?.visaCard && !(lastKinds.length === 2 && lastKinds.every((t) => t === 'flag-skyline')));
+  const look: Look = { banner: banner && brand && words ? { text: words, brand, visaCard } : undefined, emblem: cfg.images.showLogo ? brand?.emblem || null : null };
   const symbols = banner && cfg.images.officialSymbols;
   const maxAttempts = spec.kind === 'cover' ? 4 : 2;
   const needed = realismNeeded(cfg.images.minRealism, spec.kind);
@@ -271,9 +284,11 @@ export async function producePicture(spec: PictureSpec, ctx: { topic: string; fo
   const recent = await recentPictures();
   const chosen = spec.types?.length ? spec.types : pickSceneTypes([spec.kind === 'cover' ? `${ctx.topic} ${ctx.focusKeyword}` : spec.purpose], recent.types, ctx.variant)[0];
   // a second round of covers starts from the backup kinds
-  const types = chosen.slice(ctx.variant % 2 && spec.kind === 'cover' && !spec.types ? 1 : 0).concat(chosen).slice(0, 3);
+  const rotated = chosen.slice(ctx.variant % 2 && spec.kind === 'cover' && !spec.types ? 1 : 0).concat(chosen).slice(0, 3);
+  // behind the gold card: the skyline with the UAE flag first, then calm backdrops fitted to the title
+  const types = visaCard ? ['flag-skyline', ...rotated.filter((t) => t !== 'flag-skyline')].slice(0, 3) : rotated;
   // scenes written for THIS article by the AI photo editor (so the picture fits the title)
-  const concept = await pictureConcept(spec, ctx, ref && refImg ? ref.caption : '', cfg, banner, types, recent.alts).catch((e) => {
+  const concept = await pictureConcept(spec, ctx, ref && refImg ? ref.caption : '', cfg, banner, types, recent.alts, visaCard).catch((e) => {
     if (e instanceof AiError && (e.kind === 'quota' || e.kind === 'config')) throw e;
     void autoLog('warn', `Picture idea step failed, using house scenes: ${e instanceof Error ? e.message : e}`, ctx.jobId);
     return { scenes: [] as string[], alts: [] as string[], alt: '' };
@@ -325,17 +340,17 @@ export async function producePicture(spec: PictureSpec, ctx: { topic: string; fo
       if (clean && v.realism >= Math.max(5, needed - 1) && (!best || v.realism > best.realism)) best = { raw, hash, sharp: sharpScore, realism: v.realism, attempt };
       continue;
     }
-    return remember(await savePicture({ ...spec, alt: altFor(attempt) }, ctx, raw, hash, sharpScore, v.realism, attempt, look), spec.kind === 'cover' && attempt === maxAttempts && attempt > 1 ? 'skyline-flight' : types[(attempt - 1) % types.length]);
+    return remember(await savePicture({ ...spec, alt: altFor(attempt) }, ctx, raw, hash, sharpScore, v.realism, attempt, look), visaCard ? 'flag-skyline' : spec.kind === 'cover' && attempt === maxAttempts && attempt > 1 ? 'skyline-flight' : types[(attempt - 1) % types.length]);
   }
   if (best && spec.kind === 'cover') {
     await autoLog('info', `No cover attempt reached ${needed}/10 — using the best clean attempt (realism ${best.realism}, no text, logos, hands or faces).`, ctx.jobId);
-    return remember(await savePicture({ ...spec, alt: altFor(best.attempt) }, ctx, best.raw, best.hash, best.sharp, best.realism, maxAttempts, look), types[(best.attempt - 1) % types.length]);
+    return remember(await savePicture({ ...spec, alt: altFor(best.attempt) }, ctx, best.raw, best.hash, best.sharp, best.realism, maxAttempts, look), visaCard ? 'flag-skyline' : types[(best.attempt - 1) % types.length]);
   }
   await autoLog('warn', `Picture failed after ${maxAttempts} attempts (${spec.kind}): ${reasons.join(' · ')}`, ctx.jobId);
   return { ok: false, reason: reasons.join(' · '), attempts: maxAttempts };
 }
 
-type Look = { banner?: { text: CoverText; brand: CoverBrand }; emblem: Buffer | null };
+type Look = { banner?: { text: CoverText; brand: CoverBrand; visaCard?: boolean }; emblem: Buffer | null };
 
 /** Small logo mark on photos (when "Show logo on pictures" is on) */
 async function marked(buf: Buffer, look: Look, quality: number): Promise<Buffer> {
@@ -348,7 +363,7 @@ async function savePicture(spec: PictureSpec, ctx: { topic: string; focusKeyword
   let out: { url: string }, ogUrl: string | undefined, width: number, height: number;
   if (spec.kind === 'cover') {
     const [cover, og] = look.banner
-      ? await Promise.all([composeCover(raw, look.banner.text, look.banner.brand, 1600, 900), composeCover(raw, look.banner.text, look.banner.brand, 1200, 630)])
+      ? await Promise.all([composeCover(raw, look.banner.text, look.banner.brand, 1600, 900, { visaCard: look.banner.visaCard }), composeCover(raw, look.banner.text, look.banner.brand, 1200, 630, { visaCard: look.banner.visaCard })])
       : await Promise.all([
           sharp(raw).resize(1600, 900, { fit: 'cover', position: 'attention' }).webp({ quality: 82 }).toBuffer().then((b) => marked(b, look, 82)),
           sharp(raw).resize(1200, 630, { fit: 'cover', position: 'attention' }).webp({ quality: 80 }).toBuffer().then((b) => marked(b, look, 80)),

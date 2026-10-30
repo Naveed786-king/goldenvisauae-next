@@ -22,6 +22,8 @@ export const SCENE_TYPES: SceneType[] = [
   { id: 'landmark', people: true, words: /\b(uae|emirate|abu dhabi|dubai|sharjah|ras al|citizenship|nationality|residen|living|life|culture)/i, brief: 'a traveller admiring a famous UAE landmark (Museum of the Future, Sheikh Zayed Grand Mosque, Burj Khalifa or Louvre Abu Dhabi) in beautiful light, seen from behind' },
   { id: 'skyline-flight', people: false, words: /\b(passport|visa-free|second passport|world|global|countries|travel freedom|citizenship|flight)/i, brief: 'an airliner climbing over the Dubai skyline and Burj Khalifa at golden hour, photographed from the ground across the city (outdoor, no windows or interiors)' },
   { id: 'lifestyle', people: true, words: /\b(lifestyle|cost of living|quality|community|neighbourhood|neighborhood|weekend|marina|beach)/i, brief: 'people strolling along the Dubai Marina promenade at golden hour, yachts and towers behind' },
+  // only used as the backdrop behind the drawn gold visa card (never picked by words)
+  { id: 'flag-skyline', people: false, words: /(?!)/, brief: 'the Dubai skyline with Burj Khalifa at golden hour seen across calm water, a correct UAE flag (vertical red band at the pole, then horizontal green, white and black stripes) waving on a tall flagpole near the right edge, open sky in the middle of the frame' },
   { id: 'cost', people: false, words: /\b(cost|fee|price|pay|budget|afford|cheap|expens|charge|aed)/i, brief: 'a neat flat lay of a closed leather wallet, a smooth plain gold card without any markings and a plain leather passport holder on a light stone desk, sunlight' },
 ];
 
