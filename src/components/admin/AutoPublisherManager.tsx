@@ -261,7 +261,7 @@ function AiTab({ cfg, patch, providers, act }: { cfg: any; patch: (fn: (c: any) 
               <div className="grid gap-3 sm:grid-cols-2">
                 <div>
                   <label className="admin-label">API key</label>
-                  <input type="password" autoComplete="off" className="admin-input font-mono" placeholder={p.keyHint} value={cfg.providers[p.id]?.key || ''} onChange={(e) => patch((c) => ((c.providers[p.id].key = e.target.value), c))} />
+                  <input type="password" autoComplete="off" className="admin-input font-mono" placeholder={p.keyHint} value={cfg.providers[p.id]?.key || ''} onFocus={(e) => e.target.select()} onChange={(e) => patch((c) => ((c.providers[p.id].key = e.target.value), c))} />
                   <a href={p.keyUrl} target="_blank" rel="noopener noreferrer" className="mt-1 inline-block text-xs font-bold text-gold-deep underline">
                     Get a key
                   </a>

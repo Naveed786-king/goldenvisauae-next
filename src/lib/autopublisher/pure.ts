@@ -46,7 +46,15 @@ export function unmaskSecrets<T>(incoming: T, stored: any): T {
     const out: any = {};
     for (const [k, v] of Object.entries(incoming as any)) {
       const old = stored && typeof stored === 'object' ? stored[k] : undefined;
-      if (/key$/i.test(k) && typeof v === 'string') out[k] = isMasked(v) ? (old ?? '') : v.trim();
+      if (/key$/i.test(k) && typeof v === 'string') {
+        // unchanged mask → keep the stored key; a key pasted next to the mask → use only the pasted part
+        const shown = typeof old === 'string' ? maskKey(old) : '';
+        if (!isMasked(v) || (shown && v === shown)) out[k] = isMasked(v) ? (old ?? '') : v.trim();
+        else {
+          const typed = (shown && v.startsWith(shown) ? v.slice(shown.length) : v.replace(/^\u2022+/, '')).trim();
+          out[k] = typed.length >= 12 ? typed : (old ?? '');
+        }
+      }
       else out[k] = unmaskSecrets(v, old);
     }
     return out;
