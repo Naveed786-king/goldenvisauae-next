@@ -9,7 +9,7 @@ import { autoLog } from './log';
 import { stem, terms } from './text';
 import { readLocal } from './local-file';
 
-export type Reference = { id: string; url: string; caption: string; tags: string };
+export type Reference = { id: string; url: string; caption: string; tags: string; matched?: boolean };
 
 /** Small JPEG of a library photo (for the vision AI and as the picture AI's reference) */
 export async function referenceImage(url: string, size = 1024): Promise<Buffer> {
@@ -69,7 +69,8 @@ export async function pickReference(text: string, excludeIds: string[] = []): Pr
   const ranked = refs
     .map((r) => ({ r, s: referenceScore(want, r) - Math.min(1, r.uses * 0.1) }))
     .sort((a, b) => b.s - a.s || (a.r.lastUsedAt?.getTime() || 0) - (b.r.lastUsedAt?.getTime() || 0));
-  const best = ranked[0].s > 0 ? ranked[0].r : [...refs].sort((a, b) => (a.lastUsedAt?.getTime() || 0) - (b.lastUsedAt?.getTime() || 0))[0];
+  const matched = ranked[0].s > 0;
+  const best = matched ? ranked[0].r : [...refs].sort((a, b) => (a.lastUsedAt?.getTime() || 0) - (b.lastUsedAt?.getTime() || 0))[0];
   await prisma.autoReference.update({ where: { id: best.id }, data: { uses: { increment: 1 }, lastUsedAt: new Date() } });
-  return { id: best.id, url: best.url, caption: best.caption, tags: best.tags };
+  return { id: best.id, url: best.url, caption: best.caption, tags: best.tags, matched };
 }
