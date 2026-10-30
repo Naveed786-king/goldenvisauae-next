@@ -6,6 +6,7 @@ import { savePublicFile } from '@/lib/upload';
 import { AutoConfig } from './config';
 import { AiError, completeJson, http, isFakeAi, providerKey } from './ai';
 import { autoLog, countAiCall } from './log';
+import { pickSceneTypes, sceneType } from './scene-types';
 import { slugify } from './text';
 import { dhash, hamming, sharpness } from './imaging';
 import { readLocal } from './local-file';
@@ -133,31 +134,35 @@ async function saveWebp(buf: Buffer, name: string, alt: string): Promise<{ url: 
   return { url: saved.url, size: saved.size };
 }
 
-export type PictureSpec = { purpose: string; hint?: string; alt: string; kind: 'cover' | 'inline'; placement?: string; idea?: string };
-export type PictureResult = { ok: true; url: string; ogUrl?: string; width: number; height: number; alt: string; hash: string; sharpness: number; realism: number; attempts: number } | { ok: false; reason: string; attempts: number };
+export type PictureSpec = { purpose: string; hint?: string; alt: string; kind: 'cover' | 'inline'; placement?: string; idea?: string; types?: string[] };
+export type PictureResult = { ok: true; url: string; ogUrl?: string; width: number; height: number; alt: string; hash: string; sharpness: number; realism: number; attempts: number; sceneType?: string } | { ok: false; reason: string; attempts: number };
 
 /**
  * The AI photo editor: three concrete, realistic scenes that clearly fit this article (title, section,
  * summary), in the style of the library photo when there is one. Safe for picture models: no readable
  * text or numbers, people only at a natural distance.
  */
-export async function pictureConcept(spec: PictureSpec, ctx: { topic: string; focusKeyword: string; summary?: string }, refCaption: string, cfg: AutoConfig, banner = false): Promise<{ scenes: string[]; alts: string[]; alt: string }> {
+export async function pictureConcept(spec: PictureSpec, ctx: { topic: string; focusKeyword: string; summary?: string }, refCaption: string, cfg: AutoConfig, banner = false, types: string[] = [], recentAlts: string[] = []): Promise<{ scenes: string[]; alts: string[]; alt: string }> {
   const passportRule = cfg.images.officialSymbols
     ? 'Passports may show the UAE national emblem and the words UNITED ARAB EMIRATES and PASSPORT in gold on the cover (spelled exactly); cards may say GOLDEN VISA. No personal data, names, ID numbers, photos of a person or barcodes.'
     : 'Picture models print garbled words and numbers on documents, so a passport is always inside a closed dark leather passport holder whose front is completely smooth plain leather (no crest, no embossing, no stitching patterns that look like letters); the gold visa card is a smooth plain gold card like a blank metal card, with no chip, numbers, letters or embossing.';
+  const kinds = (types.length ? types : ['consult', 'airport', 'desk'])
+    .map((id, i) => `${i + 1}. ${sceneType(id)?.brief || id}`)
+    .join('\n');
   const task = banner
     ? `Write 3 rich, detailed scenes for the photo half of a designed article cover (the title is drawn on the left, so the photo itself carries no words). A reader must see "UAE visa" at a glance and connect it with THIS title. The subject fills the right two thirds of the frame, large and close; the left third stays bright and simple (soft warm daylight, pale out-of-focus background).
-Make the 3 scenes different kinds of picture, each combining several visa elements that fit the title:
-1. A full desk composition: a passport in a plain dark leather holder, a smooth plain gold card, plus 2-3 objects for the topic (travel: a leather suitcase or carry-on and sunglasses; property: house keys and a small villa model; family: a small child's backpack or toy plane next to the suitcase; business or investors: a leather briefcase and a fountain pen; students: a graduation cap; medical: a stethoscope; retirement: a sun hat; renewal or rules: closed document folders and a calendar without numbers), on a marble or warm wood desk by a large window with the Dubai skyline (Burj Khalifa) and one small distant airliner high in the sky.
-2. People: a smiling Emirati consultant in a white kandura (or an Emirati woman consultant in a black abaya) at a bright modern consultancy office desk, talking with clients who fit the topic (a couple, a family, an investor, a student), a plain leather passport holder and a smooth plain gold card on the desk between them, the Dubai skyline softly behind through floor-to-ceiling windows (one continuous real room, no aircraft in this scene). Medium shot, people seen from the side or three-quarter, natural poses, hands resting naturally.
-3. Travel and arrival: travellers or a family who fit the topic with suitcases on a trolley at a bright modern Dubai airport terminal or arriving at a Dubai home, a plain leather passport holder in hand, the skyline and one small distant airliner in the sky seen through tall glass (realistic scale).
+Make the 3 scenes 3 DIFFERENT kinds of picture, in this order:
+${kinds}
+Shape each kind around THIS title so it could not be used for another article, and add visa elements where they fit naturally (a plain leather passport holder, a smooth plain gold card, luggage, the Dubai skyline, a distant airliner).
 Rules:
 - Photorealistic, bright warm golden-hour light, layered depth (detailed foreground, clear middle ground, skyline behind), gold, white and black tones. Never dark rooms or black backgrounds. Never an almost empty table.
 - People only at a natural distance (medium shot, side or three-quarter view); no close-up faces or hands.
 - ${passportRule}
 - No other text, numbers, prices, logos, signs, flags with writing or screens with content.
 - Each scene 2-3 sentences, at most 70 words.`
-    : `Write 3 different photo scenes for this picture. Each must be a real moment a photographer could shoot in the UAE that clearly shows THIS topic (for a family visa: a family with luggage arriving at a bright Dubai home; for property: a modern villa or apartment with keys on the counter; for costs and fees: a couple at a consultant's desk with closed folders; for renewal or medical: a clean modern clinic or government service centre hall).
+    : `Write 3 photo scenes for this picture, each a real moment a photographer could shoot in the UAE that clearly shows what THIS ${spec.kind === 'cover' ? 'title' : 'section'} is about. They must be 3 DIFFERENT kinds of picture, in this order:
+${kinds}
+Shape each kind around the exact subject of the ${spec.kind === 'cover' ? 'title' : 'section heading'} (who, where, what moment), so it could not be used for another article.
 Rules:
 - Photorealistic editorial photo, natural light, believable details. Different place or camera angle in each scene.
 - People are welcome when they help, but at a natural distance (side or back view, or medium shot); never close-up faces or hands.
@@ -167,8 +172,8 @@ Rules:
     system: 'You are the photo editor of a UAE visa and residency consultancy blog. You pick realistic photos that a reader instantly connects with the article.',
     prompt: `ARTICLE TITLE: ${ctx.topic}
 FOCUS KEYWORD: ${ctx.focusKeyword}
-${ctx.summary ? `WHAT THE ARTICLE SAYS: ${String(ctx.summary).slice(0, 600)}\n` : ''}PICTURE FOR: ${spec.kind === 'cover' ? 'the cover (top of the article)' : spec.purpose}
-${refCaption ? `OUR LIBRARY PHOTO TO TAKE STYLE FROM: ${refCaption}\n` : ''}${spec.idea ? `THE ADMIN'S OWN IDEA FOR THIS PICTURE (follow it closely; only change what breaks the rules below): ${spec.idea}\n` : ''}HOUSE STYLE: ${cfg.images.houseStyle || 'bright, calm, premium, natural light, subtle warm gold accents'}
+${ctx.summary ? `WHAT THE ARTICLE SAYS: ${String(ctx.summary).slice(0, 600)}\n` : ''}PICTURE FOR: ${spec.kind === 'cover' ? 'the cover (top of the article)' : `${spec.purpose} (show what THIS section is about, not the article in general)`}
+${refCaption ? `OUR LIBRARY PHOTO TO TAKE STYLE FROM: ${refCaption}\n` : ''}${recentAlts.length ? `OUR RECENT PICTURES (do NOT repeat their place, objects, people or composition; this picture must look clearly different): ${recentAlts.slice(0, 14).join(' | ')}\n` : ''}${spec.idea ? `THE ADMIN'S OWN IDEA FOR THIS PICTURE (follow it closely; only change what breaks the rules below): ${spec.idea}\n` : ''}HOUSE STYLE: ${cfg.images.houseStyle || 'bright, calm, premium, natural light, subtle warm gold accents'}
 
 ${task}
 Return JSON only: {"scenes": ["", "", ""], "alts": ["short alt text for scene 1", "for scene 2", "for scene 3"]} (alt texts describe what is visible and include the focus keyword where natural)`,
@@ -180,6 +185,39 @@ Return JSON only: {"scenes": ["", "", ""], "alts": ["short alt text for scene 1"
   const rawAlts = Array.isArray(r?.alts) ? r.alts : [];
   const keep = raw.map((x, i) => ({ scene: String(x).trim(), alt: String(rawAlts[i] || '').trim().slice(0, 200) })).filter((x) => x.scene.length > 15).slice(0, 4);
   return { scenes: keep.map((x) => x.scene), alts: keep.map((x) => x.alt), alt: keep[0]?.alt || String(r?.alt || '').trim().slice(0, 200) };
+}
+
+// ---------------------------------------------------------------- variety across the blog
+
+const RECENT_KEY = 'autopublisher.recentScenes';
+let recentChain: Promise<unknown> = Promise.resolve();
+
+/** Kinds of picture used most recently (newest first) and the alt texts of the latest pictures */
+export async function recentPictures(): Promise<{ types: string[]; alts: string[] }> {
+  const row = await prisma.setting.findUnique({ where: { key: RECENT_KEY } }).catch(() => null);
+  let types: string[] = [];
+  try {
+    const v = JSON.parse(row?.value || '[]');
+    if (Array.isArray(v)) types = v.map(String).slice(0, 30);
+  } catch {}
+  const media = await prisma.media
+    .findMany({ where: { OR: [{ filename: { contains: '-cover-' } }, { filename: { contains: '-inline-' } }], NOT: { alt: '' } }, orderBy: { createdAt: 'desc' }, take: 14, select: { alt: true } })
+    .catch(() => [] as { alt: string }[]);
+  return { types, alts: media.map((m) => String(m.alt || '').slice(0, 120)).filter(Boolean) };
+}
+
+/** Notes the kind of picture just used, so the next ones pick something else (one write at a time) */
+async function remember(res: PictureResult, type?: string): Promise<PictureResult> {
+  if (!res.ok || !type) return res;
+  recentChain = recentChain
+    .then(async () => {
+      const { types } = await recentPictures();
+      const value = JSON.stringify([type, ...types].slice(0, 30));
+      await prisma.setting.upsert({ where: { key: RECENT_KEY }, create: { key: RECENT_KEY, value }, update: { value } });
+    })
+    .catch(() => null);
+  await recentChain;
+  return { ...res, sceneType: type };
 }
 
 /** Problems that make a picture unusable even as a fallback (text, logos, broken hands or faces) */
@@ -209,8 +247,13 @@ export async function producePicture(spec: PictureSpec, ctx: { topic: string; fo
   });
   const refImg = ref ? await referenceImage(ref.url).catch(() => null) : null;
   if (ref && refImg) await autoLog('info', `Using library photo as inspiration (${spec.kind}): ${ref.caption || ref.url}`, ctx.jobId);
+  // a different kind of picture than the blog's recent ones (and than the other pictures of this article)
+  const recent = await recentPictures();
+  const chosen = spec.types?.length ? spec.types : pickSceneTypes([spec.kind === 'cover' ? `${ctx.topic} ${ctx.focusKeyword}` : spec.purpose], recent.types, ctx.variant)[0];
+  // a second round of covers starts from the backup kinds
+  const types = chosen.slice(ctx.variant % 2 && spec.kind === 'cover' && !spec.types ? 1 : 0).concat(chosen).slice(0, 3);
   // scenes written for THIS article by the AI photo editor (so the picture fits the title)
-  const concept = await pictureConcept(spec, ctx, ref && refImg ? ref.caption : '', cfg, banner).catch((e) => {
+  const concept = await pictureConcept(spec, ctx, ref && refImg ? ref.caption : '', cfg, banner, types, recent.alts).catch((e) => {
     if (e instanceof AiError && (e.kind === 'quota' || e.kind === 'config')) throw e;
     void autoLog('warn', `Picture idea step failed, using house scenes: ${e instanceof Error ? e.message : e}`, ctx.jobId);
     return { scenes: [] as string[], alts: [] as string[], alt: '' };
@@ -259,11 +302,11 @@ export async function producePicture(spec: PictureSpec, ctx: { topic: string; fo
       if (clean && v.realism >= Math.max(5, needed - 1) && (!best || v.realism > best.realism)) best = { raw, hash, sharp: sharpScore, realism: v.realism, attempt };
       continue;
     }
-    return savePicture({ ...spec, alt: altFor(attempt) }, ctx, raw, hash, sharpScore, v.realism, attempt, look);
+    return remember(await savePicture({ ...spec, alt: altFor(attempt) }, ctx, raw, hash, sharpScore, v.realism, attempt, look), types[(attempt - 1) % types.length]);
   }
   if (best && spec.kind === 'cover') {
     await autoLog('info', `No cover attempt reached ${needed}/10 — using the best clean attempt (realism ${best.realism}, no text, logos, hands or faces).`, ctx.jobId);
-    return savePicture({ ...spec, alt: altFor(best.attempt) }, ctx, best.raw, best.hash, best.sharp, best.realism, maxAttempts, look);
+    return remember(await savePicture({ ...spec, alt: altFor(best.attempt) }, ctx, best.raw, best.hash, best.sharp, best.realism, maxAttempts, look), types[(best.attempt - 1) % types.length]);
   }
   await autoLog('warn', `Picture failed after ${maxAttempts} attempts (${spec.kind}): ${reasons.join(' · ')}`, ctx.jobId);
   return { ok: false, reason: reasons.join(' · '), attempts: maxAttempts };

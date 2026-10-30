@@ -293,6 +293,10 @@ export const AI_WORDS = [
   'in summary', 'in today\'s', "let's dive", 'dive into', 'deep dive', "here's what you need to know", 'whether you\'re', 'whether you are',
   'comprehensive guide', 'ultimate guide', 'the landscape of', 'evolving landscape', 'plays a key role', 'plays a crucial role',
   'stands as', 'serves as a', 'nestled', 'in the heart of', 'breathtaking', 'rest assured', 'peace of mind', 'hassle-free', 'journey',
+  'plays a vital role', 'plays a pivotal role', 'a wide range of', 'a myriad of', 'myriad', 'plethora', 'paramount', 'holistic', 'foster',
+  'elevate', 'streamline', 'streamlined', 'empower', 'empowering', 'cutting-edge', 'state-of-the-art', 'key takeaways', 'in essence',
+  'when it comes to', 'it is essential to', "it's essential to", 'it is crucial', 'navigating', 'commendable', 'noteworthy', 'invaluable',
+  'firstly', 'lastly', 'to sum up', 'all in all', 'unparalleled', 'a testament to', 'dynamic landscape', 'thriving', 'bustling',
 ];
 
 export type AiTells = { score: number; problems: string[] };
@@ -353,6 +357,42 @@ export function aiTells(html: string): AiTells {
   if (closers >= 2) {
     score += 1;
     problems.push(`Cut the ${closers} summary/closing lines that only restate the section ("This means…", "Ultimately…"): end each section on the last useful fact or next step`);
+  }
+  // the patterns AI detectors weigh most: flat paragraphs, missing contractions, no "we" voice, same openers
+  const paras = [...html.matchAll(/<p[^>]*>([\s\S]*?)<\/p>/gi)].map((m) => stripHtml(m[1])).filter((p) => p.split(/\s+/).length >= 6);
+  if (paras.length >= 8) {
+    const counts = paras.map((p) => p.split(/(?<=[.!?])\s+/).filter(Boolean).length);
+    const single = counts.filter((c) => c === 1).length / counts.length;
+    const pm = counts.reduce((a, b) => a + b, 0) / counts.length;
+    const psd = Math.sqrt(counts.reduce((a, b) => a + (b - pm) ** 2, 0) / counts.length);
+    if (psd < 0.8 || single < 0.08) {
+      score += 1;
+      problems.push(`Paragraphs all have about the same length (${pm.toFixed(1)} sentences each): make a few of them a single short sentence and let one or two run longer`);
+    }
+  }
+  const wordCount = text.split(/\s+/).filter(Boolean).length;
+  if (wordCount >= 400) {
+    const contractions = (text.match(/\b\w+'(ll|re|ve|d|s|t|m)\b/gi) || []).filter((c) => !/'s$/i.test(c) || /^(it|that|there|here|what|who|he|she|let)'s$/i.test(c)).length;
+    if ((contractions / wordCount) * 100 < 0.5) {
+      score += 1;
+      problems.push(`Almost no contractions (${contractions} in ${wordCount} words): write "you'll", "it's", "don't", "we've" where a person would say them`);
+    }
+    if (!/\b(we|we're|we've|our|us)\b/i.test(text)) {
+      score += 1;
+      problems.push('No "we" anywhere: say what we see with clients and what we check first, where COMPANY FACTS support it');
+    }
+  }
+  if (sentences.length >= 15) {
+    const first: Record<string, number> = {};
+    for (const s of sentences) {
+      const w = s.split(/\s+/)[0].toLowerCase().replace(/[^a-z']/g, '');
+      if (w) first[w] = (first[w] || 0) + 1;
+    }
+    const [topWord, topN] = Object.entries(first).sort((a, b) => b[1] - a[1])[0] || ['', 0];
+    if (topN / sentences.length > 0.2) {
+      score += 1;
+      problems.push(`${topN} of ${sentences.length} sentences start with "${topWord}": vary how sentences open`);
+    }
   }
   const triads = (text.match(/\b\w+, \w+(,)? and \w+\b/g) || []).length;
   if (sentences.length && triads / sentences.length > 0.25) {

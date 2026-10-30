@@ -61,7 +61,7 @@ export function buildImagePrompt(o: { purpose: string; hint?: string; topic: str
   if (o.scene) {
     const hasPeople = PEOPLE_WORDS.test(o.scene) || peopleAllowed(o.houseStyle);
     return [
-      o.withReference ? 'Use the attached photo only as inspiration for its style, light, colours and kind of place. Create a NEW, different photograph with its own composition and details; do not copy it.' : '',
+      o.withReference ? 'Use the attached photo only as a guide for colour grading, light and photo quality. The place, objects, people and composition come from the scene below and must be clearly different from the attached photo; never copy it.' : '',
       // no topic words for banner photos: picture models tend to print them as text on the image
       o.still
         ? 'Rich, premium wide photograph for a website header, full of meaningful detail. It must contain no text, titles, captions or lettering at all. The main subject fills the RIGHT two thirds of the frame and is large, close and detailed; the left third is bright and simple (soft warm daylight, pale out-of-focus background) with nothing important in it. Bright overall, no black or dark areas.'

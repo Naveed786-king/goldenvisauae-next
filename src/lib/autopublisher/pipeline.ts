@@ -15,7 +15,8 @@ import { clusterFor, freshRelevant, googleNews, researchMission } from './resear
 import { checkArticle, checkTopic, fingerprintPost, rebuildFingerprints } from './similarity';
 import { companyFacts, linkTargets, briefPrompt, writePrompt, editPrompt, fixPrompt, nativePrompt, HUMAN_VOICE } from './prompts';
 import { aiTells, insertFigures, bannedFound, cleanArticleHtml, escapeHtml, guaranteeFound, jaccard, normalize, seoScore, shingles, slugify, stripHtml, terms, topicTerms, unsupportedNumbers, words } from './text';
-import { figureHtml, fingerprintExistingImages, producePicture } from './images';
+import { figureHtml, fingerprintExistingImages, producePicture, recentPictures } from './images';
+import { pickSceneTypes } from './scene-types';
 import { COPIED_SLUGS } from './copied-slugs';
 import { describeReferences } from './references';
 import { hashItems, source } from '@/lib/i18n/content';
@@ -435,7 +436,7 @@ const check: Stage = async (job, d, cfg) => {
   d.seo = seo;
   if (seo.score < cfg.quality.minSeo && Number(d.fixed.seo || 0) < 2 && !isFakeAi()) {
     d.fixed.seo = Number(d.fixed.seo || 0) + 1;
-    const { system, prompt } = fixPrompt(cfg, a, seo.failed.map((f) => `SEO: ${f}`), `Focus keyword: ${d.focusKeyword}. Allowed internal links: ${[...(d.links?.fixed || []), ...(d.links?.related || [])].map((l: any) => l.href).join(', ')}`);
+    const { system, prompt } = fixPrompt(cfg, a, seo.failed.map((f) => `SEO: ${f}`), `Focus keyword: ${d.focusKeyword}. Allowed internal links: ${[...(d.links?.fixed || []), ...(d.links?.related || [])].map((l: any) => l.href).join(', ')}\nChange only what the SEO points need and keep the rest word for word.\n\n${HUMAN_VOICE}`);
     d.article = { ...a, ...(await completeJson({ system, prompt, temperature: 0.4, maxTokens: 16000, timeoutMs: 230_000 })) };
     return 'check'; // re-check on the next tick
   }
@@ -448,7 +449,7 @@ const check: Stage = async (job, d, cfg) => {
       d.fixed.sim = Number(d.fixed.sim || 0) + 1;
       const problems = sim.clashes.map((c) => `Too similar to our post "${c.title}" (text ${Math.round(c.text * 100)}%, title ${Math.round(c.title_ * 100)}%) — rewrite the overlapping parts and choose a clearly different title/angle`);
       if (sim.maxWeb > cfg.quality.maxTextSimilarity) problems.push('Some passages are too close to the researched news texts — rewrite them fully in our own words');
-      const { system, prompt } = fixPrompt(cfg, a, problems);
+      const { system, prompt } = fixPrompt(cfg, a, problems, HUMAN_VOICE);
       d.article = { ...a, ...(await completeJson({ system, prompt, temperature: 0.6, maxTokens: 16000, timeoutMs: 230_000 })) };
       return 'check';
     }
@@ -470,7 +471,7 @@ const check: Stage = async (job, d, cfg) => {
         ...guarantees.map((g) => `Remove any promise or guarantee of approval: "${g}"`),
         ...numbers.map((n) => `The figure "${n}" is not supported by our research or company facts — remove it or describe it without a number`),
       ];
-      const { system, prompt } = fixPrompt(cfg, a, problems);
+      const { system, prompt } = fixPrompt(cfg, a, problems, `Change only the sentences these points name and keep the rest word for word.\n\n${HUMAN_VOICE}`);
       d.article = { ...a, ...(await completeJson({ system, prompt, temperature: 0.3, maxTokens: 16000, timeoutMs: 230_000 })) };
       return 'check';
     }
@@ -483,15 +484,15 @@ const check: Stage = async (job, d, cfg) => {
   const tells = aiTells(html);
   d.human = { score: tells.score, problems: tells.problems };
   if (tells.score >= 2 && !isFakeAi()) {
-    if (Number(d.fixed.human || 0) < 2) {
+    if (Number(d.fixed.human || 0) < 3) {
       d.fixed.human = Number(d.fixed.human || 0) + 1;
-      await autoLog('info', `Reads machine-written (score ${tells.score}) — rewriting in a human voice (round ${d.fixed.human} of 2)`, job.id);
-      const problems = ['Rewrite every part that reads as machine-written. Keep every fact, number, heading topic and internal link.', ...tells.problems];
+      await autoLog('info', `Reads machine-written (score ${tells.score}) — rewriting in a human voice (round ${d.fixed.human} of 3)`, job.id);
+      const problems = ['Rewrite every part that reads as machine-written. Keep every fact, number, heading topic and internal link. Make the text less predictable: an unexpected but accurate word choice now and then, a short aside in brackets, a sentence that starts with "But" or "So", a direct question to the reader where it fits.', ...tells.problems];
       const { system, prompt } = fixPrompt(cfg, a, problems, HUMAN_VOICE);
       d.article = { ...a, ...(await completeJson({ system, prompt, temperature: 0.8, maxTokens: 16000, timeoutMs: 230_000 })) };
       return 'check';
     }
-    await autoLog('warn', `Still some machine-sounding patterns after 2 rewrites (score ${tells.score}): ${tells.problems.join(' | ')}`, job.id);
+    await autoLog('warn', `Still some machine-sounding patterns after 3 rewrites (score ${tells.score}): ${tells.problems.join(' | ')}`, job.id);
   }
   if (seo.score < cfg.quality.minSeo && !isFakeAi()) {
     // SEO is not a safety problem: after 2 automatic fixes the article goes on
@@ -520,6 +521,11 @@ const images: Stage = async (job, d, cfg) => {
       const afterH2 = m ? Number(m[1]) : Math.min(h2s.length, 2 + i * 2);
       plan.push({ kind: 'inline', purpose: p.purpose || `illustration for the section "${h2s[afterH2 - 1] || h2s[0]}"`, hint: p.prompt, alt: p.alt || `${h2s[afterH2 - 1] || a.title}`, afterH2 });
     }
+    // every picture a different kind (desk, consultant, airport, family home, keys…), fitted to its title or
+    // section and unlike the blog's latest pictures
+    const recent = await recentPictures().catch(() => ({ types: [] as string[], alts: [] as string[] }));
+    const kinds = pickSceneTypes(plan.map((p: any) => (p.kind === 'cover' ? `${a.title} ${a.focusKeyword || d.focusKeyword || ''}` : `${h2s[(p.afterH2 || 1) - 1] || ''} ${p.purpose}`)), recent.types, hashCode(job.id));
+    plan.forEach((p: any, i: number) => (p.types = kinds[i]));
     d.picPlan = plan;
     d.figures = d.figures || [];
     d.picIndex = 0;
@@ -551,7 +557,7 @@ const images: Stage = async (job, d, cfg) => {
     d.coverRounds = Number(d.coverRounds || 0) + 1;
     if (d.coverRounds < 2) {
       // only the cover is made again (inline results are kept); new scenes through a different variant
-      d.picPlan = d.picPlan.filter((p: any) => p.kind === 'cover').map((p: any) => ({ ...p, hint: undefined }));
+      d.picPlan = d.picPlan.filter((p: any) => p.kind === 'cover').map((p: any) => ({ ...p, hint: undefined, types: Array.isArray(p.types) && p.types.length ? [...p.types.slice(1), p.types[0]] : p.types }));
       d.picIndex = 0;
       await autoLog('info', `Cover failed the checks — trying a new set of scenes`, job.id);
       return 'images';
