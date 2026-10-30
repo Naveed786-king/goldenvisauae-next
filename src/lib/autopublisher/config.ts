@@ -75,7 +75,7 @@ export const DEFAULT_CONFIG: AutoConfig = {
     openrouter: { key: '', model: 'anthropic/claude-sonnet-5.5' },
   },
   useTranslationGeminiKey: true,
-  images: { provider: 'openai', openaiModel: 'gpt-image-1', geminiModel: 'gemini-2.5-flash-image', quality: 'high', inline: 2, houseStyle: '', onFail: 'skip', minSharpness: 60, minRealism: 7, coverStyle: 'banner', showLogo: true, ribbonText: '', officialSymbols: false, visaCard: 'auto' },
+  images: { provider: 'openai', openaiModel: 'gpt-image-2', geminiModel: 'gemini-2.5-flash-image', quality: 'high', inline: 2, houseStyle: '', onFail: 'skip', minSharpness: 60, minRealism: 7, coverStyle: 'banner', showLogo: true, ribbonText: '', officialSymbols: false, visaCard: 'auto' },
   quality: {
     minQuality: 80,
     minSeo: 80,

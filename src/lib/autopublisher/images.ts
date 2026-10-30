@@ -31,7 +31,7 @@ export async function generateImage(prompt: string, cfg: AutoConfig, reference?:
     return await generateWith(cfg.images.provider, prompt, cfg, reference);
   } catch (e) {
     // a wrong OpenAI key must not stop the pictures when a Gemini key works
-    if (cfg.images.provider === 'openai' && e instanceof AiError && (e.kind === 'auth' || e.kind === 'config') && (await providerKey(cfg, 'gemini'))) {
+    if (cfg.images.provider === 'openai' && e instanceof AiError && e.kind !== 'network' && (await providerKey(cfg, 'gemini'))) {
       await autoLog('warn', `OpenAI pictures not available (${e.message.slice(0, 160)}), using Gemini for this picture.`);
       return generateWith('gemini', prompt, cfg, reference);
     }
@@ -44,7 +44,32 @@ async function generateWith(which: 'openai' | 'gemini', prompt: string, cfg: Aut
   if (!key) throw new AiError('config', `No ${which === 'openai' ? 'OpenAI' : 'Gemini'} key for pictures. Add it in AI & pictures.`);
   await countAiCall();
   if (which === 'openai') {
-    const model = cfg.images.openaiModel || 'gpt-image-1';
+    // the chosen model first, then OpenAI's other picture models (accounts differ in which ones they have)
+    const tried: string[] = [];
+    for (const model of [...new Set([workingOpenAiModel, cfg.images.openaiModel, ...OPENAI_IMAGE_MODELS].filter(Boolean) as string[])]) {
+      try {
+        const out = await openAiPicture(model, key, prompt, cfg, reference);
+        if (workingOpenAiModel !== model) {
+          workingOpenAiModel = model;
+          if (model !== cfg.images.openaiModel) await autoLog('info', `OpenAI picture model "${cfg.images.openaiModel}" is not available on this account, using "${model}".`);
+        }
+        return out;
+      } catch (e) {
+        if (!(e instanceof AiError) || !MODEL_MISSING.test(e.message)) throw e;
+        tried.push(model);
+      }
+    }
+    throw new AiError('config', `None of the OpenAI picture models works on this account (${tried.join(', ')}). Verify the organization at platform.openai.com → Settings → Organization, or use Google Gemini for pictures.`);
+  }
+  return geminiPicture(key, prompt, cfg, reference);
+}
+
+const OPENAI_IMAGE_MODELS = ['gpt-image-2', 'gpt-image-1.5', 'gpt-image-1', 'gpt-image-1-mini'];
+const MODEL_MISSING = /does not exist|model_not_found|not found|invalid model|do not have access|must be verified|verify your organization/i;
+let workingOpenAiModel = '';
+
+async function openAiPicture(model: string, key: string, prompt: string, cfg: AutoConfig, reference?: Buffer | null): Promise<Buffer> {
+  {
     // with a library photo: the edits endpoint takes it as input and paints a new picture inspired by it
     if (reference && !model.startsWith('dall-e')) {
       const fd = new FormData();
@@ -67,6 +92,9 @@ async function generateWith(which: 'openai' | 'gemini', prompt: string, cfg: Aut
     if (!b64) throw new AiError('bad_output', 'OpenAI returned no picture');
     return Buffer.from(b64, 'base64');
   }
+}
+
+async function geminiPicture(key: string, prompt: string, cfg: AutoConfig, reference?: Buffer | null): Promise<Buffer> {
   const base = process.env.GEMINI_API_BASE || 'https://generativelanguage.googleapis.com';
   const model = cfg.images.geminiModel || 'gemini-2.5-flash-image';
   const j = await http(
