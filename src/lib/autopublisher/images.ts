@@ -124,6 +124,7 @@ Reject it if ANY of these is true: visible text, letters, numbers, logos or wate
 Off-topic too: plants or places that do not exist in the UAE (olive trees, cypresses, European streets, snow).
 On-topic for this UAE visa and residency consultancy: closed passports with a plain cover or in a leather holder, blank gold or white cards, luggage, airports and planes, consultants talking with clients in an office, families and travellers, UAE landmarks, skylines, homes, offices and coastlines. A plain passport cover or a blank card is fine as long as nothing on it is readable.
 ${propText === 'official' ? 'Allowed exception: the UAE national emblem and the exact words UNITED ARAB EMIRATES, PASSPORT or GOLDEN VISA on a passport cover or card prop. Reject them if the lettering is misspelled, garbled or invented, or if any personal data, ID number or face appears.\n' : propText === 'passport' ? 'Allowed exception: a simple crest and the single word PASSPORT, spelled exactly, on a passport cover. Any other lettering, or PASSPORT misspelled or garbled, still counts as visible text.\n' : ''}Realism: 9-10 = indistinguishable from a professional photo, 7-8 = convincing photo with tiny flaws, 5-6 = clearly AI-looking, under 5 = broken.
+Do not fail a picture only because a small detail of the scene description is missing or different (the number of people or objects, a pose, an object left out); judge the photo itself.
 Match: how clearly a reader connects this picture with the article title, 0-10 (7+ = obviously about this topic, under 5 = generic or unrelated).
 Return JSON only: {"ok": true|false, "realism": 0-10, "match": 0-10, "issues": ["…"]}`,
     images: [{ mime: 'image/jpeg', data: small.toString('base64') }],
@@ -244,9 +245,12 @@ async function remember(res: PictureResult, type?: string): Promise<PictureResul
 }
 
 const SAFE_SCENE = [
-  'The Dubai skyline with Burj Khalifa at golden hour, seen across the water from a quiet promenade, warm sunlight on glass towers, a few palm trees in the foreground. No people, no documents.',
-  'Modern Dubai Downtown towers and Burj Khalifa against a clear late-afternoon sky, photographed from a terrace with a sand-coloured stone balustrade and date palms in the foreground. No people, no documents.',
+  'The Dubai skyline with Burj Khalifa at golden hour, seen across the water from a quiet promenade, warm sunlight on glass towers, a few date palms in the foreground. No people, no documents.',
+  'The Abu Dhabi Corniche at golden hour: modern towers along the turquoise sea, a palm-lined waterfront walkway. No people, no documents.',
+  'Dubai Creek at sunset with traditional wooden dhows moored along the quay and the modern city behind. No people, no documents.',
   'Dubai Marina towers and calm water at golden hour, yachts moored along the marina, warm reflections. No people, no documents.',
+  'Golden desert dunes at sunset with the distant Dubai skyline and Burj Khalifa on the horizon. No people, no documents.',
+  'Modern Dubai Downtown towers and Burj Khalifa against a clear late-afternoon sky, photographed from a terrace with a sand-coloured stone balustrade and date palms in the foreground. No people, no documents.',
 ];
 
 /** Problems that make a picture unusable even as a fallback (text, logos, broken hands or faces) */
@@ -295,16 +299,17 @@ export async function producePicture(spec: PictureSpec, ctx: { topic: string; fo
   });
   // the alt text must describe the scene that was actually used (attempt k uses scene k)
   const generic = /—|^cover|illustration for/i.test(spec.alt);
-  const safeAlt = `Dubai skyline at golden hour, ${ctx.focusKeyword || ctx.topic}`.slice(0, 200);
+  const safeAlt = `UAE city view at golden hour, ${ctx.focusKeyword || ctx.topic}`.slice(0, 200);
   const altFor = (attempt: number) => (spec.kind === 'cover' && attempt === maxAttempts && attempt > 1 ? (generic ? safeAlt : spec.alt) : '') || (generic && concept.scenes.length ? concept.alts[(attempt - 1) % concept.scenes.length] || concept.alt : '') || spec.alt;
+  let safeRetry = 0;
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     // the last cover try is the safest kind of photo (architecture, no people, no documents), so a cover is almost always ready
     const safeTry = spec.kind === 'cover' && attempt === maxAttempts && attempt > 1;
-    const scene = safeTry ? SAFE_SCENE[ctx.variant % SAFE_SCENE.length] : concept.scenes.length ? concept.scenes[(attempt - 1) % concept.scenes.length] : undefined;
-    const prompt = buildImagePrompt({ purpose: spec.purpose, hint: attempt === 1 ? spec.hint : undefined, topic: ctx.topic, houseStyle: cfg.images.houseStyle, variant: ctx.variant + attempt * 5, scene, withReference: !!refImg, symbols, still: banner });
+    const scene = safeTry ? SAFE_SCENE[(Math.abs(ctx.variant) + safeRetry * 3) % SAFE_SCENE.length] : concept.scenes.length ? concept.scenes[(attempt - 1) % concept.scenes.length] : undefined;
+    const prompt = buildImagePrompt({ purpose: spec.purpose, hint: attempt === 1 ? spec.hint : undefined, topic: ctx.topic, houseStyle: cfg.images.houseStyle, variant: ctx.variant + attempt * 5, scene, withReference: !!refImg && !safeTry, symbols, still: banner });
     let raw: Buffer;
     try {
-      raw = await generateImage(prompt, cfg, refImg);
+      raw = await generateImage(prompt, cfg, safeTry ? null : refImg);
     } catch (e: any) {
       if (e instanceof AiError && (e.kind === 'quota' || e.kind === 'config')) throw e;
       reasons.push(`attempt ${attempt}: ${e?.message || e}`);
@@ -319,6 +324,11 @@ export async function producePicture(spec: PictureSpec, ctx: { topic: string; fo
     const near = await nearestImage(hash);
     if (near.distance <= cfg.quality.maxImageDistance) {
       reasons.push(`attempt ${attempt}: too similar to a picture we used (distance ${near.distance})`);
+      // the safe skyline try gets one more go with a different place
+      if (safeTry && safeRetry === 0) {
+        safeRetry = 1;
+        attempt--;
+      }
       continue;
     }
     let v: { ok: boolean; realism: number; match?: number; issues: string[] };
