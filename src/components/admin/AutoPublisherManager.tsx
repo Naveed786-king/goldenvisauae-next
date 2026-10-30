@@ -1,6 +1,6 @@
 'use client';
 import { useCallback, useEffect, useState } from 'react';
-import { Activity, BookOpen, Images, CirclePause, CirclePlay, ClipboardCheck, FileWarning, FlaskConical, Gauge, ImageIcon, KeyRound, ListChecks, Power, RefreshCw, Save, ScrollText, Search, Sparkles, Target, Trash2, Undo2, Waypoints } from 'lucide-react';
+import { Activity, BookOpen, Images, CirclePause, CirclePlay, ClipboardCheck, FileWarning, FlaskConical, Gauge, ImageIcon, KeyRound, ListChecks, Power, RefreshCw, Save, ScrollText, Search, ShieldCheck, Sparkles, Target, Trash2, Undo2, Waypoints } from 'lucide-react';
 import { Btn, Card, Empty, PageTitle, Spinner, Toggle, api, confirmDialog, toast } from './ui';
 import { cn } from '@/lib/utils';
 import { KeywordsTab, KnowledgeTab, LiveJobs, MissionsTab, ReportTab, ReviewTab } from './AutoPublisherPanels';
@@ -491,7 +491,7 @@ function CopiedTab() {
   async function run(action: 'draft' | 'publish') {
     const msg =
       action === 'draft'
-        ? `Move all ${d.summary.published} published copied posts to Draft? They disappear from the website and sitemap immediately. You can undo this.`
+        ? `Move the ${d.summary.published} published copied posts to Draft? They disappear from the website and sitemap immediately. You can undo this.`
         : 'Put the copied posts back online (published)?';
     if (!confirmDialog(msg)) return;
     setBusy(action);
@@ -526,6 +526,10 @@ function CopiedTab() {
       title={`Copied posts · ${d.summary.total}`}
       actions={
         <div className="flex flex-wrap gap-2">
+          <Btn size="sm" variant="ghost" onClick={() => { setBusy('check'); load().finally(() => setBusy('')); }} loading={busy === 'check'}>
+            <RefreshCw className="h-3.5 w-3.5" /> Check again
+          </Btn>
+          {d.summary.total > 0 && (<>
           <Btn size="sm" variant="danger" onClick={() => run('draft')} loading={busy === 'draft'} disabled={!d.summary.published}>
             <Trash2 className="h-3.5 w-3.5" /> Move all to Draft
           </Btn>
@@ -535,15 +539,14 @@ function CopiedTab() {
           <Btn size="sm" variant="outline" onClick={replaceAll} loading={busy === 'replace'}>
             <Sparkles className="h-3.5 w-3.5" /> Replace with original articles
           </Btn>
+          </>)}
         </div>
       }
     >
-      <div className="border-b border-gray-100 px-5 py-3 text-sm text-gray-600">
-        These {d.summary.total} posts were reworded from goldenvisauae.net. <b>{d.summary.published}</b> published · <b>{d.summary.draft}</b> draft
-        {d.summary.missing ? ` · ${d.summary.missing} not in the database` : ''}{d.summary.replaceJobs ? ` · ${d.summary.replaceJobs} replacements waiting/in progress` : ''}{d.summary.replaced ? ` · ${d.summary.replaced} replaced` : ''}. They are no longer added by the starter content. "Replace with original articles" writes a completely new article on the same topic — the AI never sees the old text — with new pictures, and keeps the same URL.
-      </div>
       {!d.items.length ? (
-        <Empty text="No copied posts." />
+        <div className="flex items-center gap-3 px-5 py-8 text-sm text-gray-600">
+          <ShieldCheck className="h-5 w-5 text-emerald-600" /> 0 copied posts found
+        </div>
       ) : (
         <div className="max-h-[560px] overflow-y-auto">
           <table className="w-full text-sm">
@@ -558,14 +561,14 @@ function CopiedTab() {
               {d.items.map((p: any) => (
                 <tr key={p.slug} className="border-t border-gray-100">
                   <td className="px-5 py-2.5">
-                    {p.exists ? (
-                      <a href={`/admin/posts/${p.id}`} className="font-semibold hover:text-gold-deep">
-                        {p.title}
-                      </a>
-                    ) : (
-                      <span className="text-gray-400">—</span>
-                    )}
+                    <a href={`/admin/posts/${p.id}`} className="font-semibold hover:text-gold-deep">
+                      {p.title}
+                    </a>
                     <p className="font-mono text-[0.7rem] text-gray-400">/blog/{p.slug}</p>
+                    <p className="text-xs text-amber-700">
+                      {p.reason}
+                      {p.of ? `: "${p.of.title}" (${Math.round((p.score || 0) * 100)}% same)` : ''}
+                    </p>
                   </td>
                   <td className="px-3 py-2.5">
                     <span className={cn('rounded-full px-2 py-0.5 text-xs font-bold', p.status === 'published' ? 'bg-emerald-50 text-emerald-700' : p.status === 'draft' ? 'bg-gray-100 text-gray-600' : 'bg-amber-50 text-amber-700')}>{p.status}</span>
