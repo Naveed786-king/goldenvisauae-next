@@ -300,3 +300,15 @@ test('a new key pasted next to the masked old key replaces it', () => {
   assert.equal(um({ providers: { openai: { key: shown + 'sk-proj-NEWNEWNEWNEW123' } } }, stored).providers.openai.key, 'sk-proj-NEWNEWNEWNEW123');
   assert.equal(um({ providers: { openai: { key: 'sk-proj-ANOTHER1234567' } } }, stored).providers.openai.key, 'sk-proj-ANOTHER1234567');
 });
+
+import { contentMatches } from '../src/lib/upload.ts';
+test('uploads: file content must match the declared type; SVG with scripts is refused', () => {
+  assert.ok(contentMatches(Buffer.from([0x89, 0x50, 0x4e, 0x47, 13, 10, 26, 10]), 'image/png'));
+  assert.ok(!contentMatches(Buffer.from('<html><script>alert(1)</script>'), 'image/png'));
+  assert.ok(contentMatches(Buffer.from('%PDF-1.7 ...'), 'application/pdf'));
+  assert.ok(!contentMatches(Buffer.from('<html>'), 'application/pdf'));
+  assert.ok(contentMatches(Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"><rect/></svg>'), 'image/svg+xml'));
+  assert.ok(!contentMatches(Buffer.from('<svg onload="alert(1)"></svg>'), 'image/svg+xml'));
+  assert.ok(!contentMatches(Buffer.from('<svg><script>x</script></svg>'), 'image/svg+xml'));
+  assert.ok(!contentMatches(Buffer.from('MZ....'), 'text/html'));
+});

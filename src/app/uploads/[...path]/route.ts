@@ -6,7 +6,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ path: s
   const { path: parts } = await params;
   if (!parts?.length || parts[0] !== 'media') return new Response('Not found', { status: 404 });
   const file = path.resolve(UPLOAD_ROOT, ...parts);
-  if (!file.startsWith(path.join(UPLOAD_ROOT, 'media'))) return new Response('Not found', { status: 404 });
+  if (!file.startsWith(path.join(UPLOAD_ROOT, 'media') + path.sep)) return new Response('Not found', { status: 404 });
   try {
     const data = await readStored(parts.join('/'));
     if (!data) throw new Error('missing');

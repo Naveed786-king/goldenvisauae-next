@@ -20,6 +20,11 @@ const hits = new Map<string, { count: number; reset: number }>();
 /** Very small in-memory rate limiter. Returns true when allowed. */
 export function rateLimit(key: string, limit = 10, windowMs = 60_000) {
   const now = Date.now();
+  if (hits.size > 5000) {
+    for (const [k, v] of hits) if (v.reset < now) hits.delete(k);
+    // still huge (a flood of new keys): drop the oldest half
+    if (hits.size > 20000) for (const k of [...hits.keys()].slice(0, 10000)) hits.delete(k);
+  }
   const h = hits.get(key);
   if (!h || h.reset < now) {
     hits.set(key, { count: 1, reset: now + windowMs });

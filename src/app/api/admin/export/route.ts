@@ -3,7 +3,9 @@ import { requireStaff } from '@/lib/auth';
 
 function csv(rows: any[], cols: string[]) {
   const esc = (v: any) => {
-    const s = v === null || v === undefined ? '' : v instanceof Date ? v.toISOString() : String(v);
+    let s = v === null || v === undefined ? '' : v instanceof Date ? v.toISOString() : String(v);
+    // a visitor could type "=HYPERLINK(...)" as a name: never let Excel run it as a formula
+    if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
     return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
   };
   return [cols.join(','), ...rows.map((r) => cols.map((c) => esc(r[c])).join(','))].join('\n');

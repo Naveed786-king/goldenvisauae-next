@@ -1,16 +1,18 @@
 import { prisma } from '@/lib/db';
-import { ok, fail } from '@/lib/api';
+import { ok, fail, rateLimit, isEmail } from '@/lib/api';
 import { requireStaff, checkPassword, hashPassword, startSession } from '@/lib/auth';
 
 export async function PUT(req: Request) {
   const s = await requireStaff();
   if (!s) return fail('Unauthorized', 401);
+  if (!rateLimit('pw-change:' + s.sub, 8, 15 * 60_000)) return fail('Too many attempts. Please wait a few minutes.', 429);
   const b = await req.json().catch(() => ({}));
   const user = await prisma.user.findUnique({ where: { id: s.sub } });
   if (!user) return fail('Not found', 404);
   const data: any = {};
-  if (b.name) data.name = String(b.name);
+  if (b.name) data.name = String(b.name).trim().slice(0, 120);
   if (b.email) data.email = String(b.email).toLowerCase().trim();
+  if (data.email && !isEmail(data.email)) return fail('Please enter a valid email');
   // the login email is part of the login: changing it needs the current password too
   if (data.email && data.email !== user.email && !(await checkPassword(String(b.current || ''), user.passwordHash))) return fail('Enter your current password to change the login email');
   if (b.password) {
