@@ -31,13 +31,20 @@ export function LoginForm({ admin = false }: { admin?: boolean }) {
   const sp = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [needCode, setNeedCode] = useState(false);
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
     setError('');
     const fd = new FormData(e.currentTarget);
     try {
-      const d = await post('/api/auth/login', { email: fd.get('email'), password: fd.get('password'), admin });
+      const d = await post('/api/auth/login', { email: fd.get('email'), password: fd.get('password'), admin, code: fd.get('code') || undefined });
+      if (d.needCode) {
+        // password was right; this account also needs the code from the authenticator app
+        setNeedCode(true);
+        setLoading(false);
+        return;
+      }
       const next = sp.get('next');
       // only a path on this site ("//other.site" or "/\other.site" would leave it)
       const safeNext = next && /^\/(?![\/\\])/.test(next) ? next : '';
@@ -51,9 +58,15 @@ export function LoginForm({ admin = false }: { admin?: boolean }) {
     <form onSubmit={submit} className="space-y-4">
       <input name="email" type="email" required placeholder={t('Email address')} className="field" autoComplete="email" />
       <PasswordInput name="password" required placeholder={t('Password')} autoComplete="current-password" />
+      {needCode && (
+        <div className="space-y-2">
+          <p className="rounded-xl bg-gold/10 px-4 py-3 text-sm text-ink/70">Enter the 6-digit code from your authenticator app (or one of your backup codes).</p>
+          <input name="code" required autoFocus inputMode="numeric" autoComplete="one-time-code" placeholder="123456" maxLength={11} className="field tracking-[0.3em]" />
+        </div>
+      )}
       {error && <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600">{error}</p>}
       <button disabled={loading} className="btn btn-gold w-full">
-        {loading && <LoaderCircle className="h-4 w-4 animate-spin" />} {t('Sign in')}
+        {loading && <LoaderCircle className="h-4 w-4 animate-spin" />} {needCode ? 'Verify and sign in' : t('Sign in')}
       </button>
       {!admin && (
         <div className="flex justify-between text-sm">

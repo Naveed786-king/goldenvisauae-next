@@ -27,7 +27,19 @@ export { buildImagePrompt, peopleAllowed } from './image-prompt';
 
 export async function generateImage(prompt: string, cfg: AutoConfig, reference?: Buffer | null): Promise<Buffer> {
   if (isFakeAi()) return fakeImage(prompt);
-  const which = cfg.images.provider;
+  try {
+    return await generateWith(cfg.images.provider, prompt, cfg, reference);
+  } catch (e) {
+    // a wrong OpenAI key must not stop the pictures when a Gemini key works
+    if (cfg.images.provider === 'openai' && e instanceof AiError && (e.kind === 'auth' || e.kind === 'config') && (await providerKey(cfg, 'gemini'))) {
+      await autoLog('warn', `OpenAI pictures not available (${e.message.slice(0, 160)}), using Gemini for this picture.`);
+      return generateWith('gemini', prompt, cfg, reference);
+    }
+    throw e;
+  }
+}
+
+async function generateWith(which: 'openai' | 'gemini', prompt: string, cfg: AutoConfig, reference?: Buffer | null): Promise<Buffer> {
   const key = await providerKey(cfg, which === 'openai' ? 'openai' : 'gemini');
   if (!key) throw new AiError('config', `No ${which === 'openai' ? 'OpenAI' : 'Gemini'} key for pictures. Add it in AI & pictures.`);
   await countAiCall();
@@ -153,10 +165,11 @@ export async function pictureConcept(spec: PictureSpec, ctx: { topic: string; fo
     ? `Write 3 rich, detailed scenes for the photo half of a designed article cover (the title is drawn on the left, so the photo itself carries no words). A reader must see "UAE visa" at a glance and connect it with THIS title. The subject fills the right two thirds of the frame, large and close; the left third stays bright and simple (soft warm daylight, pale out-of-focus background).
 Make the 3 scenes 3 DIFFERENT kinds of picture, in this order:
 ${kinds}
-Shape each kind around THIS title so it could not be used for another article, and add visa elements where they fit naturally (a plain leather passport holder, a smooth plain gold card, luggage, the Dubai skyline, a distant airliner).
+Shape each kind around THIS title so it could not be used for another article. Add visa touches only where they fit naturally (luggage, the Dubai skyline); passports and cards only in desk or flat-lay scenes, lying on the surface.
 Rules:
 - Photorealistic, bright warm golden-hour light, layered depth (detailed foreground, clear middle ground, skyline behind), gold, white and black tones. Never dark rooms or black backgrounds. Never an almost empty table.
-- People only at a natural distance (medium shot, side or three-quarter view); no close-up faces or hands.
+- People only at a natural distance (medium shot, side, back or three-quarter view); no close-up faces or hands, and nobody holds a passport, card or document.
+- One real place per scene, shot in one take: never a view of one place through the window of another (no airliner interiors, no scenes inside windows).
 - ${passportRule}
 - No other text, numbers, prices, logos, signs, flags with writing or screens with content.
 - Each scene 2-3 sentences, at most 70 words.`
@@ -166,7 +179,8 @@ Shape each kind around the exact subject of the ${spec.kind === 'cover' ? 'title
 Rules:
 - Photorealistic editorial photo, natural light, believable details. Different place or camera angle in each scene.
 - People are welcome when they help, but at a natural distance (side or back view, or medium shot); never close-up faces or hands.
-- Nothing readable: no text, numbers, prices, logos, signs, screens with content, charts or open documents. Passports only closed with a plain cover; cards blank.
+- Nothing readable: no text, numbers, prices, logos, signs, screens with content, charts or open documents. Passports only closed with a plain cover; cards blank. Nobody holds a passport, card or document.
+- One real place per scene, shot in one take (no view of another place inside a window).
 - Each scene 1-2 sentences, at most 50 words.`;
   const r = await completeJson<{ scenes?: string[]; alts?: string[]; alt?: string }>({
     system: 'You are the photo editor of a UAE visa and residency consultancy blog. You pick realistic photos that a reader instantly connects with the article.',
@@ -220,6 +234,12 @@ async function remember(res: PictureResult, type?: string): Promise<PictureResul
   return { ...res, sceneType: type };
 }
 
+const SAFE_SCENE = [
+  'The Dubai skyline with Burj Khalifa at golden hour, seen across the water from a quiet promenade, warm sunlight on glass towers, a few palm trees in the foreground. No people, no documents.',
+  'Modern Dubai Downtown towers and Burj Khalifa against a clear late-afternoon sky, photographed from a terrace with a stone balustrade and potted olive trees in the foreground. No people, no documents.',
+  'Dubai Marina towers and calm water at golden hour, yachts moored along the marina, warm reflections. No people, no documents.',
+];
+
 /** Problems that make a picture unusable even as a fallback (text, logos, broken hands or faces) */
 const SERIOUS = /text|letter|number|digit|logo|watermark|brand|finger|hand|face|emblem|sign|caption|readable/i;
 
@@ -260,9 +280,12 @@ export async function producePicture(spec: PictureSpec, ctx: { topic: string; fo
   });
   // the alt text must describe the scene that was actually used (attempt k uses scene k)
   const generic = /—|^cover|illustration for/i.test(spec.alt);
-  const altFor = (attempt: number) => (generic && concept.scenes.length ? concept.alts[(attempt - 1) % concept.scenes.length] || concept.alt : '') || spec.alt;
+  const safeAlt = `Dubai skyline at golden hour, ${ctx.focusKeyword || ctx.topic}`.slice(0, 200);
+  const altFor = (attempt: number) => (spec.kind === 'cover' && attempt === maxAttempts && attempt > 1 ? (generic ? safeAlt : spec.alt) : '') || (generic && concept.scenes.length ? concept.alts[(attempt - 1) % concept.scenes.length] || concept.alt : '') || spec.alt;
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-    const scene = concept.scenes.length ? concept.scenes[(attempt - 1) % concept.scenes.length] : undefined;
+    // the last cover try is the safest kind of photo (architecture, no people, no documents), so a cover is almost always ready
+    const safeTry = spec.kind === 'cover' && attempt === maxAttempts && attempt > 1;
+    const scene = safeTry ? SAFE_SCENE[ctx.variant % SAFE_SCENE.length] : concept.scenes.length ? concept.scenes[(attempt - 1) % concept.scenes.length] : undefined;
     const prompt = buildImagePrompt({ purpose: spec.purpose, hint: attempt === 1 ? spec.hint : undefined, topic: ctx.topic, houseStyle: cfg.images.houseStyle, variant: ctx.variant + attempt * 5, scene, withReference: !!refImg, symbols, still: banner });
     let raw: Buffer;
     try {
@@ -302,7 +325,7 @@ export async function producePicture(spec: PictureSpec, ctx: { topic: string; fo
       if (clean && v.realism >= Math.max(5, needed - 1) && (!best || v.realism > best.realism)) best = { raw, hash, sharp: sharpScore, realism: v.realism, attempt };
       continue;
     }
-    return remember(await savePicture({ ...spec, alt: altFor(attempt) }, ctx, raw, hash, sharpScore, v.realism, attempt, look), types[(attempt - 1) % types.length]);
+    return remember(await savePicture({ ...spec, alt: altFor(attempt) }, ctx, raw, hash, sharpScore, v.realism, attempt, look), spec.kind === 'cover' && attempt === maxAttempts && attempt > 1 ? 'skyline-flight' : types[(attempt - 1) % types.length]);
   }
   if (best && spec.kind === 'cover') {
     await autoLog('info', `No cover attempt reached ${needed}/10 — using the best clean attempt (realism ${best.realism}, no text, logos, hands or faces).`, ctx.jobId);

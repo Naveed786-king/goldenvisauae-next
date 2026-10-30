@@ -11,6 +11,8 @@ export async function PUT(req: Request) {
   const data: any = {};
   if (b.name) data.name = String(b.name);
   if (b.email) data.email = String(b.email).toLowerCase().trim();
+  // the login email is part of the login: changing it needs the current password too
+  if (data.email && data.email !== user.email && !(await checkPassword(String(b.current || ''), user.passwordHash))) return fail('Enter your current password to change the login email');
   if (b.password) {
     if (!(await checkPassword(String(b.current || ''), user.passwordHash))) return fail('Current password is incorrect');
     if (String(b.password).length < 8) return fail('New password must be at least 8 characters');
