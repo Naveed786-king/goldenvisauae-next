@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { Save, Send, Globe, Phone, Share2, Palette, Search, CodeXml, Mail, ToggleLeft } from 'lucide-react';
+import { Save, Send, Globe, Phone, Share2, Palette, Search, CodeXml, Mail, ToggleLeft, ShieldCheck } from 'lucide-react';
 import type { Field } from '@/components/blocks/types';
 import { FieldGroup } from './FieldInput';
 import { Btn, Card, PageTitle, Spinner, api, toast } from './ui';
@@ -500,6 +500,74 @@ export function ProfileEditor({ name, email }: { name: string; email: string }) 
           <Save className="h-4 w-4" /> Save
         </Btn>
       </Card>
+      <TwoFactorCard />
     </div>
+  );
+}
+
+/** Two-step login: after the password, a 6-digit code from an authenticator app on the phone */
+function TwoFactorCard() {
+  const [st, setSt] = useState<{ enabled: boolean; backupLeft: number; overridden: boolean } | null>(null);
+  const [setup, setSetup] = useState<{ secret: string; qr: string } | null>(null);
+  const [codes, setCodes] = useState<string[] | null>(null);
+  const [code, setCode] = useState('');
+  const [password, setPassword] = useState('');
+  const [busy, setBusy] = useState(false);
+  const load = () => api<any>('/api/admin/security').then(setSt).catch((e) => toast(e.message, 'error'));
+  useEffect(() => {
+    load();
+  }, []);
+  async function act(body: any, after: (d: any) => void) {
+    setBusy(true);
+    try {
+      after(await api<any>('/api/admin/security', 'POST', body));
+    } catch (e: any) {
+      toast(e.message, 'error');
+    } finally {
+      setBusy(false);
+    }
+  }
+  if (!st) return null;
+  return (
+    <Card className="mt-6 p-6 space-y-4">
+      <div className="flex items-center gap-2">
+        <ShieldCheck className={cn('h-5 w-5', st.enabled ? 'text-emerald-600' : 'text-gray-400')} />
+        <p className="text-sm font-bold">Two-step login {st.enabled ? '· ON' : '· OFF'}</p>
+      </div>
+      <p className="text-sm text-gray-600">After your password, the login also asks for a 6-digit code from an authenticator app on your phone (Google Authenticator, Microsoft Authenticator or similar). Someone who learns your password still cannot get in.</p>
+      {st.overridden && <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">ADMIN_2FA_OFF=1 is set on the server, so codes are not asked at the moment. Remove it in xCloud → Environment.</p>}
+
+      {codes ? (
+        <div className="space-y-3">
+          <p className="text-sm font-semibold text-emerald-700">Two-step login is on. Save these backup codes somewhere safe (each works once, if your phone is lost). They are shown only now.</p>
+          <div className="grid grid-cols-2 gap-2 rounded-xl bg-gray-50 p-4 font-mono text-sm">{codes.map((c) => <span key={c}>{c}</span>)}</div>
+          <Btn variant="outline" onClick={() => { setCodes(null); load(); }}>I saved them</Btn>
+        </div>
+      ) : st.enabled ? (
+        <div className="space-y-3">
+          <p className="text-sm text-gray-600">{st.backupLeft} backup code(s) left.</p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <input type="password" className="admin-input" placeholder="Your password" value={password} onChange={(e) => setPassword(e.target.value)} />
+            <input className="admin-input" inputMode="numeric" placeholder="Code from the app" value={code} onChange={(e) => setCode(e.target.value)} />
+          </div>
+          <Btn variant="outline" loading={busy} onClick={() => act({ action: 'disable', password, code }, () => { toast('Two-step login turned off'); setCode(''); setPassword(''); load(); })}>Turn off</Btn>
+        </div>
+      ) : setup ? (
+        <div className="space-y-3">
+          <p className="text-sm">1. In the authenticator app tap <b>+</b> and scan this code (or type the key below).</p>
+          <img src={setup.qr} alt="QR code for the authenticator app" className="h-[220px] w-[220px] rounded-lg ring-1 ring-gray-200" />
+          <p className="break-all font-mono text-xs text-gray-500">{setup.secret}</p>
+          <p className="text-sm">2. Enter the 6-digit code the app shows:</p>
+          <div className="flex gap-3">
+            <input className="admin-input max-w-[180px] tracking-[0.3em]" inputMode="numeric" maxLength={6} placeholder="123456" value={code} onChange={(e) => setCode(e.target.value)} />
+            <Btn loading={busy} onClick={() => act({ action: 'enable', code }, (d) => { setCodes(d.codes); setSetup(null); setCode(''); })}>Turn on</Btn>
+          </div>
+        </div>
+      ) : (
+        <Btn loading={busy} onClick={() => act({ action: 'start' }, setSetup)}>
+          <ShieldCheck className="h-4 w-4" /> Set up two-step login
+        </Btn>
+      )}
+    </Card>
   );
 }

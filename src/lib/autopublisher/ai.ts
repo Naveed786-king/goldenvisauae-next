@@ -51,27 +51,57 @@ export async function complete(opts: CompleteOpts): Promise<string> {
     const used = await aiCallsToday();
     if (cfg.quality.maxAiCallsPerDay > 0 && used >= cfg.quality.maxAiCallsPerDay) throw new AiError('quota', `Daily AI budget reached (${used} calls). The publisher continues tomorrow.`);
   }
-  const key = await providerKey(cfg, id);
-  if (!key) throw new AiError('config', `No API key for ${id}. Add it in Auto Publisher → AI & pictures.`);
-  const model = cfg.providers[id]?.model?.trim();
-  if (!model) throw new AiError('config', `No model name set for ${id}.`);
-
   const timeoutMs = opts.timeoutMs ?? 180_000;
   const temperature = opts.temperature ?? 0.7;
   const maxTokens = opts.maxTokens ?? 8000;
-  await countAiCall();
+  const run = async (pid: ProviderId) => {
+    const key = await providerKey(cfg, pid);
+    if (!key) throw new AiError('config', `No API key for ${pid}. Add it in Auto Publisher → AI & pictures.`);
+    const model = cfg.providers[pid]?.model?.trim();
+    if (!model) throw new AiError('config', `No model name set for ${pid}.`);
+    await countAiCall();
+    try {
+      if (pid === 'gemini') return await callGemini(key, model, opts, temperature, maxTokens, timeoutMs);
+      if (pid === 'claude') return await callClaude(key, model, opts, temperature, maxTokens, timeoutMs);
+      return await callOpenAiCompatible(pid, key, model, opts, temperature, maxTokens, timeoutMs);
+    } catch (e: any) {
+      throw e instanceof AiError ? e : new AiError(e?.name === 'TimeoutError' || e?.name === 'AbortError' ? 'network' : 'other', e?.message || String(e));
+    }
+  };
   try {
-    if (id === 'gemini') return await callGemini(key, model, opts, temperature, maxTokens, timeoutMs);
-    if (id === 'claude') return await callClaude(key, model, opts, temperature, maxTokens, timeoutMs);
-    return await callOpenAiCompatible(id, key, model, opts, temperature, maxTokens, timeoutMs);
-  } catch (e: any) {
-    const err = e instanceof AiError ? e : new AiError(e?.name === 'TimeoutError' || e?.name === 'AbortError' ? 'network' : 'other', e?.message || String(e));
+    return await run(id);
+  } catch (err: any) {
+    // a wrong or missing key must not stop the publisher when another provider has a working key
+    if ((err.kind === 'auth' || err.kind === 'config') && !opts.provider) {
+      const backup = await workingBackup(cfg, id);
+      if (backup) {
+        await noteFallback(id, backup, err.message);
+        return run(backup);
+      }
+    }
     if (err.kind === 'quota' && !opts.skipBudget) {
       await setBackoff(30, `${id}: ${err.message}`);
       await autoLog('warn', `${id} rate limit / quota — pausing 30 minutes. ${err.message}`);
     }
     throw err;
   }
+}
+
+/** Another provider with a key and a model (Gemini first), for when the chosen one's key is wrong */
+async function workingBackup(cfg: AutoConfig, failed: ProviderId): Promise<ProviderId | null> {
+  for (const pid of ['gemini', 'claude', 'openrouter', 'openai'] as ProviderId[]) {
+    if (pid === failed || !cfg.providers[pid]?.model?.trim()) continue;
+    if (await providerKey(cfg, pid)) return pid;
+  }
+  return null;
+}
+
+let lastFallbackNote = 0;
+/** Says once an hour (not on every call) that a provider key is wrong and which one is used instead */
+async function noteFallback(from: ProviderId, to: ProviderId, why: string) {
+  if (Date.now() - lastFallbackNote < 3_600_000) return;
+  lastFallbackNote = Date.now();
+  await autoLog('warn', `${from} key does not work, using ${to} instead until it is fixed. ${why}`);
 }
 
 /** Direct call to one provider with a given key and model (no budget, no config) — used by the chatbot */

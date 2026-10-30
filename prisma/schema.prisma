@@ -25,6 +25,11 @@ model User {
   resetToken   String?
   resetExpires DateTime?
   lastLoginAt  DateTime?
+  // two-step login (authenticator app); backup codes are stored as hashes
+  totpSecret   String?
+  totpEnabled  Boolean       @default(false)
+  totpStep     Int           @default(0)
+  totpBackup   String?
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   applications Application[]

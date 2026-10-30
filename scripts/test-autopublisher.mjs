@@ -275,3 +275,19 @@ test('flat, contraction-free text without "we" is flagged', () => {
   assert.ok(t.problems.some((p) => /start with "the"/.test(p)));
   assert.ok(t.score >= 3);
 });
+
+import { base32Encode, codeAt, verifyCode, newBackupCodes, useBackupCode } from '../src/lib/totp.ts';
+test('two-step login codes match the standard (RFC 6238) and cannot be reused', () => {
+  const secret = base32Encode(Buffer.from('12345678901234567890'));
+  assert.equal(codeAt(secret, Math.floor(59 / 30)), '287082');
+  assert.equal(codeAt(secret, Math.floor(1111111109 / 30)), '081804');
+  const now = 1111111109 * 1000;
+  const step = verifyCode(secret, '081804', 0, now);
+  assert.ok(step);
+  assert.equal(verifyCode(secret, '081804', step, now), null, 'same code twice');
+  assert.equal(verifyCode(secret, '000000', 0, now), null);
+  const { codes, hashes } = newBackupCodes();
+  const left = useBackupCode(JSON.stringify(hashes), codes[2]);
+  assert.equal(left.length, 7);
+  assert.equal(useBackupCode(JSON.stringify(left), codes[2]), null, 'backup code works once');
+});

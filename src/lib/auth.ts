@@ -13,8 +13,9 @@ export async function checkPassword(pw: string, hash: string) {
 }
 
 /** Short fingerprint of the stored password hash (not reversible, changes with every new password) */
-export function passwordVersion(passwordHash: string): string {
-  return createHash('sha256').update(`pv:${passwordHash}`).digest('base64url').slice(0, 16);
+export function passwordVersion(passwordHash: string, totpSecret?: string | null): string {
+  // turning two-step login on or off (new secret) ends every other session, like a password change
+  return createHash('sha256').update(totpSecret ? `pv:${passwordHash}:${totpSecret}` : `pv:${passwordHash}`).digest('base64url').slice(0, 16);
 }
 
 /**
@@ -25,8 +26,8 @@ export async function getSession(): Promise<SessionPayload | null> {
   const store = await cookies();
   const s = await verifySession(store.get(SESSION_COOKIE)?.value);
   if (!s) return null;
-  const user = await prisma.user.findUnique({ where: { id: s.sub }, select: { active: true, role: true, passwordHash: true } });
-  if (!user || !user.active || user.role !== s.role || s.pv !== passwordVersion(user.passwordHash)) return null;
+  const user = await prisma.user.findUnique({ where: { id: s.sub }, select: { active: true, role: true, passwordHash: true, totpEnabled: true, totpSecret: true } });
+  if (!user || !user.active || user.role !== s.role || s.pv !== passwordVersion(user.passwordHash, user.totpEnabled ? user.totpSecret : null)) return null;
   return s;
 }
 
@@ -38,13 +39,13 @@ export async function getCurrentUser() {
   return user;
 }
 
-export async function startSession(user: { id: string; role: string; name: string; email: string; passwordHash: string }) {
+export async function startSession(user: { id: string; role: string; name: string; email: string; passwordHash: string; totpEnabled?: boolean; totpSecret?: string | null }) {
   const token = await signSession({
     sub: user.id,
     role: user.role as SessionPayload['role'],
     name: user.name,
     email: user.email,
-    pv: passwordVersion(user.passwordHash),
+    pv: passwordVersion(user.passwordHash, user.totpEnabled ? user.totpSecret : null),
   });
   const store = await cookies();
   store.set(SESSION_COOKIE, token, sessionCookieOptions);
