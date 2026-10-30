@@ -191,11 +191,11 @@ export async function composeCover(photo: Buffer, text: CoverText, brand: CoverB
   const leftW = Math.round(W * 0.54);
   const pad = px(64);
 
-  // background: sand, photo on the right half fading into the sand
-  const photoW = Math.round(W * 0.58);
+  // background: sand, photo on the right 60% fading into the sand only behind the text (the right ~half stays clear)
+  const photoW = Math.round(W * 0.6);
   const photoImg = await sharp(photo).resize(photoW, bodyH, { fit: 'cover', position: 'attention' }).toBuffer();
   const fade = Buffer.from(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="${photoW}" height="${bodyH}"><defs><linearGradient id="f" x1="0" x2="1" y1="0" y2="0"><stop offset="0" stop-color="${sand}" stop-opacity="1"/><stop offset=".22" stop-color="${sand}" stop-opacity=".92"/><stop offset=".42" stop-color="${sand}" stop-opacity=".45"/><stop offset=".62" stop-color="${sand}" stop-opacity="0"/></linearGradient></defs><rect width="100%" height="100%" fill="url(#f)"/></svg>`,
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${photoW}" height="${bodyH}"><defs><linearGradient id="f" x1="0" x2="1" y1="0" y2="0"><stop offset="0" stop-color="${sand}" stop-opacity="1"/><stop offset=".17" stop-color="${sand}" stop-opacity=".9"/><stop offset=".29" stop-color="${sand}" stop-opacity=".4"/><stop offset=".4" stop-color="${sand}" stop-opacity="0"/></linearGradient></defs><rect width="100%" height="100%" fill="url(#f)"/></svg>`,
   );
   const layers: OverlayOptions[] = [
     { input: photoImg, left: W - photoW, top: 0 },

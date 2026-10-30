@@ -39,7 +39,9 @@ export function LoginForm({ admin = false }: { admin?: boolean }) {
     try {
       const d = await post('/api/auth/login', { email: fd.get('email'), password: fd.get('password'), admin });
       const next = sp.get('next');
-      window.location.href = next && next.startsWith('/') ? next : d.redirect;
+      // only a path on this site ("//other.site" or "/\other.site" would leave it)
+      const safeNext = next && /^\/(?![\/\\])/.test(next) ? next : '';
+      window.location.href = safeNext || d.redirect;
     } catch (err: any) {
       setError(err.message);
       setLoading(false);
