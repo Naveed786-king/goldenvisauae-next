@@ -203,6 +203,15 @@ p { text-wrap: pretty; }
     animation: cert-spin 9s linear infinite;
   }
   .ink-panel .card { background: rgba(255, 255, 255, 0.72); }
+  /* blog article text sits on its own calm surface: the page's gold glow and dots stay behind it */
+  .post-read { position: relative; isolation: isolate; }
+  .post-read::before {
+    content: ''; position: absolute; inset: -0.75rem -0.5rem; z-index: -1; pointer-events: none; border-radius: 28px;
+    background: rgba(255, 255, 255, 0.86); box-shadow: 0 20px 60px -45px rgba(120, 86, 25, 0.35);
+  }
+  @media (min-width: 768px) { .post-read::before { inset: -1.25rem -1.5rem; } }
+  /* long words in translated buttons and labels wrap instead of spilling out of their box */
+  aside .btn { white-space: normal; text-align: center; line-height: 1.25; }
 
   /* Forms */
   .field {

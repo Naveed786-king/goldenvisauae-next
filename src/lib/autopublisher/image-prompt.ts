@@ -58,13 +58,13 @@ const UAE_REAL = 'It must look like the real UAE today: only plants that grow th
 const NEVER_SYMBOLS =
   'The passport cover may show the UAE national emblem and the words UNITED ARAB EMIRATES and PASSPORT in gold, spelled exactly; a residence card may say GOLDEN VISA. Nothing else readable: no other text, numbers, prices, logos, signs, watermarks or screens. No personal data, names, ID numbers, barcodes or photos of a person on any document.';
 
-export function buildImagePrompt(o: { purpose: string; hint?: string; topic: string; houseStyle?: string; variant: number; scene?: string; withReference?: boolean; symbols?: boolean; still?: boolean }) {
+export function buildImagePrompt(o: { purpose: string; hint?: string; topic: string; houseStyle?: string; variant: number; scene?: string; withReference?: boolean; refIdea?: boolean; symbols?: boolean; still?: boolean }) {
   const v = Math.abs(o.variant);
   // a scene written for this article by the AI photo editor: used as it is (it already follows the rules)
   if (o.scene) {
     const hasPeople = PEOPLE_WORDS.test(o.scene) || peopleAllowed(o.houseStyle);
     return [
-      o.withReference ? 'Use the attached photo only as a guide for colour grading, light and photo quality. The place, objects, people and composition come from the scene below and must be clearly different from the attached photo; never copy it.' : '',
+      o.withReference ? (o.refIdea ? 'The attached photo from our library fits this topic: take it only as an idea for the kind of scene, mood and light. Create a NEW photograph from the scene below with its own place, people, angle and composition; it must never look like a copy of the attached photo.' : 'Use the attached photo only as a guide for colour grading, light and photo quality. The place, objects, people and composition come from the scene below and must be clearly different from the attached photo; never copy it.') : '',
       // no topic words for banner photos: picture models tend to print them as text on the image
       o.still
         ? 'Rich, premium wide photograph for a website header, full of meaningful detail. It must contain no text, titles, captions or lettering at all. The main subject fills the RIGHT two thirds of the frame and is large, close and detailed; the left third is bright and simple (soft warm daylight, pale out-of-focus background) with nothing important in it. Bright overall, no black or dark areas.'

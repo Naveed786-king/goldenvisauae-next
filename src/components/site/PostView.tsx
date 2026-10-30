@@ -105,7 +105,7 @@ export default function PostView({ post, related, site, lang = 'en-GB', url }: {
       </header>
 
       <div className="container-x grid max-w-6xl gap-12 pb-20 pt-6 lg:grid-cols-[1fr_320px]">
-        <div className="min-w-0">
+        <div className="post-read min-w-0">
           {post.excerpt && <p className="mb-10 border-s-2 border-gold ps-5 text-[1.15rem] leading-relaxed text-[#3a3a3c]">{post.excerpt}</p>}
           <div className="rte" dangerouslySetInnerHTML={{ __html: dirhamHtml(safeArticleHtml(post.content)) }} />
           {post.tags && (
@@ -126,8 +126,10 @@ export default function PostView({ post, related, site, lang = 'en-GB', url }: {
           </div>
         </div>
 
-        <aside className="space-y-5 self-start lg:sticky lg:top-28">
-          <div className="ink-panel theme-dark p-7">
+        {/* the assessment box scrolls with the page; the enquiry form then stays in view (and can scroll
+            inside itself on short screens), so nothing is ever cut off — in any language */}
+        <aside className="min-w-0 space-y-5">
+          <div className="ink-panel theme-dark p-7 break-words">
             <p className="eyebrow">
               <T>Free assessment</T>
             </p>
@@ -146,7 +148,7 @@ export default function PostView({ post, related, site, lang = 'en-GB', url }: {
               </a>
             </div>
           </div>
-          <div className="card p-6">
+          <div className="card break-words p-6 lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto">
             <h3 className="font-display text-xl font-semibold">
               <T>Quick enquiry</T>
             </h3>

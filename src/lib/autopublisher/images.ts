@@ -184,7 +184,7 @@ export type PictureResult = { ok: true; url: string; ogUrl?: string; width: numb
  * summary), in the style of the library photo when there is one. Safe for picture models: no readable
  * text or numbers, people only at a natural distance.
  */
-export async function pictureConcept(spec: PictureSpec, ctx: { topic: string; focusKeyword: string; summary?: string }, refCaption: string, cfg: AutoConfig, banner = false, types: string[] = [], recentAlts: string[] = [], backdrop = false): Promise<{ scenes: string[]; alts: string[]; alt: string }> {
+export async function pictureConcept(spec: PictureSpec, ctx: { topic: string; focusKeyword: string; summary?: string }, refCaption: string, cfg: AutoConfig, banner = false, types: string[] = [], recentAlts: string[] = [], backdrop = false, refIdea = false): Promise<{ scenes: string[]; alts: string[]; alt: string }> {
   const passportRule = cfg.images.officialSymbols
     ? 'Passports may show the UAE national emblem and the words UNITED ARAB EMIRATES and PASSPORT in gold on the cover (spelled exactly); cards may say GOLDEN VISA. No personal data, names, ID numbers, photos of a person or barcodes.'
     : 'Picture models print garbled words and numbers on documents, so a passport is always inside a closed dark leather passport holder whose front is completely smooth plain leather (no crest, no embossing, no stitching patterns that look like letters); the gold visa card is a smooth plain gold card like a blank metal card, with no chip, numbers, letters or embossing.';
@@ -214,6 +214,7 @@ Rules:
     : `Write 3 photo scenes for this picture, each a real moment a photographer could shoot in the UAE that clearly shows what THIS title is about. They must be 3 DIFFERENT kinds of picture, in this order:
 ${kinds}
 Shape each kind around the exact subject of the title (who, where, what moment), so it could not be used for another article.
+Every scene must clearly feel like a UAE visa and residency story. Give each one a natural visa touch that fits the moment, and use a DIFFERENT one in each scene: a plain dark leather passport holder resting on a table or peeking from a bag, a smooth plain gold card lying on a desk, suitcases or a carry-on, an airliner in the sky above the city, an airport arrivals hall, a consultant's desk with closed folders, keys to a new home.
 Rules:
 - Photorealistic editorial photo, natural light, believable details. Different place or camera angle in each scene.
 - People are welcome when they help, but at a natural distance (side or back view, or medium shot); never close-up faces or hands.
@@ -226,7 +227,7 @@ Rules:
 FOCUS KEYWORD: ${ctx.focusKeyword}
 PICTURE FOR: ${spec.kind === 'cover' ? 'the cover (top of the article)' : 'a picture inside the article: another, different view of what the TITLE is about'}
 The picture follows the TITLE only: show exactly what the title is about.
-${refCaption ? `OUR LIBRARY PHOTO TO TAKE STYLE FROM: ${refCaption}\n` : ''}${recentAlts.length ? `OUR RECENT PICTURES (do NOT repeat their place, objects, people or composition; this picture must look clearly different): ${recentAlts.slice(0, 14).join(' | ')}\n` : ''}${spec.idea ? `THE ADMIN'S OWN IDEA FOR THIS PICTURE (follow it closely; only change what breaks the rules below): ${spec.idea}\n` : ''}HOUSE STYLE: ${cfg.images.houseStyle || 'bright, calm, premium, natural light, subtle warm gold accents'}
+${refCaption ? `${refIdea ? 'OUR LIBRARY PHOTO THAT FITS THIS TITLE (take it as an IDEA for the kind of scene and mood; create your own new scene, never a copy)' : 'OUR LIBRARY PHOTO TO TAKE STYLE FROM (colours and light only)'}: ${refCaption}\n` : ''}${recentAlts.length ? `OUR RECENT PICTURES (do NOT repeat their place, objects, people or composition; this picture must look clearly different): ${recentAlts.slice(0, 14).join(' | ')}\n` : ''}${spec.idea ? `THE ADMIN'S OWN IDEA FOR THIS PICTURE (follow it closely; only change what breaks the rules below): ${spec.idea}\n` : ''}HOUSE STYLE: ${cfg.images.houseStyle || 'bright, calm, premium, natural light, subtle warm gold accents'}
 
 ${task}
 Return JSON only: {"scenes": ["", "", ""], "alts": ["short alt text for scene 1", "for scene 2", "for scene 3"]} (alt texts describe what is visible and include the focus keyword where natural)`,
@@ -321,7 +322,7 @@ export async function producePicture(spec: PictureSpec, ctx: { topic: string; fo
   // behind the gold card: the skyline with the UAE flag first, then calm backdrops fitted to the title
   const types = visaCard ? ['flag-skyline', ...rotated.filter((t) => t !== 'flag-skyline')].slice(0, 3) : rotated;
   // scenes written for THIS article by the AI photo editor (so the picture fits the title)
-  const concept = await pictureConcept(spec, ctx, ref && refImg ? ref.caption : '', cfg, banner, types, recent.alts, visaCard).catch((e) => {
+  const concept = await pictureConcept(spec, ctx, ref && refImg ? ref.caption : '', cfg, banner, types, recent.alts, visaCard, !!ref?.matched).catch((e) => {
     if (e instanceof AiError && (e.kind === 'quota' || e.kind === 'config')) throw e;
     void autoLog('warn', `Picture idea step failed, using house scenes: ${e instanceof Error ? e.message : e}`, ctx.jobId);
     return { scenes: [] as string[], alts: [] as string[], alt: '' };
@@ -335,7 +336,7 @@ export async function producePicture(spec: PictureSpec, ctx: { topic: string; fo
     // the last cover try is the safest kind of photo (architecture, no people, no documents), so a cover is almost always ready
     const safeTry = spec.kind === 'cover' && attempt === maxAttempts && attempt > 1;
     const scene = safeTry ? SAFE_SCENE[(Math.abs(ctx.variant) + safeRetry * 3) % SAFE_SCENE.length] : concept.scenes.length ? concept.scenes[(attempt - 1) % concept.scenes.length] : undefined;
-    const prompt = buildImagePrompt({ purpose: spec.purpose, hint: attempt === 1 ? spec.hint : undefined, topic: ctx.topic, houseStyle: cfg.images.houseStyle, variant: ctx.variant + attempt * 5, scene, withReference: !!refImg && !safeTry, symbols, still: banner });
+    const prompt = buildImagePrompt({ purpose: spec.purpose, hint: attempt === 1 ? spec.hint : undefined, topic: ctx.topic, houseStyle: cfg.images.houseStyle, variant: ctx.variant + attempt * 5, scene, withReference: !!refImg && !safeTry, refIdea: !!ref?.matched, symbols, still: banner });
     let raw: Buffer;
     try {
       raw = await generateImage(prompt, cfg, safeTry ? null : refImg);
