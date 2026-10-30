@@ -248,7 +248,8 @@ async function callOpenAiCompatible(id: ProviderId, key: string, model: string, 
   const body: any = {
     model,
     messages: [
-      { role: 'system', content: o.system },
+      // OpenAI refuses JSON mode unless the instructions mention JSON
+      { role: 'system', content: o.json ? `${o.system}\n\nReturn valid JSON only.` : o.system },
       { role: 'user', content: o.images?.length ? [{ type: 'text', text: o.prompt }, ...o.images.map((im) => ({ type: 'image_url', image_url: { url: `data:${im.mime};base64,${im.data}` } }))] : o.prompt },
     ],
     ...(reasoning ? {} : { temperature }),
