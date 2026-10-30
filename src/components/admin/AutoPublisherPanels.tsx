@@ -163,6 +163,7 @@ const EMPTY_MISSION = {
 export function MissionsTab() {
   const [d, setD] = useState<any>(null);
   const [edit, setEdit] = useState<any>(null);
+  const [marketQ, setMarketQ] = useState('');
   const [saving, setSaving] = useState(false);
   const load = useCallback(() => api<any>('/api/admin/autopublisher/missions').then(setD).catch((e) => toast(e.message, 'error')), []);
   useEffect(() => {
@@ -208,7 +209,7 @@ export function MissionsTab() {
                     {m.name} {!m.active && <span className="ml-2 rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">paused</span>}
                   </p>
                   <p className="text-xs text-gray-500">
-                    {m.postsPerWeek}/week · {m.publishMode === 'publish' ? 'publishes automatically' : 'review first'} · {m.markets.map((c: string) => d.markets[c]?.flag || c).join(' ')} · {m.total} written
+                    {m.postsPerWeek}/week · {m.publishMode === 'publish' ? 'publishes automatically' : 'review first'} · {m.markets.slice(0, 6).map((c: string) => d.markets[c]?.flag || c).join(' ')}{m.markets.length > 6 ? ` +${m.markets.length - 6}` : ''} · {m.total} written
                     {m.lastRunAt && ` · last ${when(m.lastRunAt)}`}
                   </p>
                 </div>
@@ -268,9 +269,16 @@ export function MissionsTab() {
               <p className="mt-1 text-xs text-gray-500">Format: Title | date | category | image URL — only the title is required. Custom titles are written first, in order.</p>
             </div>
             <div className="md:col-span-2">
-              <label className="admin-label">Markets (where readers search from)</label>
-              <div className="flex flex-wrap gap-2">
-                {Object.entries(d.markets).map(([c, m]: any) => (
+              <label className="admin-label">Markets (where readers search from) · {edit.markets.length} selected</label>
+              <div className="mb-2 flex flex-wrap items-center gap-2">
+                <input className="admin-input max-w-xs" placeholder="Search a country…" value={marketQ} onChange={(e) => setMarketQ(e.target.value)} />
+                <Btn size="sm" variant="ghost" onClick={() => set('markets', Object.keys(d.markets))}>Select all countries</Btn>
+                <Btn size="sm" variant="ghost" onClick={() => set('markets', ['AE'])}>Clear</Btn>
+              </div>
+              <div className="flex max-h-56 flex-wrap gap-2 overflow-y-auto">
+                {Object.entries(d.markets)
+                  .filter(([c, m]: any) => !marketQ || `${c} ${m.name}`.toLowerCase().includes(marketQ.toLowerCase()) || edit.markets.includes(c))
+                  .map(([c, m]: any) => (
                   <button key={c} type="button" onClick={() => toggleIn('markets', c)} className={cn('rounded-full px-3 py-1.5 text-xs font-bold ring-1', edit.markets.includes(c) ? 'bg-ink text-white ring-ink' : 'bg-white text-gray-600 ring-gray-200')}>
                     {m.flag} {m.name}
                   </button>

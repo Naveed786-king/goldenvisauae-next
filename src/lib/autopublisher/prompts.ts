@@ -109,7 +109,7 @@ FOCUS KEYWORD: ${ctx.focusKeyword}
 SECONDARY KEYWORDS: ${(ctx.secondary || []).join(', ') || '—'}
 QUESTIONS PEOPLE ASK: ${(ctx.questions || []).join(' | ') || '—'}
 RELATED SEARCHES: ${(ctx.related || []).join(' | ') || '—'}
-TARGET MARKETS: ${(ctx.markets || []).join(', ')}
+TARGET MARKETS: ${(ctx.markets || []).length > 12 ? 'worldwide: readers from many countries (do not single out one nationality unless the topic does)' : (ctx.markets || []).join(', ')}
 MISSION: ${ctx.missionFocus || '—'} · tone: ${ctx.tone || 'expert, warm'} · length ${ctx.minWords}-${ctx.maxWords} words
 ${ctx.kind === 'refresh' ? `THIS IS A REFRESH of our own existing article "${ctx.topicTitle}". Keep its topic and promise, expand it to full depth, fix anything outdated, improve structure and usefulness. Keep the title unless a clearer one serves the same search.\nOUR EXISTING TEXT (ours — you may reuse and improve it):\n${ctx.existingText || ''}` : ''}
 ${ctx.kind === 'replace' ? `THIS IS A REPLACEMENT: write a completely new, original article on the topic "${ctx.topicTitle}" from your own expertise and the research below. Do not imitate any existing page; use a fresh structure and angle.` : ''}
