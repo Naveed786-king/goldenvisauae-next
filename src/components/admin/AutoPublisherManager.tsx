@@ -291,6 +291,7 @@ function AiTab({ cfg, patch, providers, act }: { cfg: any; patch: (fn: (c: any) 
             <div>
               <label className="admin-label">OpenAI image model</label>
               <input className="admin-input font-mono" value={cfg.images.openaiModel} onChange={(e) => patch((c) => ((c.images.openaiModel = e.target.value), c))} />
+              <p className="mt-1 text-xs text-gray-500">Usually gpt-image-2. If your account does not have this model, the publisher tries OpenAI's other picture models and then Google Gemini by itself.</p>
             </div>
             <div>
               <label className="admin-label">Gemini image model</label>
