@@ -10,7 +10,9 @@ export async function GET(req: Request, { params }: { params: Promise<{ token: s
   const { token } = await params;
   if (!/^[A-Za-z0-9_-]{10,200}$/.test(token)) return new Response('Not found', { status: 404 });
 
-  const host = (req.headers.get('x-forwarded-host') || req.headers.get('host') || '').split(',')[0].trim().split(':')[0].replace(/^www\./, '');
+  const rawHost = (req.headers.get('x-forwarded-host') || req.headers.get('host') || '').split(',')[0].trim().split(':')[0].replace(/^www\./, '').toLowerCase();
+  // only a plain host name may become part of a folder path
+  const host = /^[a-z0-9-]+(\.[a-z0-9-]+)+$/.test(rawHost) ? rawHost : '';
   const cwd = process.cwd();
   const roots = [
     process.env.ACME_WEBROOT,

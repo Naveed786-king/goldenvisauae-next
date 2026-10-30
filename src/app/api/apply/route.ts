@@ -8,7 +8,7 @@ import { notifyAdmin, rowsTable, sendMail, escapeHtml } from '@/lib/mail';
 export async function POST(req: Request) {
   if (!rateLimit('apply:' + clientIp(req), 5, 10 * 60_000)) return fail('Too many submissions. Please try again later.', 429);
   const fd = await req.formData();
-  const g = (k: string) => String(fd.get(k) || '').trim();
+  const g = (k: string) => String(fd.get(k) || '').trim().slice(0, k === 'notes' ? 4000 : 300);
   const service = g('service');
   const fullName = g('fullName');
   const email = g('email').toLowerCase();

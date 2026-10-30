@@ -3,14 +3,20 @@ import { ok, fail, rateLimit, clientIp } from '@/lib/api';
 import { checkPassword, startSession, isStaff } from '@/lib/auth';
 import { useBackupCode, verifyCode } from '@/lib/totp';
 
+// bcrypt hash of a random value nobody knows (only used to spend the same time as a real check)
+const DUMMY_HASH = '$2b$10$eRUml6ZzYtIwVkttH9Vz0O/NbjzdsSif1d.9Z6OBwJmIff8avYY7.';
+
 export async function POST(req: Request) {
   if (!rateLimit('login:' + clientIp(req), 10, 5 * 60_000)) return fail('Too many attempts. Please wait a few minutes.', 429);
   const { email, password, admin, code } = await req.json().catch(() => ({}));
   if (!email || !password) return fail('Email and password are required');
   // also per account: stops guessing one password from many addresses
   if (!rateLimit('login-acct:' + String(email).toLowerCase().trim(), 20, 15 * 60_000)) return fail('Too many attempts. Please wait a few minutes.', 429);
+  if (String(password).length > 200 || String(email).length > 200) return fail('Invalid email or password', 401);
   const user = await prisma.user.findUnique({ where: { email: String(email).toLowerCase().trim() } });
-  if (!user || !(await checkPassword(String(password), user.passwordHash))) return fail('Invalid email or password', 401);
+  // an unknown email takes as long as a wrong password, so nobody can find out which emails have accounts
+  const passOk = await checkPassword(String(password), user?.passwordHash || DUMMY_HASH);
+  if (!user || !passOk) return fail('Invalid email or password', 401);
   if (!user.active) return fail('This account is disabled. Please contact support.', 403);
   if (admin && !isStaff(user.role)) return fail('This account does not have admin access', 403);
   // two-step login: the password alone is not enough when the account has an authenticator app

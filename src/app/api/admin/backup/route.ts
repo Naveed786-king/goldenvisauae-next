@@ -19,6 +19,17 @@ export async function GET() {
 /** Restore a backup: REPLACES everything on this website with the backup's content. */
 export async function POST(req: Request) {
   if (!(await requireAdmin())) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  // a restore replaces the whole database: only from this website's own admin page
+  const origin = req.headers.get('origin');
+  if (origin) {
+    const site = (h: string | null) => String(h || '').split(',')[0].trim().toLowerCase().replace(/:\d+$/, '').replace(/^www\./, '');
+    let o = '';
+    try {
+      o = site(new URL(origin).host);
+    } catch {}
+    const own = [req.headers.get('x-forwarded-host'), req.headers.get('host'), process.env.NEXT_PUBLIC_SITE_URL ? new URL(process.env.NEXT_PUBLIC_SITE_URL).host : ''].map(site).filter(Boolean);
+    if (!own.includes(o)) return Response.json({ error: 'Cross-site request blocked' }, { status: 403 });
+  }
   try {
     const buf = Buffer.from(await req.arrayBuffer());
     if (!buf.length) return Response.json({ error: 'No file received.' }, { status: 400 });

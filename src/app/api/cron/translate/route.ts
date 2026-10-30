@@ -8,7 +8,8 @@ export const maxDuration = 300;
 // Daily job (see vercel.json): translates anything still missing.
 export async function GET(req: Request) {
   const secret = process.env.CRON_SECRET;
-  if (secret && req.headers.get('authorization') !== `Bearer ${secret}`) return new Response('Unauthorized', { status: 401 });
+  if (!secret) return Response.json({ error: 'Set CRON_SECRET to use this endpoint' }, { status: 403 });
+  if (req.headers.get('authorization') !== `Bearer ${secret}`) return new Response('Unauthorized', { status: 401 });
   const cfg = await getSetting('translation');
   if (!cfg.autoTranslate || cfg.provider === 'off') return Response.json({ skipped: true });
   await enqueueAll(false);

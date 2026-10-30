@@ -6,11 +6,11 @@ export async function PUT(req: Request) {
   const s = await getSession();
   if (!s) return fail('Unauthorized', 401);
   const b = await req.json().catch(() => ({}));
-  const name = String(b.name || '').trim();
+  const name = String(b.name || '').trim().slice(0, 120);
   if (!name) return fail('Name is required');
   const user = await prisma.user.update({
     where: { id: s.sub },
-    data: { name, phone: b.phone ? String(b.phone) : null, nationality: b.nationality ? String(b.nationality) : null },
+    data: { name, phone: b.phone ? String(b.phone).slice(0, 40) : null, nationality: b.nationality ? String(b.nationality).slice(0, 80) : null },
   });
   await startSession(user);
   return ok();
