@@ -50,7 +50,7 @@ const PEOPLE_RULES = 'People appear at a natural distance (side or back view, or
 
 // banner photos: a real-looking passport usually carries the word PASSPORT, so that one word is allowed
 const NEVER_BANNER =
-  'No text, letters or numbers anywhere in the picture: passports only face down or inside a plain leather holder, cards blank, no prices, logos, signs, watermarks, labels, titles or screens. No personal data or photos of a person.';
+  'No text, letters or numbers anywhere in the picture: a passport only inside a closed plain leather holder with a smooth blank front, cards smooth plain gold with no chip, numbers or embossing, no prices, logos, signs, watermarks, labels, titles or screens. No personal data or photos of a person.';
 
 const NEVER_SYMBOLS =
   'The passport cover may show the UAE national emblem and the words UNITED ARAB EMIRATES and PASSPORT in gold, spelled exactly; a residence card may say GOLDEN VISA. Nothing else readable: no other text, numbers, prices, logos, signs, watermarks or screens. No personal data, names, ID numbers, barcodes or photos of a person on any document.';
