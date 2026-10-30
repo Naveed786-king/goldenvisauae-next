@@ -183,9 +183,9 @@ Rules:
 - ${passportRule}
 - No other text, numbers, prices, logos, signs, flags with writing or screens with content.
 - Each scene 2-3 sentences, at most 70 words.`
-    : `Write 3 photo scenes for this picture, each a real moment a photographer could shoot in the UAE that clearly shows what THIS ${spec.kind === 'cover' ? 'title' : 'section'} is about. They must be 3 DIFFERENT kinds of picture, in this order:
+    : `Write 3 photo scenes for this picture, each a real moment a photographer could shoot in the UAE that clearly shows what THIS title is about. They must be 3 DIFFERENT kinds of picture, in this order:
 ${kinds}
-Shape each kind around the exact subject of the ${spec.kind === 'cover' ? 'title' : 'section heading'} (who, where, what moment), so it could not be used for another article.
+Shape each kind around the exact subject of the title (who, where, what moment), so it could not be used for another article.
 Rules:
 - Photorealistic editorial photo, natural light, believable details. Different place or camera angle in each scene.
 - People are welcome when they help, but at a natural distance (side or back view, or medium shot); never close-up faces or hands.
@@ -196,7 +196,8 @@ Rules:
     system: 'You are the photo editor of a UAE visa and residency consultancy blog. You pick realistic photos that a reader instantly connects with the article.',
     prompt: `ARTICLE TITLE: ${ctx.topic}
 FOCUS KEYWORD: ${ctx.focusKeyword}
-${ctx.summary ? `WHAT THE ARTICLE SAYS: ${String(ctx.summary).slice(0, 600)}\n` : ''}PICTURE FOR: ${spec.kind === 'cover' ? 'the cover (top of the article)' : `${spec.purpose} (show what THIS section is about, not the article in general)`}
+PICTURE FOR: ${spec.kind === 'cover' ? 'the cover (top of the article)' : 'a picture inside the article: another, different view of what the TITLE is about'}
+The picture follows the TITLE only: show exactly what the title is about.
 ${refCaption ? `OUR LIBRARY PHOTO TO TAKE STYLE FROM: ${refCaption}\n` : ''}${recentAlts.length ? `OUR RECENT PICTURES (do NOT repeat their place, objects, people or composition; this picture must look clearly different): ${recentAlts.slice(0, 14).join(' | ')}\n` : ''}${spec.idea ? `THE ADMIN'S OWN IDEA FOR THIS PICTURE (follow it closely; only change what breaks the rules below): ${spec.idea}\n` : ''}HOUSE STYLE: ${cfg.images.houseStyle || 'bright, calm, premium, natural light, subtle warm gold accents'}
 
 ${task}
@@ -278,7 +279,7 @@ export async function producePicture(spec: PictureSpec, ctx: { topic: string; fo
   const needed = realismNeeded(cfg.images.minRealism, spec.kind);
   let best: { raw: Buffer; hash: string; sharp: number; realism: number; attempt: number } | null = null;
   // a photo from the admin's library (best match for this title/section) as inspiration, if there are any
-  const ref = await pickReference(`${ctx.topic} ${ctx.focusKeyword} ${spec.purpose}`).catch((e) => {
+  const ref = await pickReference(`${ctx.topic} ${ctx.focusKeyword}`).catch((e) => {
     void autoLog('warn', `Photo library not available: ${e instanceof Error ? e.message : e}`, ctx.jobId);
     return null;
   });
@@ -286,7 +287,7 @@ export async function producePicture(spec: PictureSpec, ctx: { topic: string; fo
   if (ref && refImg) await autoLog('info', `Using library photo as inspiration (${spec.kind}): ${ref.caption || ref.url}`, ctx.jobId);
   // a different kind of picture than the blog's recent ones (and than the other pictures of this article)
   const recent = await recentPictures();
-  const chosen = spec.types?.length ? spec.types : pickSceneTypes([spec.kind === 'cover' ? `${ctx.topic} ${ctx.focusKeyword}` : spec.purpose], recent.types, ctx.variant)[0];
+  const chosen = spec.types?.length ? spec.types : pickSceneTypes([`${ctx.topic} ${ctx.focusKeyword}`], recent.types, ctx.variant)[0];
   // a second round of covers starts from the backup kinds
   const rotated = chosen.slice(ctx.variant % 2 && spec.kind === 'cover' && !spec.types ? 1 : 0).concat(chosen).slice(0, 3);
   // behind the gold card: the skyline with the UAE flag first, then calm backdrops fitted to the title

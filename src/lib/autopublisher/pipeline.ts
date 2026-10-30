@@ -524,7 +524,8 @@ const images: Stage = async (job, d, cfg) => {
     // every picture a different kind (desk, consultant, airport, family home, keys…), fitted to its title or
     // section and unlike the blog's latest pictures
     const recent = await recentPictures().catch(() => ({ types: [] as string[], alts: [] as string[] }));
-    const kinds = pickSceneTypes(plan.map((p: any) => (p.kind === 'cover' ? `${a.title} ${a.focusKeyword || d.focusKeyword || ''}` : `${h2s[(p.afterH2 || 1) - 1] || ''} ${p.purpose}`)), recent.types, hashCode(job.id));
+    // every picture follows the title; each one is still a different kind of scene
+    const kinds = pickSceneTypes(plan.map(() => `${a.title} ${a.focusKeyword || d.focusKeyword || ''}`), recent.types, hashCode(job.id));
     plan.forEach((p: any, i: number) => (p.types = kinds[i]));
     d.picPlan = plan;
     d.figures = d.figures || [];

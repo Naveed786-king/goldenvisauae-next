@@ -13,24 +13,20 @@ const g = globalThis as unknown as { __apCache?: Map<string, CacheEntry>; __apLa
 const cache = (g.__apCache ??= new Map());
 
 /** Market → language used for Autocomplete (we write in English, so most markets use en) */
-export const MARKETS: Record<string, { name: string; flag: string; hl: string }> = {
-  AE: { name: 'UAE', flag: '🇦🇪', hl: 'en' },
-  IN: { name: 'India', flag: '🇮🇳', hl: 'en' },
-  PK: { name: 'Pakistan', flag: '🇵🇰', hl: 'en' },
-  GB: { name: 'United Kingdom', flag: '🇬🇧', hl: 'en' },
-  US: { name: 'United States', flag: '🇺🇸', hl: 'en' },
-  RU: { name: 'Russia', flag: '🇷🇺', hl: 'en' },
-  CN: { name: 'China', flag: '🇨🇳', hl: 'en' },
-  SA: { name: 'Saudi Arabia', flag: '🇸🇦', hl: 'en' },
-  NG: { name: 'Nigeria', flag: '🇳🇬', hl: 'en' },
-  EG: { name: 'Egypt', flag: '🇪🇬', hl: 'en' },
-  DE: { name: 'Germany', flag: '🇩🇪', hl: 'en' },
-  FR: { name: 'France', flag: '🇫🇷', hl: 'en' },
-  TR: { name: 'Türkiye', flag: '🇹🇷', hl: 'en' },
-  PH: { name: 'Philippines', flag: '🇵🇭', hl: 'en' },
-  ZA: { name: 'South Africa', flag: '🇿🇦', hl: 'en' },
-  CA: { name: 'Canada', flag: '🇨🇦', hl: 'en' },
-};
+// every country (UAE and the main source markets first); names come from the built-in country list
+const MARKET_CODES = 'AE IN PK GB US RU CN SA NG EG DE FR TR PH ZA CA AF AL DZ AD AO AG AR AM AU AT AZ BS BH BD BB BY BE BZ BJ BT BO BA BW BR BN BG BF BI KH CM CV CF TD CL CO KM CG CD CR CI HR CU CY CZ DK DJ DM DO EC SV GQ ER EE SZ ET FJ FI GA GM GE GH GR GD GT GN GW GY HT HN HK HU IS ID IR IQ IE IL IT JM JP JO KZ KE KI KW KG LA LV LB LS LR LY LI LT LU MO MG MW MY MV ML MT MH MR MU MX FM MD MC MN ME MA MZ MM NA NR NP NL NZ NI NE MK NO OM PW PS PA PG PY PE PL PT QA RO RW KN LC VC WS SM ST SN RS SC SL SG SK SI SB SO KR SS ES LK SD SR SE CH SY TW TJ TZ TH TL TG TO TT TN TM TV UG UA UY UZ VU VA VE VN YE ZM ZW'.split(' ');
+const regionName = (() => {
+  try {
+    const d = new Intl.DisplayNames(['en'], { type: 'region' });
+    return (c: string) => d.of(c) || c;
+  } catch {
+    return (c: string) => c;
+  }
+})();
+const flagOf = (c: string) => String.fromCodePoint(...[...c].map((ch) => 0x1f1e6 + ch.charCodeAt(0) - 65));
+export const MARKETS: Record<string, { name: string; flag: string; hl: string }> = Object.fromEntries(
+  MARKET_CODES.map((c) => [c, { name: c === 'AE' ? 'UAE' : c === 'GB' ? 'United Kingdom' : c === 'US' ? 'United States' : regionName(c), flag: flagOf(c), hl: 'en' }]),
+);
 
 const MODIFIERS = {
   question: ['how', 'what', 'can', 'does', 'is', 'why', 'when', 'which', 'who'],
