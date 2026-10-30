@@ -170,3 +170,43 @@ function round(n: number) {
 }
 
 export { titleSimilarity, terms };
+
+export type CopiedPost = { id: string; slug: string; title: string; status: string; views: number; reason: string; of?: { id: string; title: string; slug: string }; score?: number };
+
+/**
+ * Copy checker: finds the posts on our blog that are still copies.
+ * - reworded archive posts (from the old site) that have not been replaced by an original article yet
+ * - posts whose text largely repeats another of our posts (the newer one is the copy)
+ */
+export async function findCopies(archiveSlugs: string[], minOverlap = 0.5): Promise<CopiedPost[]> {
+  const posts = await prisma.post.findMany({ select: { id: true, slug: true, title: true, status: true, views: true, createdAt: true } });
+  const byId = new Map(posts.map((p) => [p.id, p]));
+  const replaced = new Set<string>();
+  const jobs = await prisma.autoJob.findMany({ where: { kind: 'replace', stage: 'done' }, select: { postId: true, data: true } }).catch(() => []);
+  for (const j of jobs) {
+    try {
+      if (j.postId && JSON.parse(j.data || '{}').applied) replaced.add(j.postId);
+    } catch {}
+  }
+  const out = new Map<string, CopiedPost>();
+  const archive = new Set(archiveSlugs);
+  for (const p of posts) {
+    if (archive.has(p.slug) && !replaced.has(p.id)) out.set(p.id, { id: p.id, slug: p.slug, title: p.title, status: p.status, views: p.views || 0, reason: 'Reworded from another website' });
+  }
+  const sigs = (await loadPostSigs()).filter((s) => s.sig.sh?.length >= 20);
+  for (let i = 0; i < sigs.length; i++) {
+    for (let j = i + 1; j < sigs.length; j++) {
+      const A = sigs[i],
+        B = sigs[j];
+      const pa = byId.get(A.postId),
+        pb = byId.get(B.postId);
+      if (!pa || !pb) continue;
+      // the newer post is the copy; how much of it is found in the older one
+      const [copy, orig, cs, os] = pa.createdAt > pb.createdAt ? [pa, pb, A.sig.sh, B.sig.sh] : [pb, pa, B.sig.sh, A.sig.sh];
+      const score = Math.max(jaccard(cs, os), containment(cs, os));
+      if (score < minOverlap || out.has(copy.id)) continue;
+      out.set(copy.id, { id: copy.id, slug: copy.slug, title: copy.title, status: copy.status, views: copy.views || 0, reason: 'Repeats another of our posts', of: { id: orig.id, title: orig.title, slug: orig.slug }, score: round(score) });
+    }
+  }
+  return [...out.values()].sort((a, b) => (a.status === b.status ? b.views - a.views : a.status === 'published' ? -1 : 1));
+}
