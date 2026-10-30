@@ -52,6 +52,9 @@ const PEOPLE_RULES = 'People appear at a natural distance (side or back view, or
 const NEVER_BANNER =
   'No text, letters or numbers anywhere in the picture: a passport only inside a closed plain leather holder with a smooth blank front, cards smooth plain gold with no chip, numbers or embossing, no prices, logos, signs, watermarks, labels, titles or screens. No personal data or photos of a person.';
 
+// what makes a picture look like the real UAE (picture models like to add Mediterranean plants and streets)
+const UAE_REAL = 'It must look like the real UAE today: only plants that grow there (date palms, ghaf trees, bougainvillea, desert shrubs), modern Gulf or traditional Emirati architecture, desert light. No olive trees, cypresses, pine trees, lawns with deciduous trees, European streets, rain or snow.';
+
 const NEVER_SYMBOLS =
   'The passport cover may show the UAE national emblem and the words UNITED ARAB EMIRATES and PASSPORT in gold, spelled exactly; a residence card may say GOLDEN VISA. Nothing else readable: no other text, numbers, prices, logos, signs, watermarks or screens. No personal data, names, ID numbers, barcodes or photos of a person on any document.';
 
@@ -71,6 +74,7 @@ export function buildImagePrompt(o: { purpose: string; hint?: string; topic: str
         ? `Shot on a full-frame camera with a ${hasPeople ? '35 mm' : '50 mm'} lens, layered depth (detailed foreground, clear middle ground, Dubai skyline behind), bright warm golden-hour daylight, gold, white and black tones, glossy reflections.`
         : `Shot on a full-frame camera with a ${v % 2 ? '35 mm' : '50 mm'} lens, ${TIME[(v + 2) % TIME.length]}.`,
       'Sharp focus, true-to-life colours, realistic materials, believable details, premium calm mood.',
+      UAE_REAL,
       o.houseStyle ? `House style: ${o.houseStyle}.` : '',
       o.symbols ? NEVER_SYMBOLS : o.still ? NEVER_BANNER : NEVER,
       hasPeople ? PEOPLE_RULES : NO_PEOPLE,
@@ -92,6 +96,7 @@ export function buildImagePrompt(o: { purpose: string; hint?: string; topic: str
     withPeople ? `If people appear: ${people} people of mixed ages, natural poses, relaxed and confident, hands relaxed and mostly out of frame.` : '',
     `Shot on a full-frame camera with a ${v % 2 ? '24 mm' : '35 mm'} lens, ${ANGLE[v % ANGLE.length]}, ${TIME[(v + 2) % TIME.length]}.`,
     'Sharp focus, no motion blur, no heavy bokeh, realistic materials and light, true-to-life colours, premium calm mood, subtle warm gold accents.',
+    UAE_REAL,
     o.houseStyle ? `House style: ${o.houseStyle}.` : '',
     NEVER,
     withPeople ? 'No distorted hands, no extra fingers, no warped faces.' : NO_PEOPLE,

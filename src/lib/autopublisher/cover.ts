@@ -50,9 +50,9 @@ export function splitTitle(title: string): { line1: string; line2: string } {
 
 function fallbackText(title: string, headings: string[]): CoverText {
   const { line1, line2 } = splitTitle(title);
-  const defaults = ['document', 'calendar', 'family', 'check'];
-  const cards = headings.slice(0, 4).map((h, i) => ({ label: short(h.replace(/^(what|how|why|when|which|who)\b/i, '').trim(), 16), icon: defaults[i] }));
-  return { line1, line2, subtitle: '', cards: cards.filter((c) => c.label), features: [] };
+  // without the AI step we cannot pick fitting icons, so the cover shows just the title
+  void headings;
+  return { line1, line2, subtitle: '', cards: [], features: [] };
 }
 
 /** Cover words written from the article (and only our real facts for the bottom bar) */
@@ -70,10 +70,11 @@ ${String(input.facts || '—').slice(0, 1800)}
 Write the cover:
 - line1 and line2: the title split into two short lines (each at most 22 characters). You may shorten the title but keep its meaning and main keyword. Title Case.
 - subtitle: the angle in at most 40 characters (e.g. "What actually changed", "A 90-day plan").
-- cards: exactly 4 labels (at most 16 characters each) for the main groups, steps or parts the article covers, each with one icon.
+- cards: ONLY when the article is built from 3-4 clear parts, steps, documents or options that a reader benefits from seeing at a glance (a checklist, a process, requirements, a comparison): then 4 labels (at most 16 characters each), each with one icon that clearly matches it. For a news item, a single question, an opinion or an explainer without clear parts, return an empty list: the cover then shows just the title.
 - features: exactly 4 labels (at most 20 characters each) for the bottom bar: services or facts about us taken from COMPANY FACTS, or plain topic words. Never: approved, guaranteed, prices, percentages, "best", or anything not in COMPANY FACTS.
+- visaCard: true ONLY when the golden visa itself is the main subject of the title (what it is, who qualifies, cost, how to apply, renewal, benefits, rule changes). false when the title is mainly about a person, place or activity (a family moving, buying property, students, medical tests, a business setup, a city): those covers show a real photo scene that tells that story instead.
 - icon names only from: ${COVER_ICON_NAMES.join(', ')}
-Return JSON only: {"line1":"","line2":"","subtitle":"","cards":[{"label":"","icon":""}],"features":[{"label":"","icon":""}]}`,
+Return JSON only: {"line1":"","line2":"","subtitle":"","cards":[{"label":"","icon":""}],"features":[{"label":"","icon":""}],"visaCard":false}`,
       temperature: 0.5,
       maxTokens: 1500,
       timeoutMs: 60_000,
@@ -83,7 +84,7 @@ Return JSON only: {"line1":"","line2":"","subtitle":"","cards":[{"label":"","ico
     const line1 = short(r?.line1, 26);
     const subtitle = short(r?.subtitle, 44);
     if (!line1 || unsafe(`${line1} ${r?.line2 || ''}`)) return fb;
-    return { line1, line2: short(r?.line2, 26), subtitle: unsafe(subtitle) ? '' : subtitle, cards: cards.length >= 2 ? cards : fb.cards, features };
+    return { line1, line2: short(r?.line2, 26), subtitle: unsafe(subtitle) ? '' : subtitle, cards: cards.length >= 3 ? cards : [], features, visaCard: r?.visaCard === true };
   } catch (e) {
     // the cover still gets the title and section names
     await autoLog('warn', `Cover words could not be written, using the title: ${e instanceof Error ? e.message : e}`);

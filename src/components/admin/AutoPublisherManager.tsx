@@ -329,6 +329,7 @@ function AiTab({ cfg, patch, providers, act }: { cfg: any; patch: (fn: (c: any) 
               <label className="admin-label">Text in the banner's gold ribbon</label>
               <input className="admin-input" maxLength={40} placeholder="e.g. GoldenVisaUAE.ai (empty = website address)" value={cfg.images.ribbonText || ''} onChange={(e) => patch((c) => ((c.images.ribbonText = e.target.value), c))} />
             </div>
+            <Toggle checked={cfg.images.visaCard !== 'off'} onChange={(v) => patch((c) => ((c.images.visaCard = v ? 'auto' : 'off'), c))} label="Gold UAE GOLDEN VISA card on covers whose title is about a visa" />
             <Toggle checked={!!cfg.images.officialSymbols} onChange={(v) => patch((c) => ((c.images.officialSymbols = v), c))} label="Real UAE emblem and wording on passports/cards in covers" />
             <p className="text-xs leading-relaxed text-amber-800">Off by default. Using the UAE national emblem in advertising usually needs official approval; when off, passports and cards look real but carry a plain gold crest and no wording. Never shows personal data or ID numbers.</p>
           </div>

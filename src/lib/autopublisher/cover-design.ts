@@ -109,6 +109,7 @@ export type CoverText = {
   subtitle: string;
   cards: { label: string; icon: string }[]; // up to 4
   features: { label: string; icon: string }[]; // up to 4, bottom bar
+  visaCard?: boolean; // the cover designer thinks the gold visa card is the right picture for this title
 };
 
 export type CoverBrand = {
@@ -181,7 +182,7 @@ const rr = (x: number, y: number, w: number, h: number, r: number) => `M${x + r}
  * Composes a banner like the reference covers. Width/height in pixels (cover 1600×900, Open Graph 1200×630).
  * The photo fills the right side and fades into the light text area.
  */
-export async function composeCover(photo: Buffer, text: CoverText, brand: CoverBrand, W = 1600, H = 900): Promise<Buffer> {
+export async function composeCover(photo: Buffer, text: CoverText, brand: CoverBrand, W = 1600, H = 900, opts: { visaCard?: boolean } = {}): Promise<Buffer> {
   const k = W / 1600;
   const px = (n: number) => Math.round(n * k);
   const { gold, ink, sand } = brand.colors;
@@ -211,12 +212,16 @@ export async function composeCover(photo: Buffer, text: CoverText, brand: CoverB
   } else y += px(16);
 
   // title: gold line + dark line, divider with a diamond, subtitle
+  const cardsWanted = text.cards.length >= 2;
+  const titleSize = px(cardsWanted ? 112 : 124);
+  const blockFirst = layers.length;
+  const blockTop = y;
   const titleMax = leftW - pad - px(20);
-  const l1 = await textImage(text.line1, FONT.display, px(112), goldDeep, titleMax, { minSize: px(60) });
+  const l1 = await textImage(text.line1, FONT.display, titleSize, goldDeep, titleMax, { minSize: px(60) });
   layers.push({ input: l1.buf, left: pad, top: y });
   y += Math.round(l1.height * 1.02);
   if (text.line2) {
-    const l2 = await textImage(text.line2, FONT.display, px(112), ink, titleMax, { minSize: px(60) });
+    const l2 = await textImage(text.line2, FONT.display, titleSize, ink, titleMax, { minSize: px(60) });
     layers.push({ input: l2.buf, left: pad, top: y });
     y += Math.round(l2.height * 1.0);
   }
@@ -234,8 +239,25 @@ export async function composeCover(photo: Buffer, text: CoverText, brand: CoverB
     y += st.height + px(26);
   }
 
+  // without info cards the title block sits in the middle of the light area (icons only where they help)
+  if (!cardsWanted) {
+    const shift = Math.max(0, Math.round((bodyH - blockTop - (y - blockTop)) / 2) - px(10));
+    for (let i = blockFirst; i < layers.length; i++) layers[i].top = (layers[i].top || 0) + shift;
+  }
+
+  // gold visa card on the photo, for covers about a visa (drawn, so the lettering is always exact)
+  if (opts.visaCard) {
+    const cw = px(470);
+    const card = await visaCardImage(cw, brand);
+    const meta = await sharp(card.card).metadata();
+    const cx = Math.round(W * 0.775 - (meta.width || cw) / 2);
+    const cy = Math.round(bodyH * 0.5 - (meta.height || cw * 0.63) / 2);
+    layers.push({ input: card.shadow, left: Math.max(0, cx - card.margin + px(14)), top: Math.max(0, cy - card.margin + px(26)) });
+    layers.push({ input: card.card, left: cx, top: cy });
+  }
+
   // info cards
-  const cards = text.cards.slice(0, 4);
+  const cards = cardsWanted ? text.cards.slice(0, 4) : [];
   if (cards.length) {
     const gap = px(18);
     const cardsTop = Math.max(y, Math.round(bodyH * 0.5));
@@ -295,6 +317,52 @@ export async function composeCover(photo: Buffer, text: CoverText, brand: CoverB
   }
 
   return sharp({ create: { width: W, height: H, channels: 3, background: sand } }).composite(layers).webp({ quality: 86 }).toBuffer();
+}
+
+/**
+ * A premium gold card that reads UAE / GOLDEN VISA (our own drawing and fonts: no national emblem, chip,
+ * numbers or personal data), tilted a little, with its soft shadow. Returns transparent PNGs.
+ */
+export async function visaCardImage(cw: number, brand: CoverBrand): Promise<{ card: Buffer; shadow: Buffer; margin: number }> {
+  const ch = Math.round(cw / 1.586);
+  const r = Math.round(cw * 0.05);
+  const ink = '#3a2a0c';
+  // brushed metal: diagonal gold gradient, fine guilloche arcs, inner border, a gold "wing" sweep
+  const arcs = Array.from({ length: 26 }, (_, i) => `<circle cx="${cw * 0.98}" cy="${ch * 1.1}" r="${ch * 0.25 + i * ch * 0.045}" fill="none" stroke="#fff6d2" stroke-opacity=".13" stroke-width="${Math.max(1, cw / 420)}"/>`).join('');
+  const sweep = `<path d="M${cw * 0.52},${ch * 0.86} C${cw * 0.7},${ch * 0.78} ${cw * 0.82},${ch * 0.6} ${cw * 0.92},${ch * 0.36}" fill="none" stroke="#7a5a18" stroke-opacity=".35" stroke-width="${cw * 0.012}"/><path d="M${cw * 0.58},${ch * 0.9} C${cw * 0.74},${ch * 0.84} ${cw * 0.86},${ch * 0.68} ${cw * 0.95},${ch * 0.46}" fill="none" stroke="#fff3c4" stroke-opacity=".45" stroke-width="${cw * 0.006}"/>`;
+  const base = Buffer.from(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${cw}" height="${ch}"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#9c7629"/><stop offset=".28" stop-color="#e8cd7e"/><stop offset=".5" stop-color="#b98f3a"/><stop offset=".72" stop-color="#f3dd98"/><stop offset="1" stop-color="#a07a2c"/></linearGradient><clipPath id="c"><path d="${rr(0, 0, cw, ch, r)}"/></clipPath></defs><path d="${rr(0, 0, cw, ch, r)}" fill="url(#g)"/><g clip-path="url(#c)">${arcs}${sweep}</g><path d="${rr(cw * 0.035, cw * 0.035, cw - cw * 0.07, ch - cw * 0.07, r * 0.7)}" fill="none" stroke="#fff3c4" stroke-opacity=".55" stroke-width="${Math.max(1, cw / 300)}"/></svg>`,
+  );
+  const uae = await textImage('UAE', FONT.display, Math.round(ch * 0.26), ink, cw * 0.6, { spacing: 0.04 });
+  const uaeHi = await textImage('UAE', FONT.display, Math.round(ch * 0.26), '#fff3c4', cw * 0.6, { spacing: 0.04 });
+  const gv = await textImage('GOLDEN VISA', FONT.sans, Math.round(ch * 0.115), ink, cw * 0.8, { spacing: 0.14 });
+  const gvHi = await textImage('GOLDEN VISA', FONT.sans, Math.round(ch * 0.115), '#fff3c4', cw * 0.8, { spacing: 0.14 });
+  const x0 = Math.round(cw * 0.08);
+  const y0 = Math.round(ch * 0.2);
+  const y1 = y0 + uae.height + Math.round(ch * 0.03);
+  const off = Math.max(1, Math.round(cw / 400));
+  const layers: OverlayOptions[] = [
+    { input: uaeHi.buf, left: x0 + off, top: y0 + off },
+    { input: uae.buf, left: x0, top: y0 },
+    { input: gvHi.buf, left: x0 + off, top: y1 + off },
+    { input: gv.buf, left: x0, top: y1 },
+  ];
+  if (brand.emblem) {
+    const em = await sharp(brand.emblem).resize({ height: Math.round(ch * 0.26), fit: 'inside' }).png().toBuffer();
+    const m = await sharp(em).metadata();
+    layers.push({ input: em, left: cw - (m.width || 0) - Math.round(cw * 0.08), top: Math.round(ch * 0.12) });
+  }
+  const flat = await sharp(base).composite(layers).png().toBuffer();
+  const tilt = { background: { r: 0, g: 0, b: 0, alpha: 0 } };
+  const card = await sharp(flat).rotate(-8, tilt).png().toBuffer();
+  // the shadow canvas has a margin so the blur is not cut off at the edges
+  const m = Math.round(cw / 12);
+  const silhouette = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${cw + 2 * m}" height="${ch + 2 * m}"><path d="${rr(m, m, cw, ch, r)}" fill="#000" fill-opacity=".42"/></svg>`);
+  const shadow = await sharp(await sharp(silhouette).rotate(-8, tilt).png().toBuffer())
+    .blur(Math.max(1, cw / 40))
+    .png()
+    .toBuffer();
+  return { card, shadow, margin: m };
 }
 
 /** Small logo in the corner of a photo (used when the cover style is "photo" and for inline pictures) */
