@@ -7,7 +7,7 @@ import { AutoConfig } from './config';
 import { AiError, completeJson, http, isFakeAi, providerKey } from './ai';
 import { autoLog, countAiCall } from './log';
 import { pickSceneTypes, sceneType } from './scene-types';
-import { designBrief, designCheck, designPrompt, designSizes } from './infographic';
+import { designBrief, designCheck, designPrompt, designSizes, type DesignBrief } from './infographic';
 import { slugify } from './text';
 import { dhash, hamming, sharpness } from './imaging';
 import { readLocal } from './local-file';
@@ -176,7 +176,7 @@ async function saveWebp(buf: Buffer, name: string, alt: string): Promise<{ url: 
   return { url: saved.url, size: saved.size };
 }
 
-export type PictureSpec = { purpose: string; hint?: string; alt: string; kind: 'cover' | 'inline'; placement?: string; idea?: string; types?: string[]; section?: { heading: string; text: string } };
+export type PictureSpec = { purpose: string; hint?: string; alt: string; kind: 'cover' | 'inline'; placement?: string; idea?: string; types?: string[]; section?: { heading: string; text: string }; brief?: DesignBrief; others?: string[] };
 export type PictureResult = { ok: true; url: string; ogUrl?: string; width: number; height: number; alt: string; hash: string; sharpness: number; realism: number; attempts: number; sceneType?: string } | { ok: false; reason: string; attempts: number };
 
 /**
@@ -299,7 +299,10 @@ async function produceDesigned(spec: PictureSpec, ctx: { topic: string; focusKey
     let brief;
     try {
       // a new design every try: never the same pattern twice
-      brief = await designBrief({ title: ctx.topic, kind: spec.kind, heading: spec.section?.heading, text, facts, recent: recent.alts, officialSymbols: cfg.images.officialSymbols });
+      brief =
+        attempt === 1 && spec.brief
+          ? spec.brief
+          : await designBrief({ title: ctx.topic, kind: spec.kind, heading: spec.section?.heading, text, facts, recent: recent.alts, recentDesigns: await recentDesigns(), others: [...(spec.others || []), ...(spec.brief?.look ? [spec.brief.look] : [])], officialSymbols: cfg.images.officialSymbols });
     } catch (e: any) {
       if (e instanceof AiError && (e.kind === 'quota' || e.kind === 'config')) throw e;
       reasons.push(`attempt ${attempt}: design step failed (${e?.message || e})`);
@@ -332,9 +335,52 @@ async function produceDesigned(spec: PictureSpec, ctx: { topic: string; focusKey
       continue;
     }
     const alt = brief.alt || spec.alt;
+    await rememberDesign(brief.look);
     return remember(await savePicture({ ...spec, alt }, ctx, raw, hash, sharpScore, v.realism, attempt, look), 'design');
   }
   return { ok: false, reason: reasons.join(' · ') || 'no attempt succeeded', attempts: tries };
+}
+
+const DESIGNS_KEY = 'autopublisher.recentDesigns';
+/** What the latest designed pictures looked like (newest first), so new ones look different */
+async function recentDesigns(): Promise<string[]> {
+  const row = await prisma.setting.findUnique({ where: { key: DESIGNS_KEY } }).catch(() => null);
+  try {
+    const v = JSON.parse(row?.value || '[]');
+    return Array.isArray(v) ? v.map(String).slice(0, 15) : [];
+  } catch {
+    return [];
+  }
+}
+async function rememberDesign(look: string) {
+  if (!look) return;
+  recentChain = recentChain
+    .then(async () => {
+      const value = JSON.stringify([look, ...(await recentDesigns())].slice(0, 15));
+      await prisma.setting.upsert({ where: { key: DESIGNS_KEY }, create: { key: DESIGNS_KEY, value }, update: { value } });
+    })
+    .catch(() => null);
+  await recentChain;
+}
+
+/**
+ * Designs all pictures of one article one after another, each seeing the designs before it, so the cover and
+ * the inside pictures never look alike. The pictures themselves are then made at the same time.
+ */
+export async function planDesigns(specs: PictureSpec[], ctx: { topic: string; articleText?: string; summary?: string; headings?: string[] }, cfg: AutoConfig): Promise<PictureSpec[]> {
+  if (cfg.images.coverStyle !== 'design' || isFakeAi()) return specs;
+  const facts = (await companyFacts(cfg).catch(() => ({ text: '' }))).text;
+  const recent = await recentPictures().catch(() => ({ types: [] as string[], alts: [] as string[] }));
+  const past = await recentDesigns();
+  const looks: string[] = [];
+  const out: PictureSpec[] = [];
+  for (const spec of specs) {
+    const text = spec.kind === 'inline' && spec.section ? `${spec.section.heading}\n${spec.section.text}` : ctx.articleText || [ctx.summary, ...(ctx.headings || [])].filter(Boolean).join('\n');
+    const brief = await designBrief({ title: ctx.topic, kind: spec.kind, heading: spec.section?.heading, text, facts, recent: recent.alts, recentDesigns: past, others: [...looks], officialSymbols: cfg.images.officialSymbols }).catch(() => undefined);
+    if (brief?.look) looks.push(brief.look);
+    out.push({ ...spec, brief, others: [...looks] });
+  }
+  return out;
 }
 
 /** Problems that make a picture unusable even as a fallback (text, logos, broken hands or faces) */

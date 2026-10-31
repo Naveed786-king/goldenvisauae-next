@@ -111,7 +111,9 @@ const KEY = 'autopublisher';
 export async function getAutoConfig(): Promise<AutoConfig> {
   try {
     const row = await prisma.setting.findUnique({ where: { key: KEY } });
-    return deepMerge(DEFAULT_CONFIG, row ? JSON.parse(row.value) : {});
+    const cfg = deepMerge(DEFAULT_CONFIG, row ? JSON.parse(row.value) : {});
+    cfg.images.showLogo = true; // our logo is on every picture, always
+    return cfg;
   } catch {
     return DEFAULT_CONFIG;
   }
@@ -127,7 +129,8 @@ export async function saveAutoConfig(incoming: Partial<AutoConfig>): Promise<Aut
   next.images.minSharpness = clamp(Number(next.images.minSharpness) || 0, 0, 5000);
   next.images.minRealism = clamp(Number(next.images.minRealism) || 0, 0, 10);
   next.images.coverStyle = next.images.coverStyle === 'photo' || next.images.coverStyle === 'design' ? next.images.coverStyle : 'banner';
-  next.images.showLogo = next.images.showLogo !== false;
+  // our logo is on every picture, always
+  next.images.showLogo = true;
   next.images.ribbonText = String(next.images.ribbonText || '').trim().slice(0, 40);
   next.images.officialSymbols = next.images.officialSymbols === true;
   next.images.visaCard = next.images.visaCard === 'off' ? 'off' : 'auto';
