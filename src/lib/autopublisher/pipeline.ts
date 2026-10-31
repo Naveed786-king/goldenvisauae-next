@@ -15,7 +15,7 @@ import { clusterFor, freshRelevant, googleNews, researchMission } from './resear
 import { checkArticle, checkTopic, fingerprintPost, rebuildFingerprints } from './similarity';
 import { companyFacts, linkTargets, briefPrompt, writePrompt, editPrompt, fixPrompt, nativePrompt, HUMAN_VOICE } from './prompts';
 import { aiTells, insertFigures, bannedFound, cleanArticleHtml, escapeHtml, guaranteeFound, jaccard, normalize, seoScore, shingles, slugify, stripHtml, terms, topicTerms, unsupportedNumbers, words } from './text';
-import { figureHtml, fingerprintExistingImages, producePicture, recentPictures } from './images';
+import { figureHtml, fingerprintExistingImages, planDesigns, producePicture, recentPictures } from './images';
 import { pickSceneTypes } from './scene-types';
 import { spreadPositions } from './pure';
 import { COPIED_SLUGS } from './copied-slugs';
@@ -537,8 +537,11 @@ const images: Stage = async (job, d, cfg) => {
 
   // all remaining pictures are made at the same time (several minutes faster than one by one)
   const start = d.picIndex;
-  const specs = d.picPlan.slice(start);
-  const results = await Promise.all(specs.map((spec: any, k: number) => producePicture(spec, { topic: a.title, focusKeyword: a.focusKeyword || d.focusKeyword, summary: stripHtml(a.quickAnswer || a.excerpt || ''), headings: [...String(a.contentHtml || '').matchAll(/<h2[^>]*>([\s\S]*?)<\/h2>/gi)].map((m) => stripHtml(m[1])), variant: hashCode(job.id) + (start + k) * 7 + Number(d.coverRounds || 0) * 13, jobId: job.id, articleText: stripHtml(`${a.quickAnswer || ''}\n${a.contentHtml || ''}`).slice(0, 3500) }, cfg)));
+  const articleText = stripHtml(`${a.quickAnswer || ''}\n${a.contentHtml || ''}`).slice(0, 3500);
+  const headings = [...String(a.contentHtml || '').matchAll(/<h2[^>]*>([\s\S]*?)<\/h2>/gi)].map((m) => stripHtml(m[1]));
+  // designed pictures: planned one after another so each looks different from the others
+  const specs: any[] = await planDesigns(d.picPlan.slice(start), { topic: a.title, articleText, headings }, cfg);
+  const results = await Promise.all(specs.map((spec: any, k: number) => producePicture(spec, { topic: a.title, focusKeyword: a.focusKeyword || d.focusKeyword, summary: stripHtml(a.quickAnswer || a.excerpt || ''), headings, variant: hashCode(job.id) + (start + k) * 7 + Number(d.coverRounds || 0) * 13, jobId: job.id, articleText }, cfg)));
   d.picIndex = d.picPlan.length;
   let coverFailed = '';
   results.forEach((res, k) => {

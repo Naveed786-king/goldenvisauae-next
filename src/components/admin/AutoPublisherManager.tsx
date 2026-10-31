@@ -327,7 +327,7 @@ function AiTab({ cfg, patch, providers, act }: { cfg: any; patch: (fn: (c: any) 
             <p className="mt-1 text-xs text-gray-500">Banner colours and fonts come from your website theme automatically (Site settings → Brand colours). The AI makes only the photo; all words are drawn by the site, so they are always spelled right.</p>
           </div>
           <div className="space-y-3">
-            <Toggle checked={cfg.images.showLogo !== false} onChange={(v) => patch((c) => ((c.images.showLogo = v), c))} label="Show our logo on every picture" />
+            <p className="text-sm font-semibold text-emerald-700">Our logo is added to every picture (always on).</p>
             <div>
               <label className="admin-label">Text in the banner's gold ribbon</label>
               <input className="admin-input" maxLength={40} placeholder="e.g. GoldenVisaUAE.ai (empty = website address)" value={cfg.images.ribbonText || ''} onChange={(e) => patch((c) => ((c.images.ribbonText = e.target.value), c))} />
