@@ -17,6 +17,7 @@ import { companyFacts, linkTargets, briefPrompt, writePrompt, editPrompt, fixPro
 import { aiTells, insertFigures, bannedFound, cleanArticleHtml, escapeHtml, guaranteeFound, jaccard, normalize, seoScore, shingles, slugify, stripHtml, terms, topicTerms, unsupportedNumbers, words } from './text';
 import { figureHtml, fingerprintExistingImages, producePicture, recentPictures } from './images';
 import { pickSceneTypes } from './scene-types';
+import { spreadPositions } from './pure';
 import { COPIED_SLUGS } from './copied-slugs';
 import { describeReferences } from './references';
 import { hashItems, source } from '@/lib/i18n/content';
@@ -515,11 +516,12 @@ const images: Stage = async (job, d, cfg) => {
       plan.push({ kind: 'cover', purpose: c.purpose || `cover picture for "${a.title}"`, hint: c.prompt, alt: c.alt || `${a.focusKeyword || d.focusKeyword} — ${a.title}` });
     }
     const inline = ai.filter((p: any) => !/cover/i.test(p?.placement || '')).slice(0, cfg.images.inline);
-    for (let i = 0; i < cfg.images.inline && h2s.length > 1; i++) {
+    // inside pictures are spread evenly through the article (never two close together), each under its own heading
+    const sections = String(a.contentHtml || '').split(/(?=<h2[\s>])/i).slice(1);
+    for (const [i, afterH2] of spreadPositions(h2s.length, cfg.images.inline).entries()) {
       const p = inline[i] || {};
-      const m = String(p.placement || '').match(/(\d+)/);
-      const afterH2 = m ? Number(m[1]) : Math.min(h2s.length, 2 + i * 2);
-      plan.push({ kind: 'inline', purpose: p.purpose || `illustration for the section "${h2s[afterH2 - 1] || h2s[0]}"`, hint: p.prompt, alt: p.alt || `${h2s[afterH2 - 1] || a.title}`, afterH2 });
+      const heading = h2s[afterH2 - 1] || a.title;
+      plan.push({ kind: 'inline', purpose: p.purpose || `illustration for the section "${heading}"`, hint: p.prompt, alt: p.alt || heading, afterH2, section: { heading, text: stripHtml(sections[afterH2 - 1] || '').slice(0, 2500) } });
     }
     // every picture a different kind (desk, consultant, airport, family home, keys…), fitted to its title or
     // section and unlike the blog's latest pictures
@@ -536,7 +538,7 @@ const images: Stage = async (job, d, cfg) => {
   // all remaining pictures are made at the same time (several minutes faster than one by one)
   const start = d.picIndex;
   const specs = d.picPlan.slice(start);
-  const results = await Promise.all(specs.map((spec: any, k: number) => producePicture(spec, { topic: a.title, focusKeyword: a.focusKeyword || d.focusKeyword, summary: stripHtml(a.quickAnswer || a.excerpt || ''), headings: [...String(a.contentHtml || '').matchAll(/<h2[^>]*>([\s\S]*?)<\/h2>/gi)].map((m) => stripHtml(m[1])), variant: hashCode(job.id) + (start + k) * 7 + Number(d.coverRounds || 0) * 13, jobId: job.id }, cfg)));
+  const results = await Promise.all(specs.map((spec: any, k: number) => producePicture(spec, { topic: a.title, focusKeyword: a.focusKeyword || d.focusKeyword, summary: stripHtml(a.quickAnswer || a.excerpt || ''), headings: [...String(a.contentHtml || '').matchAll(/<h2[^>]*>([\s\S]*?)<\/h2>/gi)].map((m) => stripHtml(m[1])), variant: hashCode(job.id) + (start + k) * 7 + Number(d.coverRounds || 0) * 13, jobId: job.id, articleText: stripHtml(`${a.quickAnswer || ''}\n${a.contentHtml || ''}`).slice(0, 3500) }, cfg)));
   d.picIndex = d.picPlan.length;
   let coverFailed = '';
   results.forEach((res, k) => {

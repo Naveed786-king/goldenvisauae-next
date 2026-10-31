@@ -137,3 +137,20 @@ export function thinkingModel(model: string): boolean {
 export function outputBudget(model: string, maxTokens: number): number {
   return thinkingModel(model) ? Math.max(maxTokens, 4096) : maxTokens;
 }
+
+/**
+ * Where n inside pictures go among m H2 sections: evenly spread, never in the first section (the cover is
+ * just above it), never two in neighbouring sections when there is room.
+ */
+export function spreadPositions(m: number, n: number): number[] {
+  if (m < 2 || n < 1) return [];
+  const count = Math.min(n, Math.max(1, Math.floor(m / 2)));
+  const out: number[] = [];
+  for (let i = 1; i <= count; i++) {
+    let pos = Math.max(2, Math.round((i * (m + 1)) / (count + 1)));
+    while (out.length && pos - out[out.length - 1] < 2 && pos < m) pos++;
+    if (pos <= m && !out.includes(pos)) out.push(pos);
+  }
+  return out;
+}
+

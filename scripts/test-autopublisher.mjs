@@ -312,3 +312,14 @@ test('uploads: file content must match the declared type; SVG with scripts is re
   assert.ok(!contentMatches(Buffer.from('<svg><script>x</script></svg>'), 'image/svg+xml'));
   assert.ok(!contentMatches(Buffer.from('MZ....'), 'text/html'));
 });
+
+import { spreadPositions } from '../src/lib/autopublisher/pure.ts';
+test('inside pictures are spread out under different headings, never next to each other', () => {
+  assert.deepEqual(spreadPositions(8, 2), [3, 6]);
+  const p = spreadPositions(10, 3);
+  assert.equal(p.length, 3);
+  for (let i = 1; i < p.length; i++) assert.ok(p[i] - p[i - 1] >= 2, JSON.stringify(p));
+  assert.ok(p[0] >= 2);
+  assert.deepEqual(spreadPositions(3, 2), [2]);
+  assert.deepEqual(spreadPositions(1, 2), []);
+});

@@ -36,7 +36,7 @@ export type AutoConfig = {
     onFail: 'hold' | 'skip'; // a picture that fails QC: hold the article, or publish without that inline picture
     minSharpness: number; // Laplacian variance on a 512px grey copy; lower = blurry
     minRealism: number; // 0-10 from the vision check
-    coverStyle: 'banner' | 'photo'; // banner = designed cover with title, info cards, icons and logo
+    coverStyle: 'banner' | 'photo' | 'design'; // design = the AI designs each picture freely (like ChatGPT), our logo added // banner = designed cover with title, info cards, icons and logo
     showLogo: boolean; // site logo on every picture (banner: top left + ribbon; photos: small corner mark)
     ribbonText: string; // text in the banner's gold ribbon; empty = the site address
     officialSymbols: boolean;
@@ -126,7 +126,7 @@ export async function saveAutoConfig(incoming: Partial<AutoConfig>): Promise<Aut
   next.images.inline = clamp(Math.round(Number(next.images.inline) || 0), 0, 6);
   next.images.minSharpness = clamp(Number(next.images.minSharpness) || 0, 0, 5000);
   next.images.minRealism = clamp(Number(next.images.minRealism) || 0, 0, 10);
-  next.images.coverStyle = next.images.coverStyle === 'photo' ? 'photo' : 'banner';
+  next.images.coverStyle = next.images.coverStyle === 'photo' || next.images.coverStyle === 'design' ? next.images.coverStyle : 'banner';
   next.images.showLogo = next.images.showLogo !== false;
   next.images.ribbonText = String(next.images.ribbonText || '').trim().slice(0, 40);
   next.images.officialSymbols = next.images.officialSymbols === true;
