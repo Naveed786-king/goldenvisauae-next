@@ -321,7 +321,9 @@ function AiTab({ cfg, patch, providers, act }: { cfg: any; patch: (fn: (c: any) 
             <select className="admin-input" value={cfg.images.coverStyle || 'banner'} onChange={(e) => patch((c) => ((c.images.coverStyle = e.target.value), c))}>
               <option value="banner">Designed banner: title, 4 info cards, icons, feature bar and logo</option>
               <option value="photo">Photo only</option>
+              <option value="design">Designed by AI for each title (like ChatGPT; our logo added)</option>
             </select>
+            {cfg.images.coverStyle === 'design' && <p className="mt-1 text-xs text-gray-500">For every title the AI designs a new picture from scratch (infographic, timeline, scene…), using only words from the article. Inside pictures sit under their own heading and are designed for it. Works best with OpenAI pictures (gpt-image-2). If a design fails the checks, a realistic photo is used.</p>}
             <p className="mt-1 text-xs text-gray-500">Banner colours and fonts come from your website theme automatically (Site settings → Brand colours). The AI makes only the photo; all words are drawn by the site, so they are always spelled right.</p>
           </div>
           <div className="space-y-3">

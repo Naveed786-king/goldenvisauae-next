@@ -7,6 +7,7 @@ import { AutoConfig } from './config';
 import { AiError, completeJson, http, isFakeAi, providerKey } from './ai';
 import { autoLog, countAiCall } from './log';
 import { pickSceneTypes, sceneType } from './scene-types';
+import { designBrief, designCheck, designPrompt, designSizes } from './infographic';
 import { slugify } from './text';
 import { dhash, hamming, sharpness } from './imaging';
 import { readLocal } from './local-file';
@@ -143,13 +144,12 @@ export function realismNeeded(minRealism: number, kind: 'cover' | 'inline'): num
   return kind === 'inline' ? Math.max(5, minRealism - 1) : minRealism;
 }
 
-export async function visionCheck(buf: Buffer, purpose: string, cfg: AutoConfig, kind: 'cover' | 'inline' = 'cover', title = '', propText: 'none' | 'passport' | 'official' = 'none'): Promise<{ ok: boolean; realism: number; match: number; issues: string[] }> {
+export async function visionCheck(buf: Buffer, purpose: string, cfg: AutoConfig, kind: 'cover' | 'inline' = 'cover', title = '', propText: 'none' | 'passport' | 'official' = 'none', designWords: string[] | null = null): Promise<{ ok: boolean; realism: number; match: number; issues: string[] }> {
   const small = await sharp(buf).resize(1024, 1024, { fit: 'inside' }).jpeg({ quality: 82 }).toBuffer();
   const r = await completeJson<any>({
     system: 'You are a strict picture quality inspector for a premium consultancy website. Be honest and critical.',
     prompt: `Check this picture, meant for: "${pictureSafe(purpose) || 'a UAE visa article'}"${title ? ` in an article titled "${pictureSafe(title)}"` : ''}.
-Reject it if ANY of these is true: visible text, letters, numbers, logos or watermarks; deformed or extra fingers/hands; warped or uncanny faces; obvious AI artefacts; blurry or low detail; documents with readable details; off-topic or unrealistic scene.
-Off-topic too: plants or places that do not exist in the UAE (olive trees, cypresses, European streets, snow).
+${designWords ? designCheck(designWords) + '\nRealism here means overall quality: 9-10 = looks like a professional designer made it, 7-8 = good with tiny flaws, under 6 = clearly broken or amateur.\n' : 'Reject it if ANY of these is true: visible text, letters, numbers, logos or watermarks; deformed or extra fingers/hands; warped or uncanny faces; obvious AI artefacts; blurry or low detail; documents with readable details; off-topic or unrealistic scene.\n'}Off-topic too: plants or places that do not exist in the UAE (olive trees, cypresses, European streets, snow).
 On-topic for this UAE visa and residency consultancy: closed passports with a plain cover or in a leather holder, blank gold or white cards, luggage, airports and planes, consultants talking with clients in an office, families and travellers, UAE landmarks, skylines, homes, offices and coastlines. A plain passport cover or a blank card is fine as long as nothing on it is readable.
 ${propText === 'official' ? 'Allowed exception: the UAE national emblem and the exact words UNITED ARAB EMIRATES, PASSPORT or GOLDEN VISA on a passport cover or card prop. Reject them if the lettering is misspelled, garbled or invented, or if any personal data, ID number or face appears.\n' : propText === 'passport' ? 'Allowed exception: a simple crest and the single word PASSPORT, spelled exactly, on a passport cover. Any other lettering, or PASSPORT misspelled or garbled, still counts as visible text.\n' : ''}Realism: 9-10 = indistinguishable from a professional photo, 7-8 = convincing photo with tiny flaws, 5-6 = clearly AI-looking, under 5 = broken.
 Do not fail a picture only because a small detail of the scene description is missing or different (the number of people or objects, a pose, an object left out); judge the photo itself.
@@ -176,7 +176,7 @@ async function saveWebp(buf: Buffer, name: string, alt: string): Promise<{ url: 
   return { url: saved.url, size: saved.size };
 }
 
-export type PictureSpec = { purpose: string; hint?: string; alt: string; kind: 'cover' | 'inline'; placement?: string; idea?: string; types?: string[] };
+export type PictureSpec = { purpose: string; hint?: string; alt: string; kind: 'cover' | 'inline'; placement?: string; idea?: string; types?: string[]; section?: { heading: string; text: string } };
 export type PictureResult = { ok: true; url: string; ogUrl?: string; width: number; height: number; alt: string; hash: string; sharpness: number; realism: number; attempts: number; sceneType?: string } | { ok: false; reason: string; attempts: number };
 
 /**
@@ -283,6 +283,60 @@ const SAFE_SCENE = [
   'Modern Dubai Downtown towers and Burj Khalifa against a clear late-afternoon sky, photographed from a terrace with a sand-coloured stone balustrade and date palms in the foreground. No people, no documents.',
 ];
 
+/**
+ * A picture the AI art director designs from scratch for this title (or for the heading it sits under):
+ * free style and layout, words only from the article, our logo added afterwards. 3 tries for a cover, 2 inside.
+ */
+async function produceDesigned(spec: PictureSpec, ctx: { topic: string; focusKeyword: string; variant: number; jobId?: string; summary?: string; headings?: string[]; articleText?: string }, cfg: AutoConfig): Promise<PictureResult> {
+  const reasons: string[] = [];
+  const brand = cfg.images.showLogo !== false ? await coverBrand(cfg).catch(() => null) : null;
+  const look: Look = { emblem: brand?.emblem || null, designed: spec.kind === 'cover' };
+  const facts = (await companyFacts(cfg).catch(() => ({ text: '' }))).text;
+  const recent = await recentPictures().catch(() => ({ types: [] as string[], alts: [] as string[] }));
+  const text = spec.kind === 'inline' && spec.section ? `${spec.section.heading}\n${spec.section.text}` : ctx.articleText || [ctx.summary, ...(ctx.headings || [])].filter(Boolean).join('\n');
+  const tries = spec.kind === 'cover' ? 3 : 2;
+  for (let attempt = 1; attempt <= tries; attempt++) {
+    let brief;
+    try {
+      // a new design every try: never the same pattern twice
+      brief = await designBrief({ title: ctx.topic, kind: spec.kind, heading: spec.section?.heading, text, facts, recent: recent.alts, officialSymbols: cfg.images.officialSymbols });
+    } catch (e: any) {
+      if (e instanceof AiError && (e.kind === 'quota' || e.kind === 'config')) throw e;
+      reasons.push(`attempt ${attempt}: design step failed (${e?.message || e})`);
+      continue;
+    }
+    let raw: Buffer;
+    try {
+      raw = await generateImage(designPrompt(brief, cfg.images.officialSymbols), cfg, null);
+    } catch (e: any) {
+      if (e instanceof AiError && (e.kind === 'quota' || e.kind === 'config')) throw e;
+      reasons.push(`attempt ${attempt}: ${e?.message || e}`);
+      continue;
+    }
+    const sharpScore = await sharpness(raw);
+    const hash = await dhash(raw);
+    const near = await nearestImage(hash);
+    if (near.distance <= Math.min(6, cfg.quality.maxImageDistance)) {
+      reasons.push(`attempt ${attempt}: too similar to a picture we used (distance ${near.distance})`);
+      continue;
+    }
+    let v: { ok: boolean; realism: number; match?: number; issues: string[] };
+    try {
+      v = await visionCheck(raw, spec.kind === 'cover' ? ctx.topic : spec.section?.heading || ctx.topic, cfg, spec.kind, ctx.topic, 'none', brief.words);
+    } catch (e: any) {
+      if (e instanceof AiError && (e.kind === 'quota' || e.kind === 'config' || e.kind === 'auth')) throw e;
+      v = { ok: true, realism: 0, issues: ['vision check unavailable'] };
+    }
+    if (!v.ok) {
+      reasons.push(`attempt ${attempt}: check failed (quality ${v.realism}${v.issues.length ? `: ${v.issues.join(', ')}` : ''})`);
+      continue;
+    }
+    const alt = brief.alt || spec.alt;
+    return remember(await savePicture({ ...spec, alt }, ctx, raw, hash, sharpScore, v.realism, attempt, look), 'design');
+  }
+  return { ok: false, reason: reasons.join(' · ') || 'no attempt succeeded', attempts: tries };
+}
+
 /** Problems that make a picture unusable even as a fallback (text, logos, broken hands or faces) */
 const SERIOUS = /text|letter|number|digit|logo|watermark|brand|finger|hand|face|emblem|sign|caption|readable/i;
 
@@ -292,7 +346,13 @@ const SERIOUS = /text|letter|number|digit|logo|watermark|brand|finger|hand|face|
  * when it is at most one point under the minimum and has no serious problem (text, logos, hands, faces).
  * Saves WebP files (cover 1600×900 + Open Graph 1200×630, inline 1200 wide).
  */
-export async function producePicture(spec: PictureSpec, ctx: { topic: string; focusKeyword: string; variant: number; jobId?: string; summary?: string; headings?: string[] }, cfg: AutoConfig): Promise<PictureResult> {
+export async function producePicture(spec: PictureSpec, ctx: { topic: string; focusKeyword: string; variant: number; jobId?: string; summary?: string; headings?: string[]; articleText?: string }, cfg: AutoConfig): Promise<PictureResult> {
+  if (cfg.images.coverStyle === 'design' && !isFakeAi()) {
+    const designed = await produceDesigned(spec, ctx, cfg);
+    if (designed.ok === true) return designed;
+    await autoLog('warn', `Designed picture failed (${designed.reason.slice(0, 300)}), making a realistic photo instead.`, ctx.jobId);
+    return producePicture(spec, ctx, { ...cfg, images: { ...cfg.images, coverStyle: 'photo' } });
+  }
   const reasons: string[] = [];
   // covers in "banner" style: the AI makes the photo, the title/cards/logo are drawn on top in the site's style
   const banner = spec.kind === 'cover' && cfg.images.coverStyle === 'banner';
@@ -390,7 +450,7 @@ export async function producePicture(spec: PictureSpec, ctx: { topic: string; fo
   return { ok: false, reason: reasons.join(' · '), attempts: maxAttempts };
 }
 
-type Look = { banner?: { text: CoverText; brand: CoverBrand; visaCard?: boolean }; emblem: Buffer | null };
+type Look = { banner?: { text: CoverText; brand: CoverBrand; visaCard?: boolean }; emblem: Buffer | null; designed?: boolean };
 
 /** Small logo mark on photos (when "Show logo on pictures" is on) */
 async function marked(buf: Buffer, look: Look, quality: number): Promise<Buffer> {
@@ -402,7 +462,9 @@ async function savePicture(spec: PictureSpec, ctx: { topic: string; focusKeyword
   const base = `${slugify(ctx.focusKeyword || ctx.topic, 40)}-${spec.kind}`;
   let out: { url: string }, ogUrl: string | undefined, width: number, height: number;
   if (spec.kind === 'cover') {
-    const [cover, og] = look.banner
+    const [cover, og] = look.designed
+      ? await designSizes(raw).then(async (s) => [await marked(s.cover, look, 86), await marked(s.og, look, 84)])
+      : look.banner
       ? await Promise.all([composeCover(raw, look.banner.text, look.banner.brand, 1600, 900, { visaCard: look.banner.visaCard }), composeCover(raw, look.banner.text, look.banner.brand, 1200, 630, { visaCard: look.banner.visaCard })])
       : await Promise.all([
           sharp(raw).resize(1600, 900, { fit: 'cover', position: 'attention' }).webp({ quality: 82 }).toBuffer().then((b) => marked(b, look, 82)),
@@ -410,8 +472,9 @@ async function savePicture(spec: PictureSpec, ctx: { topic: string; focusKeyword
         ]);
     out = await saveWebp(cover, base, spec.alt);
     ogUrl = (await saveWebp(og, `${base}-og`, spec.alt)).url;
-    width = 1600;
-    height = 900;
+    const cm = look.designed ? await sharp(cover).metadata() : null;
+    width = cm?.width || 1600;
+    height = cm?.height || 900;
   } else {
     const buf = await marked(await sharp(raw).resize(1200, undefined, { withoutEnlargement: false }).webp({ quality: 80 }).toBuffer(), look, 80);
     const meta = await sharp(buf).metadata();
