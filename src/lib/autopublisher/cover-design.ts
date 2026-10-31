@@ -365,6 +365,28 @@ export async function visaCardImage(cw: number, brand: CoverBrand): Promise<{ ca
   return { card, shadow, margin: m };
 }
 
+/** Our full logo (emblem + name) on a soft white rounded plate in one corner of a designed picture */
+export async function fullLogoMark(photo: Buffer, logo: Buffer, corner: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' = 'top-left'): Promise<Buffer> {
+  const meta = await sharp(photo).metadata();
+  const w = meta.width || 1600;
+  const h = meta.height || 900;
+  const lh = Math.round(w * 0.042);
+  const lg = await sharp(logo).resize({ height: lh, fit: 'inside' }).png().toBuffer();
+  const lm = await sharp(lg).metadata();
+  const padX = Math.round(lh * 0.45);
+  const padY = Math.round(lh * 0.3);
+  const pw = (lm.width || lh * 4) + padX * 2;
+  const ph = lh + padY * 2;
+  const plate = await sharp(Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${pw}" height="${ph}"><rect width="${pw}" height="${ph}" rx="${Math.round(ph / 2.4)}" fill="#ffffff" fill-opacity=".92"/></svg>`))
+    .composite([{ input: lg, left: padX, top: padY }])
+    .png()
+    .toBuffer();
+  const m = Math.round(w * 0.025);
+  const left = corner.endsWith('left') ? m : w - pw - m;
+  const top = corner.startsWith('top') ? m : h - ph - m;
+  return sharp(photo).composite([{ input: plate, left, top }]).toBuffer();
+}
+
 /** Small logo in the corner of a photo (used when the cover style is "photo" and for inline pictures) */
 export async function watermark(photo: Buffer, emblem: Buffer, opts: { size?: number } = {}): Promise<Buffer> {
   const meta = await sharp(photo).metadata();

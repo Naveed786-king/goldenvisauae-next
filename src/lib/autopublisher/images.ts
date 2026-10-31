@@ -12,7 +12,7 @@ import { slugify } from './text';
 import { dhash, hamming, sharpness } from './imaging';
 import { readLocal } from './local-file';
 import { pickReference, referenceImage } from './references';
-import { composeCover, watermark, type CoverBrand, type CoverText } from './cover-design';
+import { composeCover, fullLogoMark, watermark, type CoverBrand, type CoverText } from './cover-design';
 import { coverBrand, coverText } from './cover';
 import { companyFacts } from './prompts';
 export { readLocal };
@@ -336,7 +336,8 @@ async function produceDesigned(spec: PictureSpec, ctx: { topic: string; focusKey
     }
     const alt = brief.alt || spec.alt;
     await rememberDesign(brief.look);
-    return remember(await savePicture({ ...spec, alt }, ctx, raw, hash, sharpScore, v.realism, attempt, look), 'design');
+    const finalLook: Look = spec.kind === 'cover' && brand?.logo ? { ...look, fullLogo: { logo: brand.logo, corner: brief.corner } } : look;
+    return remember(await savePicture({ ...spec, alt }, ctx, raw, hash, sharpScore, v.realism, attempt, finalLook), 'design');
   }
   return { ok: false, reason: reasons.join(' · ') || 'no attempt succeeded', attempts: tries };
 }
@@ -496,10 +497,12 @@ export async function producePicture(spec: PictureSpec, ctx: { topic: string; fo
   return { ok: false, reason: reasons.join(' · '), attempts: maxAttempts };
 }
 
-type Look = { banner?: { text: CoverText; brand: CoverBrand; visaCard?: boolean }; emblem: Buffer | null; designed?: boolean };
+type Look = { banner?: { text: CoverText; brand: CoverBrand; visaCard?: boolean }; emblem: Buffer | null; designed?: boolean; fullLogo?: { logo: Buffer; corner: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' } };
 
 /** Small logo mark on photos (when "Show logo on pictures" is on) */
 async function marked(buf: Buffer, look: Look, quality: number): Promise<Buffer> {
+  // a designed cover carries our full logo in the corner the designer kept free
+  if (look.fullLogo) return sharp(await fullLogoMark(buf, look.fullLogo.logo, look.fullLogo.corner)).webp({ quality }).toBuffer();
   if (!look.emblem) return buf;
   return sharp(await watermark(buf, look.emblem)).webp({ quality }).toBuffer();
 }
