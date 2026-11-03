@@ -485,9 +485,9 @@ const check: Stage = async (job, d, cfg) => {
   const tells = aiTells(html);
   d.human = { score: tells.score, problems: tells.problems };
   if (tells.score >= 2 && !isFakeAi()) {
-    if (Number(d.fixed.human || 0) < 3) {
+    if (Number(d.fixed.human || 0) < (cfg.images.saveCredit ? 2 : 3)) {
       d.fixed.human = Number(d.fixed.human || 0) + 1;
-      await autoLog('info', `Reads machine-written (score ${tells.score}) — rewriting in a human voice (round ${d.fixed.human} of 3)`, job.id);
+      await autoLog('info', `Reads machine-written (score ${tells.score}) — rewriting in a human voice (round ${d.fixed.human} of ${cfg.images.saveCredit ? 2 : 3})`, job.id);
       const problems = ['Rewrite every part that reads as machine-written. Keep every fact, number, heading topic and internal link. Make the text less predictable: an unexpected but accurate word choice now and then, a short aside in brackets, a sentence that starts with "But" or "So", a direct question to the reader where it fits.', ...tells.problems];
       const { system, prompt } = fixPrompt(cfg, a, problems, HUMAN_VOICE);
       d.article = { ...a, ...(await completeJson({ system, prompt, temperature: 0.8, maxTokens: 16000, timeoutMs: 230_000 })) };
@@ -561,7 +561,7 @@ const images: Stage = async (job, d, cfg) => {
   if (coverFailed) {
     // one more full round with new scenes before asking a human
     d.coverRounds = Number(d.coverRounds || 0) + 1;
-    if (d.coverRounds < 2) {
+    if (d.coverRounds < (cfg.images.saveCredit ? 1 : 2)) {
       // only the cover is made again (inline results are kept); new scenes through a different variant
       d.picPlan = d.picPlan.filter((p: any) => p.kind === 'cover').map((p: any) => ({ ...p, hint: undefined, types: Array.isArray(p.types) && p.types.length ? [...p.types.slice(1), p.types[0]] : p.types }));
       d.picIndex = 0;
