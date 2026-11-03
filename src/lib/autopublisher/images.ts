@@ -12,7 +12,7 @@ import { slugify } from './text';
 import { dhash, hamming, sharpness } from './imaging';
 import { readLocal } from './local-file';
 import { pickReference, referenceImage } from './references';
-import { composeCover, fullLogoMark, watermark, type CoverBrand, type CoverText } from './cover-design';
+import { composeCover, watermark, type CoverBrand, type CoverText } from './cover-design';
 import { coverBrand, coverText } from './cover';
 import { companyFacts } from './prompts';
 export { readLocal };
@@ -176,7 +176,7 @@ async function saveWebp(buf: Buffer, name: string, alt: string): Promise<{ url: 
   return { url: saved.url, size: saved.size };
 }
 
-export type PictureSpec = { purpose: string; hint?: string; alt: string; kind: 'cover' | 'inline'; placement?: string; idea?: string; types?: string[]; section?: { heading: string; text: string }; brief?: DesignBrief; others?: string[] };
+export type PictureSpec = { purpose: string; hint?: string; alt: string; kind: 'cover' | 'inline'; placement?: string; idea?: string; types?: string[]; section?: { heading: string; text: string }; brief?: DesignBrief; others?: string[]; safeOnly?: boolean };
 export type PictureResult = { ok: true; url: string; ogUrl?: string; width: number; height: number; alt: string; hash: string; sharpness: number; realism: number; attempts: number; sceneType?: string } | { ok: false; reason: string; attempts: number };
 
 /**
@@ -294,7 +294,7 @@ async function produceDesigned(spec: PictureSpec, ctx: { topic: string; focusKey
   const facts = (await companyFacts(cfg).catch(() => ({ text: '' }))).text;
   const recent = await recentPictures().catch(() => ({ types: [] as string[], alts: [] as string[] }));
   const text = spec.kind === 'inline' && spec.section ? `${spec.section.heading}\n${spec.section.text}` : ctx.articleText || [ctx.summary, ...(ctx.headings || [])].filter(Boolean).join('\n');
-  const tries = spec.kind === 'cover' ? 3 : 2;
+  const tries = cfg.images.saveCredit ? (spec.kind === 'cover' ? 2 : 1) : spec.kind === 'cover' ? 3 : 2;
   for (let attempt = 1; attempt <= tries; attempt++) {
     let brief;
     try {
@@ -336,7 +336,7 @@ async function produceDesigned(spec: PictureSpec, ctx: { topic: string; focusKey
     }
     const alt = brief.alt || spec.alt;
     await rememberDesign(brief.look);
-    const finalLook: Look = spec.kind === 'cover' && brand?.logo ? { ...look, fullLogo: { logo: brand.logo, corner: brief.corner } } : look;
+    const finalLook: Look = look;
     return remember(await savePicture({ ...spec, alt }, ctx, raw, hash, sharpScore, v.realism, attempt, finalLook), 'design');
   }
   return { ok: false, reason: reasons.join(' · ') || 'no attempt succeeded', attempts: tries };
@@ -397,8 +397,10 @@ export async function producePicture(spec: PictureSpec, ctx: { topic: string; fo
   if (cfg.images.coverStyle === 'design' && !isFakeAi()) {
     const designed = await produceDesigned(spec, ctx, cfg);
     if (designed.ok === true) return designed;
+    // credit saver: an inside picture is simply left out; a cover gets one safe photo try
+    if (cfg.images.saveCredit && spec.kind === 'inline') return designed;
     await autoLog('warn', `Designed picture failed (${designed.reason.slice(0, 300)}), making a realistic photo instead.`, ctx.jobId);
-    return producePicture(spec, ctx, { ...cfg, images: { ...cfg.images, coverStyle: 'photo' } });
+    return producePicture({ ...spec, safeOnly: cfg.images.saveCredit }, ctx, { ...cfg, images: { ...cfg.images, coverStyle: 'photo' } });
   }
   const reasons: string[] = [];
   // covers in "banner" style: the AI makes the photo, the title/cards/logo are drawn on top in the site's style
@@ -411,7 +413,8 @@ export async function producePicture(spec: PictureSpec, ctx: { topic: string; fo
   const visaCard = !!(banner && cfg.images.visaCard !== 'off' && /\bvisas?\b/i.test(ctx.topic) && words?.visaCard && !(lastKinds.length === 2 && lastKinds.every((t) => t === 'flag-skyline')));
   const look: Look = { banner: banner && brand && words ? { text: words, brand, visaCard } : undefined, emblem: cfg.images.showLogo ? brand?.emblem || null : null };
   const symbols = banner && cfg.images.officialSymbols;
-  const maxAttempts = spec.kind === 'cover' ? 4 : 2;
+  // credit saver: cover = one scene try + the safe try; inside picture = one try
+  const maxAttempts = spec.safeOnly ? 1 : cfg.images.saveCredit ? (spec.kind === 'cover' ? 2 : 1) : spec.kind === 'cover' ? 4 : 2;
   const needed = realismNeeded(cfg.images.minRealism, spec.kind);
   let best: { raw: Buffer; hash: string; sharp: number; realism: number; attempt: number } | null = null;
   // a photo from the admin's library (best match for this title/section) as inspiration, if there are any
@@ -437,11 +440,11 @@ export async function producePicture(spec: PictureSpec, ctx: { topic: string; fo
   // the alt text must describe the scene that was actually used (attempt k uses scene k)
   const generic = /—|^cover|illustration for/i.test(spec.alt);
   const safeAlt = `UAE city view at golden hour, ${ctx.focusKeyword || ctx.topic}`.slice(0, 200);
-  const altFor = (attempt: number) => (spec.kind === 'cover' && attempt === maxAttempts && attempt > 1 ? (generic ? safeAlt : spec.alt) : '') || (generic && concept.scenes.length ? concept.alts[(attempt - 1) % concept.scenes.length] || concept.alt : '') || spec.alt;
+  const altFor = (attempt: number) => (spec.kind === 'cover' && attempt === maxAttempts && (attempt > 1 || spec.safeOnly) ? (generic ? safeAlt : spec.alt) : '') || (generic && concept.scenes.length ? concept.alts[(attempt - 1) % concept.scenes.length] || concept.alt : '') || spec.alt;
   let safeRetry = 0;
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     // the last cover try is the safest kind of photo (architecture, no people, no documents), so a cover is almost always ready
-    const safeTry = spec.kind === 'cover' && attempt === maxAttempts && attempt > 1;
+    const safeTry = spec.kind === 'cover' && attempt === maxAttempts && (attempt > 1 || !!spec.safeOnly);
     const scene = safeTry ? SAFE_SCENE[(Math.abs(ctx.variant) + safeRetry * 3) % SAFE_SCENE.length] : concept.scenes.length ? concept.scenes[(attempt - 1) % concept.scenes.length] : undefined;
     const prompt = buildImagePrompt({ purpose: spec.purpose, hint: attempt === 1 ? spec.hint : undefined, topic: ctx.topic, houseStyle: cfg.images.houseStyle, variant: ctx.variant + attempt * 5, scene, withReference: !!refImg && !safeTry, refIdea: !!ref?.matched, symbols, still: banner });
     let raw: Buffer;
@@ -501,8 +504,6 @@ type Look = { banner?: { text: CoverText; brand: CoverBrand; visaCard?: boolean 
 
 /** Small logo mark on photos (when "Show logo on pictures" is on) */
 async function marked(buf: Buffer, look: Look, quality: number): Promise<Buffer> {
-  // a designed cover carries our full logo in the corner the designer kept free
-  if (look.fullLogo) return sharp(await fullLogoMark(buf, look.fullLogo.logo, look.fullLogo.corner)).webp({ quality }).toBuffer();
   if (!look.emblem) return buf;
   return sharp(await watermark(buf, look.emblem)).webp({ quality }).toBuffer();
 }

@@ -328,6 +328,8 @@ function AiTab({ cfg, patch, providers, act }: { cfg: any; patch: (fn: (c: any) 
           </div>
           <div className="space-y-3">
             <p className="text-sm font-semibold text-emerald-700">Our logo is added to every picture (always on).</p>
+            <Toggle checked={cfg.images.saveCredit !== false} onChange={(v) => patch((c) => ((c.images.saveCredit = v), c))} label="Save credit (recommended): few picture tries, medium quality" />
+            <p className="text-xs leading-relaxed text-gray-500">On: a cover gets at most 3 pictures (2 designs + 1 safe photo) and an inside picture 1; quality never above medium; no second round. Off: up to 14 pictures for a difficult cover, so the AI bill can be many times higher.</p>
             <div>
               <label className="admin-label">Text in the banner's gold ribbon</label>
               <input className="admin-input" maxLength={40} placeholder="e.g. GoldenVisaUAE.ai (empty = website address)" value={cfg.images.ribbonText || ''} onChange={(e) => patch((c) => ((c.images.ribbonText = e.target.value), c))} />

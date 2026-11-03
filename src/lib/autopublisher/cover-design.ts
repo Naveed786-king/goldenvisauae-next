@@ -391,7 +391,65 @@ export async function fullLogoMark(photo: Buffer, logo: Buffer, corner: 'top-lef
 export async function watermark(photo: Buffer, emblem: Buffer, opts: { size?: number } = {}): Promise<Buffer> {
   const meta = await sharp(photo).metadata();
   const w = meta.width || 1600;
-  const size = opts.size || Math.round(w * 0.06);
+  const h = meta.height || 900;
+  const size = opts.size || Math.round(w * 0.055);
+  const m = Math.round(w * 0.022);
   const em = await sharp(emblem).resize(size, size, { fit: 'inside' }).ensureAlpha(0.9).png().toBuffer();
-  return sharp(photo).composite([{ input: em, left: w - size - Math.round(w * 0.025), top: (meta.height || 900) - size - Math.round(w * 0.025) }]).toBuffer();
+  const { left, top } = await calmestCorner(photo, w, h, size, m);
+  return sharp(photo).composite([{ input: em, left, top }]).toBuffer();
+}
+
+/**
+ * The corner with the least going on (no lettering, faces or objects): the logo goes there, so it never
+ * sits on a headline or the main subject. Measured by how much the pixels vary (text and detail vary a lot).
+ */
+export async function calmestCorner(photo: Buffer, w: number, h: number, size: number, m: number): Promise<{ left: number; top: number; corner: string }> {
+  // the area the icon would cover, plus a little room around it
+  const pad = Math.round(size * 0.35);
+  const fw = size + pad * 2;
+  // edge strength per pixel (letters, faces and objects have strong edges; sky and walls almost none)
+  const edge = await sharp(photo).removeAlpha().greyscale().convolve({ width: 3, height: 3, kernel: [-1, -1, -1, -1, 8, -1, -1, -1, -1] }).raw().toBuffer({ resolveWithObject: true });
+  const W = edge.info.width;
+  const H = edge.info.height;
+  const C = edge.info.channels;
+  // how busy the busiest part under the icon is (any letter or face makes one cell busy)
+  const busy = (x0: number, y0: number) => {
+    const cells = 3;
+    const cs = Math.max(1, Math.floor(fw / cells));
+    let worst = 0;
+    for (let cy = 0; cy < cells; cy++)
+      for (let cx = 0; cx < cells; cx++) {
+        let sum = 0;
+        let n = 0;
+        for (let y = y0 + cy * cs; y < Math.min(H, y0 + (cy + 1) * cs); y += 2)
+          for (let x = x0 + cx * cs; x < Math.min(W, x0 + (cx + 1) * cs); x += 2) {
+            sum += edge.data[(y * W + x) * C];
+            n++;
+          }
+        worst = Math.max(worst, n ? sum / n : 0);
+      }
+    return worst;
+  };
+  const spots: { corner: string; left: number; top: number }[] = [];
+  const step = Math.round(size * 1.4);
+  for (let k = 0; k < 3; k++) {
+    spots.push({ corner: 'bottom-right', left: w - size - m - k * step, top: h - size - m });
+    spots.push({ corner: 'top-right', left: w - size - m - k * step, top: m });
+    spots.push({ corner: 'bottom-left', left: m + k * step, top: h - size - m });
+    spots.push({ corner: 'top-left', left: m + k * step, top: m });
+  }
+  let best = spots[0];
+  let bestScore = Infinity;
+  for (const s of spots) {
+    const x0 = Math.max(0, s.left - pad);
+    const y0 = Math.max(0, s.top - pad);
+    if (x0 + fw > W || y0 + fw > H) continue;
+    // a small preference for the usual places (corners, bottom-right first)
+    const score = busy(x0, y0) + (s.left === w - size - m || s.left === m ? 0 : 3) + (s.corner === 'bottom-right' ? 0 : 1);
+    if (score < bestScore) {
+      bestScore = score;
+      best = s;
+    }
+  }
+  return best;
 }
