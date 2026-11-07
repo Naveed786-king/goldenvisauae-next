@@ -14,6 +14,7 @@ export function refreshSite() {
   try {
     revalidatePath('/', 'layout');
   } catch {}
+  (globalThis as unknown as { __sitemap?: Map<string, unknown> }).__sitemap?.clear();
 }
 
 const hits = new Map<string, { count: number; reset: number }>();
