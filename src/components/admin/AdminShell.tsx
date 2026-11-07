@@ -89,20 +89,109 @@ const NAV = [
   },
 ];
 
-function beep() {
+// Browsers only allow sound after the admin has clicked or typed on the page once, so one shared
+// audio context is created on the first click and reused for every alert.
+let audio: AudioContext | null = null;
+function unlockAudio() {
   try {
-    const Ctx = (window as any).AudioContext || (window as any).webkitAudioContext;
-    const ctx = new Ctx();
-    const o = ctx.createOscillator();
-    const g = ctx.createGain();
-    o.connect(g);
-    g.connect(ctx.destination);
-    o.frequency.value = 880;
-    g.gain.setValueAtTime(0.08, ctx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.4);
-    o.start();
-    o.stop(ctx.currentTime + 0.4);
+    if (!audio) {
+      const Ctx = (window as any).AudioContext || (window as any).webkitAudioContext;
+      if (Ctx) audio = new Ctx();
+    }
+    if (audio && audio.state === 'suspended') audio.resume().catch(() => {});
   } catch {}
+}
+const soundOn = () => {
+  try {
+    return localStorage.getItem('gv-alert-sound') !== 'off';
+  } catch {
+    return true;
+  }
+};
+
+/** A clear two-tone chime (louder for new enquiries) */
+function beep(strong = false) {
+  if (!soundOn()) return;
+  try {
+    unlockAudio();
+    const ctx = audio;
+    if (!ctx) return;
+    const tones = strong ? [988, 1319, 988, 1319] : [880, 1175];
+    tones.forEach((f, i) => {
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = 'sine';
+      o.connect(g);
+      g.connect(ctx.destination);
+      const t = ctx.currentTime + i * 0.22;
+      o.frequency.value = f;
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(strong ? 0.35 : 0.2, t + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.35);
+      o.start(t);
+      o.stop(t + 0.4);
+    });
+  } catch {}
+}
+
+/** A system pop-up (shows even when the admin tab is in the background), if the admin allowed it */
+function desktopAlert(title: string, body: string, href: string) {
+  try {
+    if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
+    const n = new Notification(title, { body, tag: href, icon: '/brand/coin.webp' });
+    n.onclick = () => {
+      window.focus();
+      window.location.href = href;
+      n.close();
+    };
+  } catch {}
+}
+
+/** Sound on/off, desktop pop-ups and a test button (saved per browser) */
+function AlertSettings() {
+  const [sound, setSound] = useState(true);
+  const [perm, setPerm] = useState<string>('default');
+  useEffect(() => {
+    setSound(soundOn());
+    setPerm(typeof Notification === 'undefined' ? 'unsupported' : Notification.permission);
+  }, []);
+  const toggleSound = () => {
+    const next = !sound;
+    setSound(next);
+    try {
+      localStorage.setItem('gv-alert-sound', next ? 'on' : 'off');
+    } catch {}
+    if (next) {
+      unlockAudio();
+      beep(true);
+    }
+  };
+  const askDesktop = async () => {
+    try {
+      const p = await Notification.requestPermission();
+      setPerm(p);
+      if (p === 'granted') desktopAlert('Alerts are on', 'You will see new enquiries here, even when this tab is in the background.', '/admin/leads');
+    } catch {}
+  };
+  return (
+    <div className="flex flex-wrap items-center gap-2 border-b border-gray-100 bg-gray-50 px-4 py-2.5 text-xs">
+      <button type="button" onClick={toggleSound} className={`rounded-full px-3 py-1 font-semibold ${sound ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-200 text-gray-600'}`}>
+        {sound ? '🔊 Sound on' : '🔇 Sound off'}
+      </button>
+      {perm === 'granted' ? (
+        <span className="rounded-full bg-emerald-100 px-3 py-1 font-semibold text-emerald-700">🖥️ Desktop alerts on</span>
+      ) : perm === 'denied' ? (
+        <span className="text-gray-500">Desktop alerts blocked in this browser's site settings</span>
+      ) : perm !== 'unsupported' ? (
+        <button type="button" onClick={askDesktop} className="rounded-full bg-blue-100 px-3 py-1 font-semibold text-blue-700">
+          🖥️ Turn on desktop alerts
+        </button>
+      ) : null}
+      <button type="button" onClick={() => { unlockAudio(); beep(true); }} className="ml-auto font-semibold text-gray-500 hover:text-gray-800">
+        Test sound
+      </button>
+    </div>
+  );
 }
 
 export default function AdminShell({ user, siteName, children }: { user: { name: string; email: string; role: string }; siteName: string; children: React.ReactNode }) {
@@ -118,7 +207,7 @@ export default function AdminShell({ user, siteName, children }: { user: { name:
     let stop = false;
     async function poll() {
       try {
-        if (document.visibilityState !== 'visible' && prev.current) return;
+        // keeps checking when the tab is in the background too: that is when alerts matter most
         const r = await fetch('/api/admin/notifications', { cache: 'no-store' });
         if (r.status === 401) {
           // signed out elsewhere or the session ended: back to the login, then return here
@@ -132,15 +221,18 @@ export default function AdminShell({ user, siteName, children }: { user: { name:
         if (p) {
           if (d.newLeads > p.l) {
             toast(`🔔 New enquiry from ${d.latestLeads[0]?.name || 'a visitor'}`, 'info');
-            beep();
+            beep(true);
+            desktopAlert('New enquiry', `${d.latestLeads[0]?.name || 'A visitor'}${d.latestLeads[0]?.service ? ` · ${d.latestLeads[0].service}` : ''}`, '/admin/leads');
           }
           if (d.newApps > p.a) {
             toast(`📁 Application update: ${d.latestApps[0]?.refNo || ''}`, 'info');
             beep();
+            desktopAlert('Application update', `${d.latestApps[0]?.refNo || ''} ${d.latestApps[0]?.fullName || ''}`.trim(), '/admin/applications');
           }
           if (d.unreadMsgs > p.m) {
             toast(`💬 New message from ${d.latestMsgs[0]?.application?.fullName || 'a client'}`, 'info');
             beep();
+            desktopAlert('New client message', d.latestMsgs[0]?.application?.fullName || 'A client', '/admin/applications');
           }
         }
         prev.current = { l: d.newLeads, a: d.newApps, m: d.unreadMsgs };
@@ -149,9 +241,15 @@ export default function AdminShell({ user, siteName, children }: { user: { name:
     }
     poll();
     const t = setInterval(poll, 10000);
+    // the first click or key press anywhere unlocks sound for the rest of the visit
+    const unlock = () => unlockAudio();
+    window.addEventListener('pointerdown', unlock);
+    window.addEventListener('keydown', unlock);
     return () => {
       stop = true;
       clearInterval(t);
+      window.removeEventListener('pointerdown', unlock);
+      window.removeEventListener('keydown', unlock);
     };
   }, []);
 
@@ -284,6 +382,7 @@ export default function AdminShell({ user, siteName, children }: { user: { name:
                       <X className="h-4 w-4" />
                     </button>
                   </div>
+                  <AlertSettings />
                   <div className="max-h-[420px] overflow-y-auto thin-scroll">
                     {!totalBell && <p className="px-4 py-10 text-center text-sm text-gray-400">You are all caught up ✨</p>}
                     {counts?.latestLeads.map((l) => (

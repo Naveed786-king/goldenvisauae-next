@@ -4,6 +4,10 @@ import { getSetting } from '../settings';
 import { TRANSLATED_LOCALES } from './config';
 import { translateEntity, allTranslatableEntities, Entity } from './content';
 import { notReadyReason } from './translate';
+import { prisma } from '../db';
+import { pingIndexNow } from '../indexnow';
+import { postPath } from '../utils';
+import { localizePath } from './config';
 
 type Job = { entity: Entity; id: string; locale: string; force: boolean };
 
@@ -97,6 +101,14 @@ function run(parallel = 1) {
   }
 }
 
+/** Tells search engines (IndexNow) about a new language version of a published post, and refreshes the sitemap */
+async function announceTranslation(postId: string, locale: string) {
+  const post = await prisma.post.findUnique({ where: { id: postId }, select: { slug: true, status: true } });
+  if (!post || post.status !== 'published') return;
+  (globalThis as unknown as { __sitemap?: Map<string, unknown> }).__sitemap?.clear();
+  await pingIndexNow([localizePath(postPath(post.slug), locale)]);
+}
+
 async function worker() {
   while (Q.queue.length) {
     const job = Q.queue.shift()!;
@@ -105,6 +117,7 @@ async function worker() {
     try {
       await translateEntity(job.entity, job.id, job.locale, job.force);
       Q.done++;
+      if (job.entity === 'post') await announceTranslation(job.id, job.locale).catch(() => null);
       Q.lastError = '';
     } catch (e) {
       Q.failed++;
