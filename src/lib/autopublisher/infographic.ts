@@ -64,13 +64,13 @@ export function designPrompt(b: DesignBrief, officialSymbols: boolean, cover = f
 
 /** Sizes for the site: the cover keeps the whole picture (never cropped), the Open Graph copy sits on a blurred fill */
 export async function designSizes(raw: Buffer): Promise<{ cover: Buffer; og: Buffer }> {
-  // the site's cover frame (1536:816) WITHOUT cutting anything: the whole picture is fitted inside and a
-  // soft blurred copy of it fills any space left at the sides or top/bottom
-  const bg = await sharp(raw).resize(1600, 850, { fit: 'cover' }).blur(30).modulate({ brightness: 0.95 }).toBuffer();
-  const whole = await sharp(raw).resize(1600, 850, { fit: 'inside' }).toBuffer();
+  // the site's cover frame is 3:2, the shape ChatGPT makes, so its pictures fill it exactly; a picture of
+  // another shape is fitted whole (never cut) and a blurred copy of it fills the space left
+  const bg = await sharp(raw).resize(1600, 1067, { fit: 'cover' }).blur(30).modulate({ brightness: 0.95 }).toBuffer();
+  const whole = await sharp(raw).resize(1600, 1067, { fit: 'inside' }).toBuffer();
   const wm = await sharp(whole).metadata();
   const cover = await sharp(bg)
-    .composite([{ input: whole, left: Math.round((1600 - (wm.width || 1600)) / 2), top: Math.round((850 - (wm.height || 850)) / 2) }])
+    .composite([{ input: whole, left: Math.round((1600 - (wm.width || 1600)) / 2), top: Math.round((1067 - (wm.height || 1067)) / 2) }])
     .webp({ quality: 86 })
     .toBuffer();
   const fill = await sharp(raw).resize(1200, 630, { fit: 'cover' }).blur(28).modulate({ brightness: 0.9 }).toBuffer();
