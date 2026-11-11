@@ -14,7 +14,11 @@ export default function PostCard({ post, priority }: { post: any; dark?: boolean
       <div className="relative aspect-[1536/816] overflow-hidden bg-[#f3efe4]">
         {post.cover ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={post.cover} alt={post.title} loading={priority ? 'eager' : 'lazy'} className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]" />
+          <>
+            {/* the whole picture is shown (never cropped); a blurred copy fills any space at the edges */}
+            <img src={post.cover} alt="" aria-hidden="true" loading={priority ? 'eager' : 'lazy'} className="absolute inset-0 h-full w-full scale-110 object-cover opacity-60 blur-xl" />
+            <img src={post.cover} alt={post.title} loading={priority ? 'eager' : 'lazy'} className="relative h-full w-full object-contain transition-transform duration-700 group-hover:scale-[1.03]" />
+          </>
         ) : (
           <div className="absolute inset-0 grid place-items-center bg-[radial-gradient(circle_at_30%_20%,#fff8e4,#efe3c3)]">
             <Coin className="h-20 w-20 opacity-80" />
