@@ -11,12 +11,12 @@ export default function PostCard({ post, priority }: { post: any; dark?: boolean
   const locale = useLocale();
   return (
     <SmartLink href={postPath(post.slug)} className={cn('card card-lift tilt group flex h-full flex-col overflow-hidden')}>
-      <div className="relative aspect-[1536/816] overflow-hidden bg-[#f3efe4]">
+      <div className="relative aspect-[3/2] overflow-hidden bg-[#f3efe4]">
         {post.cover ? (
           // eslint-disable-next-line @next/next/no-img-element
           <>
             {/* the whole picture is shown (never cropped); a blurred copy fills any space at the edges */}
-            <img src={post.cover} alt="" aria-hidden="true" loading={priority ? 'eager' : 'lazy'} className="absolute inset-0 h-full w-full scale-110 object-cover opacity-60 blur-xl" />
+            <img src={post.cover} alt="" aria-hidden="true" loading={priority ? 'eager' : 'lazy'} className="absolute inset-0 h-full w-full scale-125 object-cover blur-2xl" />
             <img src={post.cover} alt={post.title} loading={priority ? 'eager' : 'lazy'} className="relative h-full w-full object-contain transition-transform duration-700 group-hover:scale-[1.03]" />
           </>
         ) : (
