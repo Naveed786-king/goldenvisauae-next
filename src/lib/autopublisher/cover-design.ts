@@ -4,6 +4,7 @@
 import path from 'path';
 // Icon drawings from lucide (raw SVG nodes: react-dom/server may not be used inside the app)
 import sharp, { type OverlayOptions } from 'sharp';
+import { edgeMap } from './pure';
 import { __iconNode as i_award } from 'lucide-react/dist/esm/icons/award.js';
 import { __iconNode as i_badge } from 'lucide-react/dist/esm/icons/badge-check.js';
 import { __iconNode as i_baby } from 'lucide-react/dist/esm/icons/baby.js';
@@ -408,10 +409,10 @@ export async function calmestCorner(photo: Buffer, w: number, h: number, size: n
   const pad = Math.round(size * 0.35);
   const fw = size + pad * 2;
   // edge strength per pixel (letters, faces and objects have strong edges; sky and walls almost none)
-  const edge = await sharp(photo).removeAlpha().greyscale().convolve({ width: 3, height: 3, kernel: [-1, -1, -1, -1, 8, -1, -1, -1, -1] }).raw().toBuffer({ resolveWithObject: true });
-  const W = edge.info.width;
-  const H = edge.info.height;
-  const C = edge.info.channels;
+  const grey = await sharp(photo).removeAlpha().greyscale().raw().toBuffer({ resolveWithObject: true });
+  const W = grey.info.width;
+  const H = grey.info.height;
+  const edge = edgeMap(grey.data, W, H, grey.info.channels);
   // how busy the busiest part under the icon is (any letter or face makes one cell busy)
   const busy = (x0: number, y0: number) => {
     const cells = 3;
@@ -423,7 +424,7 @@ export async function calmestCorner(photo: Buffer, w: number, h: number, size: n
         let n = 0;
         for (let y = y0 + cy * cs; y < Math.min(H, y0 + (cy + 1) * cs); y += 2)
           for (let x = x0 + cx * cs; x < Math.min(W, x0 + (cx + 1) * cs); x += 2) {
-            sum += edge.data[(y * W + x) * C];
+            sum += edge[y * W + x];
             n++;
           }
         worst = Math.max(worst, n ? sum / n : 0);

@@ -12,13 +12,13 @@ export default function PostCard({ post, priority }: { post: any; dark?: boolean
   return (
     <SmartLink href={postPath(post.slug)} className={cn('card card-lift tilt group flex h-full flex-col overflow-hidden')}>
       {post.cover ? (
-        // the picture keeps its own shape: never cropped, no empty bands
+        // every card picture is the same 16:9 size; covers are saved at exactly 16:9, so they fill it whole
         // eslint-disable-next-line @next/next/no-img-element
-        <div className="overflow-hidden bg-[#f3efe4]">
-          <img src={post.cover} alt={post.title} loading={priority ? 'eager' : 'lazy'} className="block h-auto w-full transition-transform duration-700 group-hover:scale-[1.03]" />
+        <div className="relative aspect-video overflow-hidden bg-[#f3efe4]">
+          <img src={post.cover} alt={post.title} loading={priority ? 'eager' : 'lazy'} className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]" />
         </div>
       ) : (
-        <div className="relative aspect-[3/2] overflow-hidden bg-[#f3efe4]">
+        <div className="relative aspect-video overflow-hidden bg-[#f3efe4]">
           <div className="absolute inset-0 grid place-items-center bg-[radial-gradient(circle_at_30%_20%,#fff8e4,#efe3c3)]">
             <Coin className="h-20 w-20 opacity-80" />
           </div>

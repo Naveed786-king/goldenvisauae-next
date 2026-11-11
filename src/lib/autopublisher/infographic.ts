@@ -6,6 +6,7 @@
 import sharp from 'sharp';
 import { AiError, completeJson } from './ai';
 import { guaranteeFound } from './text';
+import { edgeMap } from './pure';
 
 export type DesignBrief = { prompt: string; words: string[]; alt: string; look: string; corner: Corner };
 export type Corner = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
@@ -56,30 +57,57 @@ export function designPrompt(b: DesignBrief, officialSymbols: boolean, cover = f
   return [
     b.prompt,
     b.words.length ? `Spell every word exactly as given: ${b.words.map((w) => `"${w}"`).join(', ')}. Show no other words, letters or numbers.` : 'No words, letters or numbers anywhere in the picture.',
-    `Landscape format. Keep everything important away from the edges (nothing cut off). Leave the ${free} corner empty and calm (our logo goes there).`,
+    `Landscape format, trimmed afterwards to a wide 16:9 banner: leave a plain, calm margin (sky, wall or table surface, about a tenth of the height) above the top-most words or objects and below the bottom-most ones, and keep everything important away from the left and right edges, so nothing is cut off. Leave the ${free} corner empty and calm (our logo goes there).`,
     officialSymbols ? 'No personal data, ID numbers or barcodes on documents.' : 'No national emblems on passports or cards; no personal data, ID numbers or barcodes.',
     'No logos, watermarks or website addresses.',
   ].join(' ');
 }
 
-/** Sizes for the site: the cover keeps the whole picture (never cropped), the Open Graph copy sits on a blurred fill */
+/**
+ * The picture at exactly W x H without empty bands: it is scaled to cover the frame and the strip that is
+ * trimmed off is taken where the picture has the least detail (plain sky, wall or table, never the headline).
+ */
+export async function smartFit(raw: Buffer, W: number, H: number): Promise<Buffer> {
+  const meta = await sharp(raw).metadata();
+  const w0 = meta.width || W;
+  const h0 = meta.height || H;
+  const scale = Math.max(W / w0, H / h0);
+  const sw = Math.max(W, Math.round(w0 * scale));
+  const sh = Math.max(H, Math.round(h0 * scale));
+  const scaled = await sharp(raw).resize(sw, sh, { fit: 'fill' }).toBuffer();
+  const vertical = sh > H; // trimming rows (taller picture) or columns (wider picture)
+  const extra = vertical ? sh - H : sw - W;
+  if (extra <= 0) return sharp(scaled).extract({ left: 0, top: 0, width: W, height: H }).toBuffer();
+  // detail per row (or column) on a small copy
+  const k = 4;
+  const g = await sharp(scaled).resize(Math.round(sw / k), Math.round(sh / k), { fit: 'fill' }).removeAlpha().greyscale().raw().toBuffer({ resolveWithObject: true });
+  const detail = edgeMap(g.data, g.info.width, g.info.height, g.info.channels);
+  const ew = g.info.width;
+  const eh = g.info.height;
+  const n = vertical ? eh : ew;
+  const line = new Float64Array(n);
+  for (let y = 0; y < eh; y++) for (let x = 0; x < ew; x++) line[vertical ? y : x] += detail[y * ew + x];
+  const pre = new Float64Array(n + 1);
+  for (let i = 0; i < n; i++) pre[i + 1] = pre[i] + line[i];
+  const cut = Math.round(extra / k);
+  let best = Math.floor(cut / 2);
+  let bestCost = Infinity;
+  // offset o: o lines trimmed from the start, (cut - o) from the end; ties go to the centre
+  for (let o = 0; o <= cut; o++) {
+    const cost = pre[o] + (pre[n] - pre[n - (cut - o)]) + Math.abs(o - cut / 2) * 1e-6;
+    if (cost < bestCost) {
+      bestCost = cost;
+      best = o;
+    }
+  }
+  const off = Math.min(extra, best * k);
+  return sharp(scaled).extract(vertical ? { left: 0, top: off, width: W, height: H } : { left: off, top: 0, width: W, height: H }).toBuffer();
+}
+
+/** Sizes for the site: every cover is exactly 16:9 (all blog cards the same size), the Open Graph copy 1200x630 */
 export async function designSizes(raw: Buffer): Promise<{ cover: Buffer; og: Buffer }> {
-  // the site's cover frame is 3:2, the shape ChatGPT makes, so its pictures fill it exactly; a picture of
-  // another shape is fitted whole (never cut) and a blurred copy of it fills the space left
-  const bg = await sharp(raw).resize(1600, 1067, { fit: 'cover' }).blur(30).modulate({ brightness: 0.95 }).toBuffer();
-  const whole = await sharp(raw).resize(1600, 1067, { fit: 'inside' }).toBuffer();
-  const wm = await sharp(whole).metadata();
-  const cover = await sharp(bg)
-    .composite([{ input: whole, left: Math.round((1600 - (wm.width || 1600)) / 2), top: Math.round((1067 - (wm.height || 1067)) / 2) }])
-    .webp({ quality: 86 })
-    .toBuffer();
-  const fill = await sharp(raw).resize(1200, 630, { fit: 'cover' }).blur(28).modulate({ brightness: 0.9 }).toBuffer();
-  const inner = await sharp(raw).resize(1200, 630, { fit: 'inside' }).toBuffer();
-  const im = await sharp(inner).metadata();
-  const og = await sharp(fill)
-    .composite([{ input: inner, left: Math.round((1200 - (im.width || 1200)) / 2), top: Math.round((630 - (im.height || 630)) / 2) }])
-    .webp({ quality: 84 })
-    .toBuffer();
+  const cover = await sharp(await smartFit(raw, 1600, 900)).webp({ quality: 86 }).toBuffer();
+  const og = await sharp(await smartFit(raw, 1200, 630)).webp({ quality: 84 }).toBuffer();
   return { cover, og };
 }
 

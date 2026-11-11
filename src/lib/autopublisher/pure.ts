@@ -154,3 +154,14 @@ export function spreadPositions(m: number, n: number): number[] {
   return out;
 }
 
+/** How much each pixel differs from its right and lower neighbours (letters and objects high, sky and walls near 0) */
+export function edgeMap(data: Buffer, w: number, h: number, channels: number): Float32Array {
+  const out = new Float32Array(w * h);
+  const at = (x: number, y: number) => data[(y * w + x) * channels];
+  for (let y = 0; y < h; y++)
+    for (let x = 0; x < w; x++) {
+      const p = at(x, y);
+      out[y * w + x] = (x + 1 < w ? Math.abs(p - at(x + 1, y)) : 0) + (y + 1 < h ? Math.abs(p - at(x, y + 1)) : 0);
+    }
+  return out;
+}
