@@ -20,7 +20,7 @@ async function oddCovers() {
     const buf = await readLocal(p.cover!).catch(() => null);
     if (!buf) continue;
     const m = await sharp(buf).metadata().catch(() => null);
-    if (m?.width && m?.height && Math.abs(m.width / m.height - 16 / 9) > 0.05) out.push(p);
+    if (m?.width && m?.height && Math.abs(m.width / m.height - 16 / 9) > 0.12) out.push(p);
   }
   return out;
 }
@@ -36,7 +36,7 @@ export async function POST() {
   const s = await requireAdmin();
   if (!s) return fail('Admins only', 403);
   if (running) return ok({ started: false, running });
-  const list = (await oddCovers()).slice(0, 10);
+  const list = (await oddCovers()).slice(0, 30);
   running = true;
   void (async () => {
     try {
