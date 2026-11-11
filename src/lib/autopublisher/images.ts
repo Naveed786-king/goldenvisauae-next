@@ -527,13 +527,11 @@ async function savePicture(spec: PictureSpec, ctx: { topic: string; focusKeyword
       ? await designSizes(raw).then(async (s) => [await marked(s.cover, look, 86), await marked(s.og, look, 84)])
       : look.banner
       ? await Promise.all([composeCover(raw, look.banner.text, look.banner.brand, 1600, 900, { visaCard: look.banner.visaCard }), composeCover(raw, look.banner.text, look.banner.brand, 1200, 630, { visaCard: look.banner.visaCard })])
-      : await Promise.all([
-          sharp(raw).resize(1600, 900, { fit: 'cover', position: 'attention' }).webp({ quality: 82 }).toBuffer().then((b) => marked(b, look, 82)),
-          sharp(raw).resize(1200, 630, { fit: 'cover', position: 'attention' }).webp({ quality: 80 }).toBuffer().then((b) => marked(b, look, 80)),
-        ]);
+      : // photo covers keep the whole picture too (nothing cut off), fitted into the site's cover frame
+        await designSizes(raw).then(async (s) => [await marked(s.cover, look, 84), await marked(s.og, look, 82)]);
     out = await saveWebp(cover, base, spec.alt);
     ogUrl = (await saveWebp(og, `${base}-og`, spec.alt)).url;
-    const cm = look.designed ? await sharp(cover).metadata() : null;
+    const cm = look.banner ? null : await sharp(cover).metadata();
     width = cm?.width || 1600;
     height = cm?.height || 900;
   } else {
