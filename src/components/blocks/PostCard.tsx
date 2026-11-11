@@ -11,20 +11,19 @@ export default function PostCard({ post, priority }: { post: any; dark?: boolean
   const locale = useLocale();
   return (
     <SmartLink href={postPath(post.slug)} className={cn('card card-lift tilt group flex h-full flex-col overflow-hidden')}>
-      <div className="relative aspect-[3/2] overflow-hidden bg-[#f3efe4]">
-        {post.cover ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <>
-            {/* the whole picture is shown (never cropped); a blurred copy fills any space at the edges */}
-            <img src={post.cover} alt="" aria-hidden="true" loading={priority ? 'eager' : 'lazy'} className="absolute inset-0 h-full w-full scale-125 object-cover blur-2xl" />
-            <img src={post.cover} alt={post.title} loading={priority ? 'eager' : 'lazy'} className="relative h-full w-full object-contain transition-transform duration-700 group-hover:scale-[1.03]" />
-          </>
-        ) : (
+      {post.cover ? (
+        // the picture keeps its own shape: never cropped, no empty bands
+        // eslint-disable-next-line @next/next/no-img-element
+        <div className="overflow-hidden bg-[#f3efe4]">
+          <img src={post.cover} alt={post.title} loading={priority ? 'eager' : 'lazy'} className="block h-auto w-full transition-transform duration-700 group-hover:scale-[1.03]" />
+        </div>
+      ) : (
+        <div className="relative aspect-[3/2] overflow-hidden bg-[#f3efe4]">
           <div className="absolute inset-0 grid place-items-center bg-[radial-gradient(circle_at_30%_20%,#fff8e4,#efe3c3)]">
             <Coin className="h-20 w-20 opacity-80" />
           </div>
-        )}
-      </div>
+        </div>
+      )}
       <div className="flex flex-1 flex-col p-6">
         {post.category && <span className="mb-2.5 text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-[#8a6d2c]">{post.category}</span>}
         <h3 className="font-display text-[1.12rem] font-semibold leading-snug transition-colors group-hover:text-gold-deep">{post.title}</h3>
