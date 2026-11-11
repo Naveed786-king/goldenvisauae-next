@@ -323,3 +323,4 @@ test('inside pictures are spread out under different headings, never next to eac
   assert.deepEqual(spreadPositions(3, 2), [2]);
   assert.deepEqual(spreadPositions(1, 2), []);
 });
+

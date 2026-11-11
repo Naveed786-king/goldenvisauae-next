@@ -99,7 +99,7 @@ export default function PostView({ post, related, site, lang = 'en-GB', url }: {
         {post.cover && (
           <div className="container-x fx-pop relative mt-10 max-w-6xl" style={{ ['--d' as any]: '.22s' }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={post.cover} alt={post.title} className="aspect-[1536/816] h-auto w-full rounded-[28px] bg-[#f3efe4] object-contain shadow-[var(--shadow-lift)]" />
+            <img src={post.cover} alt={post.title} className="block h-auto w-full rounded-[28px] bg-[#f3efe4] object-contain shadow-[var(--shadow-lift)]" />
           </div>
         )}
       </header>

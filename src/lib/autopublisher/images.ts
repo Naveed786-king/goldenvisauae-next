@@ -26,8 +26,19 @@ export { buildImagePrompt, peopleAllowed } from './image-prompt';
 
 // ---------------------------------------------------------------- generation
 
-export async function generateImage(prompt: string, cfg: AutoConfig, reference?: Buffer | null): Promise<Buffer> {
+export async function generateImage(prompt: string, cfg: AutoConfig, reference?: Buffer | null, opts: { openaiOnly?: boolean } = {}): Promise<Buffer> {
   if (isFakeAi()) return fakeImage(prompt);
+  // featured pictures (covers) come only from ChatGPT (OpenAI); when it is not available the article
+  // waits and tries again later (every 30 minutes) instead of using another picture AI
+  if (opts.openaiOnly) {
+    try {
+      return await generateWith('openai', prompt, cfg, reference);
+    } catch (e) {
+      if (e instanceof AiError && (e.kind === 'quota' || e.kind === 'auth' || e.kind === 'config'))
+        throw new AiError('quota', `Waiting for ChatGPT (OpenAI) pictures for the featured image: ${e.message.slice(0, 200)}`);
+      throw e;
+    }
+  }
   try {
     return await generateWith(cfg.images.provider, prompt, cfg, reference);
   } catch (e) {
@@ -310,7 +321,7 @@ async function produceDesigned(spec: PictureSpec, ctx: { topic: string; focusKey
     }
     let raw: Buffer;
     try {
-      raw = await generateImage(designPrompt(brief, cfg.images.officialSymbols), cfg, null);
+      raw = await generateImage(designPrompt(brief, cfg.images.officialSymbols, spec.kind === 'cover'), cfg, null, { openaiOnly: spec.kind === 'cover' && cfg.images.coverOpenAiOnly });
     } catch (e: any) {
       if (e instanceof AiError && (e.kind === 'quota' || e.kind === 'config')) throw e;
       reasons.push(`attempt ${attempt}: ${e?.message || e}`);
@@ -449,7 +460,7 @@ export async function producePicture(spec: PictureSpec, ctx: { topic: string; fo
     const prompt = buildImagePrompt({ purpose: spec.purpose, hint: attempt === 1 ? spec.hint : undefined, topic: ctx.topic, houseStyle: cfg.images.houseStyle, variant: ctx.variant + attempt * 5, scene, withReference: !!refImg && !safeTry, refIdea: !!ref?.matched, symbols, still: banner });
     let raw: Buffer;
     try {
-      raw = await generateImage(prompt, cfg, safeTry ? null : refImg);
+      raw = await generateImage(prompt, cfg, safeTry ? null : refImg, { openaiOnly: spec.kind === 'cover' && cfg.images.coverOpenAiOnly });
     } catch (e: any) {
       if (e instanceof AiError && (e.kind === 'quota' || e.kind === 'config')) throw e;
       reasons.push(`attempt ${attempt}: ${e?.message || e}`);

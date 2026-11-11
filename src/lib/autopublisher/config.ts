@@ -40,6 +40,7 @@ export type AutoConfig = {
     showLogo: boolean; // site logo on every picture (banner: top left + ribbon; photos: small corner mark)
     ribbonText: string; // text in the banner's gold ribbon; empty = the site address
     officialSymbols: boolean;
+    coverOpenAiOnly: boolean; // featured images only from ChatGPT (OpenAI); the article waits when it is unavailable
     saveCredit: boolean; // few picture tries, medium quality, no second round: keeps the AI bill small
     visaCard: 'auto' | 'off'; // drawn gold UAE GOLDEN VISA card on covers whose title is about a visa // allow the real UAE emblem / wording on passports and cards in banner photos
   };
@@ -76,7 +77,7 @@ export const DEFAULT_CONFIG: AutoConfig = {
     openrouter: { key: '', model: 'anthropic/claude-sonnet-5.5' },
   },
   useTranslationGeminiKey: true,
-  images: { provider: 'openai', openaiModel: 'gpt-image-2', geminiModel: 'gemini-2.5-flash-image', quality: 'medium', inline: 2, saveCredit: true, houseStyle: '', onFail: 'skip', minSharpness: 60, minRealism: 7, coverStyle: 'banner', showLogo: true, ribbonText: '', officialSymbols: false, visaCard: 'auto' },
+  images: { provider: 'openai', openaiModel: 'gpt-image-2', geminiModel: 'gemini-2.5-flash-image', quality: 'medium', inline: 2, saveCredit: true, coverOpenAiOnly: true, houseStyle: '', onFail: 'skip', minSharpness: 60, minRealism: 7, coverStyle: 'banner', showLogo: true, ribbonText: '', officialSymbols: false, visaCard: 'auto' },
   quality: {
     minQuality: 80,
     minSeo: 80,
@@ -135,6 +136,7 @@ export async function saveAutoConfig(incoming: Partial<AutoConfig>): Promise<Aut
   next.images.ribbonText = String(next.images.ribbonText || '').trim().slice(0, 40);
   next.images.officialSymbols = next.images.officialSymbols === true;
   next.images.saveCredit = next.images.saveCredit !== false;
+  next.images.coverOpenAiOnly = next.images.coverOpenAiOnly !== false;
   // the credit saver never pays for the most expensive picture quality
   if (next.images.saveCredit && next.images.quality === 'high') next.images.quality = 'medium';
   next.images.visaCard = next.images.visaCard === 'off' ? 'off' : 'auto';
