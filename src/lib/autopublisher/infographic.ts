@@ -57,7 +57,7 @@ export function designPrompt(b: DesignBrief, officialSymbols: boolean, cover = f
   return [
     b.prompt,
     b.words.length ? `Spell every word exactly as given: ${b.words.map((w) => `"${w}"`).join(', ')}. Show no other words, letters or numbers.` : 'No words, letters or numbers anywhere in the picture.',
-    `Landscape format, trimmed afterwards to a wide 16:9 banner: leave a plain, calm margin (sky, wall or table surface, about a tenth of the height) above the top-most words or objects and below the bottom-most ones, and keep everything important away from the left and right edges, so nothing is cut off. Leave the ${free} corner empty and calm (our logo goes there).`,
+    `Wide 16:9 landscape banner: leave a plain, calm margin (sky, wall or table surface, about a tenth of the height) above the top-most words or objects and below the bottom-most ones, and keep everything important away from the left and right edges, so nothing is cut off. Leave the ${free} corner empty and calm (our logo goes there).`,
     officialSymbols ? 'No personal data, ID numbers or barcodes on documents.' : 'No national emblems on passports or cards; no personal data, ID numbers or barcodes.',
     'No logos, watermarks or website addresses.',
   ].join(' ');

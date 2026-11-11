@@ -96,10 +96,17 @@ async function openAiPicture(model: string, key: string, prompt: string, cfg: Au
       if (!b64) throw new AiError('bad_output', 'OpenAI returned no picture');
       return Buffer.from(b64, 'base64');
     }
-    const body: any = { model, prompt, n: 1, size: model.startsWith('dall-e') ? '1792x1024' : '1536x1024' };
+    // gpt-image-2 paints the site's 16:9 shape directly (nothing has to be trimmed afterwards); older models only know 3:2
+    const wide = model.startsWith('gpt-image-2');
+    const body: any = { model, prompt, n: 1, size: model.startsWith('dall-e') ? '1792x1024' : wide ? '1536x864' : '1536x1024' };
     if (model.startsWith('dall-e')) Object.assign(body, { response_format: 'b64_json', quality: cfg.images.quality === 'high' ? 'hd' : 'standard' });
     else body.quality = cfg.images.quality;
-    const j = await http('https://api.openai.com/v1/images/generations', { method: 'POST', headers: { Authorization: `Bearer ${key}`, 'content-type': 'application/json' }, body: JSON.stringify(body) }, 180_000, 'OpenAI images');
+    const send = () => http('https://api.openai.com/v1/images/generations', { method: 'POST', headers: { Authorization: `Bearer ${key}`, 'content-type': 'application/json' }, body: JSON.stringify(body) }, 180_000, 'OpenAI images');
+    const j = await send().catch((e) => {
+      if (!wide || !(e instanceof AiError) || !/size/i.test(e.message)) throw e;
+      body.size = '1536x1024';
+      return send();
+    });
     const b64 = j?.data?.[0]?.b64_json;
     if (!b64) throw new AiError('bad_output', 'OpenAI returned no picture');
     return Buffer.from(b64, 'base64');
