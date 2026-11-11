@@ -51,12 +51,12 @@ Return JSON only: {"prompt":"","words":[""],"alt":"","look":"","corner":"top-lef
 }
 
 /** Fixed safety rules added to every design (the design itself is free) */
-export function designPrompt(b: DesignBrief, officialSymbols: boolean): string {
+export function designPrompt(b: DesignBrief, officialSymbols: boolean, cover = false): string {
   const free = b.corner || 'top-left';
   return [
     b.prompt,
     b.words.length ? `Spell every word exactly as given: ${b.words.map((w) => `"${w}"`).join(', ')}. Show no other words, letters or numbers.` : 'No words, letters or numbers anywhere in the picture.',
-    `Landscape format. Keep everything important away from the edges (nothing cut off). Leave the ${free} corner empty and calm (our logo goes there).`,
+    `Landscape format. ${cover ? 'The top and bottom 10% of the height will be trimmed to a wide banner: keep every word, the headline and the main subject inside the middle 80% of the height, and only background in the top and bottom strips.' : 'Keep everything important away from the edges (nothing cut off).'} Leave the ${free} corner empty and calm (our logo goes there).`,
     officialSymbols ? 'No personal data, ID numbers or barcodes on documents.' : 'No national emblems on passports or cards; no personal data, ID numbers or barcodes.',
     'No logos, watermarks or website addresses.',
   ].join(' ');
@@ -64,7 +64,8 @@ export function designPrompt(b: DesignBrief, officialSymbols: boolean): string {
 
 /** Sizes for the site: the cover keeps the whole picture (never cropped), the Open Graph copy sits on a blurred fill */
 export async function designSizes(raw: Buffer): Promise<{ cover: Buffer; og: Buffer }> {
-  const cover = await sharp(raw).resize({ width: 1600 }).webp({ quality: 86 }).toBuffer();
+  // exactly the site's cover frame (1536:816), so it fits the post page and blog cards with no bars or cuts
+  const cover = await sharp(raw).resize(1600, 850, { fit: 'cover', position: 'centre' }).webp({ quality: 86 }).toBuffer();
   const fill = await sharp(raw).resize(1200, 630, { fit: 'cover' }).blur(28).modulate({ brightness: 0.9 }).toBuffer();
   const inner = await sharp(raw).resize(1200, 630, { fit: 'inside' }).toBuffer();
   const im = await sharp(inner).metadata();

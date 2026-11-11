@@ -541,7 +541,12 @@ const images: Stage = async (job, d, cfg) => {
   const headings = [...String(a.contentHtml || '').matchAll(/<h2[^>]*>([\s\S]*?)<\/h2>/gi)].map((m) => stripHtml(m[1]));
   // designed pictures: planned one after another so each looks different from the others
   const specs: any[] = await planDesigns(d.picPlan.slice(start), { topic: a.title, articleText, headings }, cfg);
-  const results = await Promise.all(specs.map((spec: any, k: number) => producePicture(spec, { topic: a.title, focusKeyword: a.focusKeyword || d.focusKeyword, summary: stripHtml(a.quickAnswer || a.excerpt || ''), headings, variant: hashCode(job.id) + (start + k) * 7 + Number(d.coverRounds || 0) * 13, jobId: job.id, articleText }, cfg)));
+  const make = (spec: any, k: number) => producePicture(spec, { topic: a.title, focusKeyword: a.focusKeyword || d.focusKeyword, summary: stripHtml(a.quickAnswer || a.excerpt || ''), headings, variant: hashCode(job.id) + (start + k) * 7 + Number(d.coverRounds || 0) * 13, jobId: job.id, articleText }, cfg);
+  // the cover first: if it has to wait (e.g. no ChatGPT credit), no credit is spent on inside pictures
+  // that would be thrown away; the inside pictures are then made together
+  const results: Awaited<ReturnType<typeof producePicture>>[] = new Array(specs.length);
+  for (const [k, spec] of specs.entries()) if (spec.kind === 'cover') results[k] = await make(spec, k);
+  await Promise.all(specs.map(async (spec: any, k: number) => (spec.kind === 'cover' ? null : (results[k] = await make(spec, k)))));
   d.picIndex = d.picPlan.length;
   let coverFailed = '';
   results.forEach((res, k) => {
