@@ -32,11 +32,16 @@ export async function GET() {
 }
 
 /** Makes a new ChatGPT cover (16:9, whole design, logo) for each post whose cover has another shape */
-export async function POST() {
+export async function POST(req: Request) {
   const s = await requireAdmin();
   if (!s) return fail('Admins only', 403);
   if (running) return ok({ started: false, running });
-  const list = (await oddCovers()).slice(0, 30);
+  // optional list of post ids to remake as well (e.g. covers that were trimmed badly)
+  const body = await req.json().catch(() => ({}));
+  const ids: string[] = Array.isArray(body?.ids) ? body.ids.filter((x: unknown) => typeof x === 'string').slice(0, 30) : [];
+  const extra = ids.length ? await prisma.post.findMany({ where: { id: { in: ids } }, select: { id: true, title: true, cover: true, content: true, excerpt: true } }) : [];
+  const odd = await oddCovers();
+  const list = [...extra, ...odd.filter((p) => !ids.includes(p.id))].slice(0, 30);
   running = true;
   void (async () => {
     try {
