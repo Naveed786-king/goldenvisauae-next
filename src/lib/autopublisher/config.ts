@@ -136,7 +136,7 @@ export async function saveAutoConfig(incoming: Partial<AutoConfig>): Promise<Aut
   next.images.ribbonText = String(next.images.ribbonText || '').trim().slice(0, 40);
   next.images.officialSymbols = next.images.officialSymbols === true;
   next.images.saveCredit = next.images.saveCredit !== false;
-  next.images.coverOpenAiOnly = next.images.coverOpenAiOnly !== false;
+  next.images.coverOpenAiOnly = true; // featured images always come from ChatGPT, never another picture AI
   // the credit saver never pays for the most expensive picture quality
   if (next.images.saveCredit && next.images.quality === 'high') next.images.quality = 'medium';
   next.images.visaCard = next.images.visaCard === 'off' ? 'off' : 'auto';
