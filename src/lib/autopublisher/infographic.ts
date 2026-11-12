@@ -57,7 +57,7 @@ export function designPrompt(b: DesignBrief, officialSymbols: boolean, cover = f
   return [
     b.prompt,
     b.words.length ? `Spell every word exactly as given: ${b.words.map((w) => `"${w}"`).join(', ')}. Show no other words, letters or numbers.` : 'No words, letters or numbers anywhere in the picture.',
-    `Wide 16:9 landscape banner: leave a plain, calm margin (sky, wall or table surface, about a tenth of the height) above the top-most words or objects and below the bottom-most ones, and keep everything important away from the left and right edges, so nothing is cut off. Leave the ${free} corner empty and calm (our logo goes there).`,
+    `Wide 16:9 landscape banner. Safe area: every word and the main subject stay well inside the frame, with clear empty space (at least a tenth of the height) between the top edge and the headline, and at least 6% of the width on the left and right of every line of text; no letter may touch or cross any edge of the picture. Leave the ${free} corner empty and calm (our logo goes there).`,
     officialSymbols ? 'No personal data, ID numbers or barcodes on documents.' : 'No national emblems on passports or cards; no personal data, ID numbers or barcodes.',
     'No logos, watermarks or website addresses.',
   ].join(' ');
@@ -114,5 +114,5 @@ export async function designSizes(raw: Buffer): Promise<{ cover: Buffer; og: Buf
 /** The checker's rules for a designed picture (words are expected, but they must be right) */
 export function designCheck(words: string[]): string {
   return `This is a designed blog picture: ${words.length ? 'text, cards and icons are EXPECTED' : 'it should carry no text'}.
-Reject it if ANY of these is true: ${words.length ? `misspelled, garbled, cut-off or nonsense words, or words that differ from the planned words (${words.join(' | ')}); ` : 'any visible text; '}deformed hands or faces; national emblems, personal data or ID numbers on documents; logos or watermarks; a messy or broken layout; a background that does not look like the UAE.`;
+Reject it if ANY of these is true: ${words.length ? `any word or letter that touches or is cut by the top, bottom, left or right edge of the picture (look closely at the very top line); misspelled, garbled, cut-off or nonsense words, or words that differ from the planned words (${words.join(' | ')}); ` : 'any visible text; '}deformed hands or faces; national emblems, personal data or ID numbers on documents; logos or watermarks; a messy or broken layout; a background that does not look like the UAE.`;
 }
