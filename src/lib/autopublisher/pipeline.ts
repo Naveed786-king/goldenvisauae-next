@@ -731,14 +731,17 @@ async function nextSlot(cfg: AutoConfig): Promise<number> {
   const startToday = new Date(`${dayKey(now)}T00:00:00+04:00`).getTime();
   const done = await prisma.autoJob.findMany({ where: { stage: 'done', updatedAt: { gte: new Date(startToday) } }, select: { data: true, updatedAt: true }, orderBy: { updatedAt: 'desc' } });
   const publishedToday = done.filter((j) => parse(j.data).publishedMode === 'publish');
-  // a finished article goes out as soon as it is ready (inside the active hours and the daily cap),
-  // with only a short gap after the previous one — no more waiting hours for an evenly spread slot
-  const gapMs = 30 * 60_000;
+  // posts are spread over the day (4 a day = one every 6 hours), so the site gets new articles all day
+  // long instead of the whole day's posts in the first hour after midnight
+  const hours = Math.max(1, q.activeTo - q.activeFrom);
+  const gapMs = Math.max(30 * 60_000, Math.floor((hours * 3_600_000) / Math.max(1, q.dailyCap)));
   const tomorrowStart = startToday + 86_400_000 + q.activeFrom * 3_600_000;
   if (publishedToday.length >= q.dailyCap) return tomorrowStart;
   if (hourDubai < q.activeFrom) return startToday + q.activeFrom * 3_600_000;
   if (hourDubai >= q.activeTo) return tomorrowStart;
-  const last = publishedToday[0]?.updatedAt.getTime() || 0;
+  // the gap counts from the last post even when it went out yesterday
+  const lastAny = await prisma.autoJob.findFirst({ where: { stage: 'done', updatedAt: { gte: new Date(Date.now() - gapMs) } }, select: { data: true, updatedAt: true }, orderBy: { updatedAt: 'desc' } });
+  const last = Math.max(publishedToday[0]?.updatedAt.getTime() || 0, lastAny && parse(lastAny.data).publishedMode === 'publish' ? lastAny.updatedAt.getTime() : 0);
   return Math.max(Date.now(), last + gapMs);
 }
 
