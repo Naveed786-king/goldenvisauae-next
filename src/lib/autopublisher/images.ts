@@ -328,7 +328,7 @@ async function produceDesigned(spec: PictureSpec, ctx: { topic: string; focusKey
     }
     let raw: Buffer;
     try {
-      raw = await generateImage(designPrompt(brief, cfg.images.officialSymbols, spec.kind === 'cover'), cfg, null, { openaiOnly: spec.kind === 'cover' && cfg.images.coverOpenAiOnly });
+      raw = await generateImage(designPrompt(brief, cfg.images.officialSymbols, spec.kind === 'cover'), cfg, null, { openaiOnly: spec.kind === 'cover' });
     } catch (e: any) {
       if (e instanceof AiError && (e.kind === 'quota' || e.kind === 'config')) throw e;
       reasons.push(`attempt ${attempt}: ${e?.message || e}`);
@@ -467,7 +467,7 @@ export async function producePicture(spec: PictureSpec, ctx: { topic: string; fo
     const prompt = buildImagePrompt({ purpose: spec.purpose, hint: attempt === 1 ? spec.hint : undefined, topic: ctx.topic, houseStyle: cfg.images.houseStyle, variant: ctx.variant + attempt * 5, scene, withReference: !!refImg && !safeTry, refIdea: !!ref?.matched, symbols, still: banner });
     let raw: Buffer;
     try {
-      raw = await generateImage(prompt, cfg, safeTry ? null : refImg, { openaiOnly: spec.kind === 'cover' && cfg.images.coverOpenAiOnly });
+      raw = await generateImage(prompt, cfg, safeTry ? null : refImg, { openaiOnly: spec.kind === 'cover' });
     } catch (e: any) {
       if (e instanceof AiError && (e.kind === 'quota' || e.kind === 'config')) throw e;
       reasons.push(`attempt ${attempt}: ${e?.message || e}`);
