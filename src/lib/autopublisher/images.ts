@@ -28,25 +28,16 @@ export { buildImagePrompt, peopleAllowed } from './image-prompt';
 
 export async function generateImage(prompt: string, cfg: AutoConfig, reference?: Buffer | null, opts: { openaiOnly?: boolean } = {}): Promise<Buffer> {
   if (isFakeAi()) return fakeImage(prompt);
-  // featured pictures (covers) come only from ChatGPT (OpenAI); when it is not available the article
-  // waits and tries again later (every 30 minutes) instead of using another picture AI
-  if (opts.openaiOnly) {
-    try {
-      return await generateWith('openai', prompt, cfg, reference);
-    } catch (e) {
-      if (e instanceof AiError && (e.kind === 'quota' || e.kind === 'auth' || e.kind === 'config'))
-        throw new AiError('quota', `Waiting for ChatGPT (OpenAI) pictures for the featured image: ${e.message.slice(0, 200)}`);
-      throw e;
-    }
-  }
+  // every picture on the blog (cover and inside pictures) comes only from ChatGPT (OpenAI): no other picture AI
+  // is ever used. When OpenAI is not available (no credit, wrong key) the article waits and tries again
+  // later (every 30 minutes).
+  void opts;
   try {
-    return await generateWith(cfg.images.provider, prompt, cfg, reference);
+    const out = await generateWith('openai', prompt, cfg, reference);
+    return out;
   } catch (e) {
-    // a wrong OpenAI key must not stop the pictures when a Gemini key works
-    if (cfg.images.provider === 'openai' && e instanceof AiError && e.kind !== 'network' && (await providerKey(cfg, 'gemini'))) {
-      await autoLog('warn', `OpenAI pictures not available (${e.message.slice(0, 160)}), using Gemini for this picture.`);
-      return generateWith('gemini', prompt, cfg, reference);
-    }
+    if (e instanceof AiError && (e.kind === 'quota' || e.kind === 'auth' || e.kind === 'config'))
+      throw new AiError('quota', `Waiting for ChatGPT (OpenAI) pictures: ${e.message.slice(0, 200)}`);
     throw e;
   }
 }
@@ -71,7 +62,7 @@ async function generateWith(which: 'openai' | 'gemini', prompt: string, cfg: Aut
         tried.push(model);
       }
     }
-    throw new AiError('config', `None of the OpenAI picture models works on this account (${tried.join(', ')}). Verify the organization at platform.openai.com → Settings → Organization, or use Google Gemini for pictures.`);
+    throw new AiError('config', `None of the OpenAI picture models works on this account (${tried.join(', ')}). Verify the organization at platform.openai.com → Settings → Organization.`);
   }
   return geminiPicture(key, prompt, cfg, reference);
 }
