@@ -282,10 +282,7 @@ function AiTab({ cfg, patch, providers, act }: { cfg: any; patch: (fn: (c: any) 
         <div className="grid gap-5 p-5 md:grid-cols-2">
           <div>
             <label className="admin-label">Picture provider</label>
-            <select className="admin-input" value={cfg.images.provider} onChange={(e) => patch((c) => ((c.images.provider = e.target.value), c))}>
-              <option value="openai">OpenAI images (uses the OpenAI key)</option>
-              <option value="gemini">Google Gemini images (uses the Gemini key)</option>
-            </select>
+            <p className="admin-input bg-gray-50 text-sm">ChatGPT (OpenAI) only, for every picture on the blog. Gemini is never used for pictures.</p>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
