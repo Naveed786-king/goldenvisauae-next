@@ -163,7 +163,8 @@ async function scheduleMissions(cfg: AutoConfig): Promise<string | null> {
   for (const m of missions) {
     if (m.postsPerWeek <= 0) continue;
     if (stopped(m)) continue;
-    const gap = (7 * 86_400_000) / m.postsPerWeek;
+    // a new article is started often enough to keep up with the daily cap (the publish slots still space them out)
+    const gap = Math.min((7 * 86_400_000) / m.postsPerWeek, cfg.quality.dailyCap > 0 ? 86_400_000 / cfg.quality.dailyCap : Infinity);
     if (m.lastRunAt && now - m.lastRunAt.getTime() < gap) continue;
     const weekJobs = await prisma.autoJob.count({ where: { missionId: m.id, createdAt: { gte: new Date(now - 7 * 86_400_000) } } });
     if (weekJobs >= m.postsPerWeek) continue;
@@ -729,7 +730,8 @@ async function nextSlot(cfg: AutoConfig): Promise<number> {
   const now = new Date();
   const hourDubai = Number(new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Dubai', hour: '2-digit', hour12: false }).format(now));
   const startToday = new Date(`${dayKey(now)}T00:00:00+04:00`).getTime();
-  const done = await prisma.autoJob.findMany({ where: { stage: 'done', updatedAt: { gte: new Date(startToday) } }, select: { data: true, updatedAt: true }, orderBy: { updatedAt: 'desc' } });
+  // only NEW articles count: updates of old posts (refresh/replace) never use up the day's slots
+  const done = await prisma.autoJob.findMany({ where: { stage: 'done', kind: 'new', updatedAt: { gte: new Date(startToday) } }, select: { data: true, updatedAt: true }, orderBy: { updatedAt: 'desc' } });
   const publishedToday = done.filter((j) => parse(j.data).publishedMode === 'publish');
   // posts are spread over the day (4 a day = one every 6 hours), so the site gets new articles all day
   // long instead of the whole day's posts in the first hour after midnight
@@ -740,7 +742,7 @@ async function nextSlot(cfg: AutoConfig): Promise<number> {
   if (hourDubai < q.activeFrom) return startToday + q.activeFrom * 3_600_000;
   if (hourDubai >= q.activeTo) return tomorrowStart;
   // the gap counts from the last post even when it went out yesterday
-  const lastAny = await prisma.autoJob.findFirst({ where: { stage: 'done', updatedAt: { gte: new Date(Date.now() - gapMs) } }, select: { data: true, updatedAt: true }, orderBy: { updatedAt: 'desc' } });
+  const lastAny = await prisma.autoJob.findFirst({ where: { stage: 'done', kind: 'new', updatedAt: { gte: new Date(Date.now() - gapMs) } }, select: { data: true, updatedAt: true }, orderBy: { updatedAt: 'desc' } });
   const last = Math.max(publishedToday[0]?.updatedAt.getTime() || 0, lastAny && parse(lastAny.data).publishedMode === 'publish' ? lastAny.updatedAt.getTime() : 0);
   return Math.max(Date.now(), last + gapMs);
 }
