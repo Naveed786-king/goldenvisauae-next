@@ -567,11 +567,11 @@ const images: Stage = async (job, d, cfg) => {
   if (coverFailed) {
     // one more full round with new scenes before asking a human
     d.coverRounds = Number(d.coverRounds || 0) + 1;
-    if (d.coverRounds < (cfg.images.saveCredit ? 1 : 2)) {
+    if (d.coverRounds < 3) {
       // only the cover is made again (inline results are kept); new scenes through a different variant
       d.picPlan = d.picPlan.filter((p: any) => p.kind === 'cover').map((p: any) => ({ ...p, hint: undefined, types: Array.isArray(p.types) && p.types.length ? [...p.types.slice(1), p.types[0]] : p.types }));
       d.picIndex = 0;
-      await autoLog('info', `Cover failed the checks — trying a new set of scenes`, job.id);
+      await autoLog('info', `Cover design failed the checks — ChatGPT makes a new design (round ${d.coverRounds + 1})`, job.id);
       return 'images';
     }
     await hold(job.id, d, `Picture failed the quality checks (cover): ${coverFailed}`);
