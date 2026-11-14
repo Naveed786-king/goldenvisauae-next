@@ -406,10 +406,10 @@ export async function producePicture(spec: PictureSpec, ctx: { topic: string; fo
   if (cfg.images.coverStyle === 'design' && !isFakeAi()) {
     const designed = await produceDesigned(spec, ctx, cfg);
     if (designed.ok === true) return designed;
-    // credit saver: an inside picture is simply left out; a cover gets one safe photo try
-    if (cfg.images.saveCredit && spec.kind === 'inline') return designed;
-    await autoLog('warn', `Designed picture failed (${designed.reason.slice(0, 300)}), making a realistic photo instead.`, ctx.jobId);
-    return producePicture({ ...spec, safeOnly: cfg.images.saveCredit }, ctx, { ...cfg, images: { ...cfg.images, coverStyle: 'photo' } });
+    // no plain stock-style photo instead: a cover is always a ChatGPT design (the article makes a new design
+    // round when this one failed); an inside picture that failed is simply left out
+    await autoLog('warn', `Designed picture failed (${designed.reason.slice(0, 300)})`, ctx.jobId);
+    return designed;
   }
   const reasons: string[] = [];
   // covers in "banner" style: the AI makes the photo, the title/cards/logo are drawn on top in the site's style
