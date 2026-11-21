@@ -120,7 +120,7 @@ export async function tokenLinks(a: Pick<Application, 'id' | 'token'>) {
 
 export async function byToken(token: string) {
   if (!/^[a-f0-9]{32}$/.test(token)) return null;
-  return prisma.application.findUnique({ where: { token }, include: { payments: { orderBy: { createdAt: 'asc' } } } });
+  return prisma.application.findFirst({ where: { token }, include: { payments: { orderBy: { createdAt: 'asc' } } } });
 }
 
 /** Moves a file to a step: dates, step text and progress are kept in step */

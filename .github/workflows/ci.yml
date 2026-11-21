@@ -223,3 +223,31 @@ jobs:
       - name: Server log
         if: always()
         run: tail -n 120 server.log || true
+
+  # The live site keeps its data: the new tables and columns must apply on top of the current database
+  # without asking to accept data loss (the server runs "prisma db push" on every start).
+  schema-upgrade:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install
+        run: npm install --no-audit --no-fund
+      - name: Old schema with data, then the new schema
+        run: |
+          set -e
+          export DATABASE_URL="file:$PWD/upgrade.db"
+          git show origin/main:prisma/schema.prisma > old.prisma
+          npx prisma db push --skip-generate --schema old.prisma
+          sqlite3 upgrade.db "INSERT INTO User (id,name,email,passwordHash,role,createdAt,updatedAt) VALUES ('u1','Old Client','old@example.com','x','CUSTOMER',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP);"
+          sqlite3 upgrade.db "INSERT INTO Application (id,refNo,userId,service,fullName,createdAt,updatedAt) VALUES ('a1','GV-OLD-1','u1','UAE Golden Visa','Old Client',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP);"
+          sqlite3 upgrade.db "INSERT INTO Application (id,refNo,userId,service,fullName,createdAt,updatedAt) VALUES ('a2','GV-OLD-2','u1','Emirates ID','Old Client',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP);"
+          npx prisma db push --skip-generate --schema prisma/schema.prisma
+          n=$(sqlite3 upgrade.db "SELECT count(*) FROM Application;"); echo "Applications after upgrade: $n"; [ "$n" = "2" ]
+          sqlite3 upgrade.db "SELECT count(*) FROM Payment;" && sqlite3 upgrade.db "SELECT count(*) FROM NotifyLog;"
+          echo "Schema upgrade keeps the data"

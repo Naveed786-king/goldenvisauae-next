@@ -173,7 +173,7 @@ model Application {
   messages      Message[]
   payments      Payment[]
   /// secret link token for the client's file (portal links, payment returns, PDFs)
-  token         String?    @unique
+  token         String?
   /// current step id in the step list (Admin > Application steps)
   stageId       String?
   stageStatus   String?
@@ -188,6 +188,8 @@ model Application {
   advisorPhone  String?
   assignee      String?
   language      String     @default("en")
+
+  @@index([token])
 }
 
 model Payment {
