@@ -1,8 +1,11 @@
 import { ok, fail, refreshSite } from '@/lib/api';
 import { requireStaff } from '@/lib/auth';
 import { getSetting, saveSetting } from '@/lib/settings';
+import { MASK, SECRET_FIELDS } from '@/lib/portal/config';
 
-const KEYS = ['site', 'header', 'footer', 'smtp', 'translation', 'design', 'fees', 'offer'] as const;
+const KEYS = ['site', 'header', 'footer', 'smtp', 'translation', 'design', 'fees', 'offer', 'payments', 'whatsapp', 'clientMail', 'pdf', 'steps', 'portal'] as const;
+// settings with keys or business details: only admins see and change them
+const ADMIN_ONLY = ['smtp', 'payments', 'whatsapp'];
 type Key = (typeof KEYS)[number];
 
 export const dynamic = 'force-dynamic';
@@ -12,8 +15,9 @@ export async function GET(_req: Request, { params }: { params: Promise<{ key: st
   if (!s) return fail('Unauthorized', 401);
   const { key } = await params;
   if (!KEYS.includes(key as Key)) return fail('Unknown setting', 404);
-  if (key === 'smtp' && s.role !== 'ADMIN') return fail('Admins only', 403);
+  if (ADMIN_ONLY.includes(key) && s.role !== 'ADMIN') return fail('Admins only', 403);
   const value: any = await getSetting(key as Key);
+  for (const f of SECRET_FIELDS[key] || []) if (value[f]) value[f] = MASK;
   if (key === 'smtp' && value.pass) value.pass = '••••••••';
   if (key === 'translation' && value.apiKey) value.apiKey = '••••••••';
   if (key === 'translation' && value.geminiKey) value.geminiKey = '••••••••';
@@ -25,9 +29,17 @@ export async function PUT(req: Request, { params }: { params: Promise<{ key: str
   if (!s) return fail('Unauthorized', 401);
   const { key } = await params;
   if (!KEYS.includes(key as Key)) return fail('Unknown setting', 404);
-  if ((key === 'smtp' || key === 'site' || key === 'translation' || key === 'design') && s.role !== 'ADMIN') return fail('Only admins can change these settings', 403);
+  if ((ADMIN_ONLY.includes(key) || key === 'site' || key === 'translation' || key === 'design' || key === 'portal') && s.role !== 'ADMIN') return fail('Only admins can change these settings', 403);
   const { value } = await req.json().catch(() => ({}));
   if (!value || typeof value !== 'object') return fail('Invalid data');
+  if (SECRET_FIELDS[key]) {
+    const current: any = await getSetting(key as Key);
+    for (const f of SECRET_FIELDS[key]) {
+      if (value[f] === MASK) value[f] = current[f];
+      else if (typeof value[f] === 'string') value[f] = value[f].trim();
+    }
+  }
+  if (key === 'portal' && typeof value.url === 'string') value.url = value.url.trim().replace(/\/+$/, '');
   if (key === 'smtp') {
     const current: any = await getSetting('smtp');
     if (value.pass === '••••••••') value.pass = current.pass;

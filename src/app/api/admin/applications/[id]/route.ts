@@ -3,6 +3,8 @@ import { ok, fail } from '@/lib/api';
 import { requireStaff } from '@/lib/auth';
 import { APPLICATION_STATUSES } from '@/lib/defaults';
 import { sendMail, escapeHtml } from '@/lib/mail';
+import { decisionOf, ensureToken, quoteGov, quoteOf, quoteTotal, quoteVat, tokenLinks } from '@/lib/portal/files';
+import { stepView } from '@/lib/portal/view';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,12 +18,26 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
       user: { select: { id: true, name: true, email: true, phone: true, nationality: true, createdAt: true } },
       documents: { orderBy: { createdAt: 'desc' } },
       messages: { orderBy: { createdAt: 'asc' }, include: { sender: { select: { name: true } } } },
+      payments: { orderBy: { createdAt: 'asc' } },
     },
   });
   if (!app) return fail('Not found', 404);
+  await ensureToken(app);
+  const links = await tokenLinks(app);
+  const q = quoteOf(app);
+  const log = await prisma.notifyLog.findMany({ where: { applicationId: id }, orderBy: { createdAt: 'desc' }, take: 30 });
   if (!app.seen) await prisma.application.update({ where: { id }, data: { seen: true } });
   await prisma.message.updateMany({ where: { applicationId: id, fromAdmin: false, read: false }, data: { read: true } });
-  return ok({ application: app });
+  return ok({
+    application: {
+      ...app,
+      steps: await stepView(app),
+      quoteData: { ...q, gov: quoteGov(q), vat: quoteVat(q), total: quoteTotal(q) },
+      decisionData: decisionOf(app),
+      links: { quotePdf: links.quotePdf, receipt: Object.fromEntries(app.payments.filter((p) => p.status === 'paid').map((p) => [p.id, links.receiptPdf(p.id)])), pay: Object.fromEntries(app.payments.map((p) => [p.id, links.pay(p.id)])) },
+      log,
+    },
+  });
 }
 
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {

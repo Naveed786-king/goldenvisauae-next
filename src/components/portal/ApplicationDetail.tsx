@@ -1,12 +1,10 @@
 'use client';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Send, Upload, FileText, LoaderCircle, Download, Check, Circle } from 'lucide-react';
-import { APPLICATION_STATUSES } from '@/lib/defaults';
+import { ArrowLeft, Send, Upload, FileText, LoaderCircle, Download } from 'lucide-react';
 import { StatusBadge, Progress } from '@/components/ui/Status';
+import { DecisionBanner, StepsCard, QuoteCard, PaymentsCard, AdvisorCard } from './FileCards';
 import { cn, formatDate, formatDateTime } from '@/lib/utils';
-
-const FLOW = ['submitted', 'under_review', 'processing', 'initial_approval', 'medical_biometrics', 'approved', 'completed'];
 
 export default function ApplicationDetail({ id }: { id: string }) {
   const [app, setApp] = useState<any>(null);
@@ -65,8 +63,7 @@ export default function ApplicationDetail({ id }: { id: string }) {
   if (error) return <p className="rounded-2xl bg-white p-8 text-center text-red-600">{error}</p>;
   if (!app) return <div className="grid place-items-center py-24"><LoaderCircle className="h-8 w-8 animate-spin text-gold" /></div>;
 
-  const currentIdx = FLOW.indexOf(app.status);
-  const terminalBad = ['rejected', 'cancelled'].includes(app.status);
+  const current = app.steps?.find((x: any) => x.current);
 
   return (
     <div className="space-y-6">
@@ -92,25 +89,25 @@ export default function ApplicationDetail({ id }: { id: string }) {
           </div>
         )}
 
-        {!terminalBad && (
-          <ol className="mt-8 grid gap-3 sm:grid-cols-4 lg:grid-cols-7">
-            {FLOW.map((s, i) => {
-              const info = APPLICATION_STATUSES.find((x) => x.value === s)!;
-              const done = currentIdx >= i;
-              return (
-                <li key={s} className={cn('relative rounded-2xl p-3 text-center ring-1', done ? 'bg-gold/10 ring-gold/40' : 'ring-ink/5')}>
-                  <span className={cn('mx-auto grid h-8 w-8 place-items-center rounded-full', done ? 'bg-gold text-ink' : 'bg-ink/5 text-ink/30')}>
-                    {done ? <Check className="h-4 w-4" strokeWidth={3} /> : <Circle className="h-3 w-3" />}
-                  </span>
-                  <p className={cn('mt-2 text-[0.7rem] font-bold leading-tight', done ? 'text-ink' : 'text-ink/40')}>{info.label}</p>
-                </li>
-              );
-            })}
-          </ol>
+        {current && (
+          <div className="mt-6 rounded-2xl bg-sand p-5">
+            <p className="text-xs font-extrabold uppercase tracking-wider text-gold-deep">Current step: {current.name}</p>
+            <p className="mt-1 text-sm text-ink/80">{app.nextStep || current.next}</p>
+          </div>
         )}
         {app.status === 'documents_required' && (
           <p className="mt-6 rounded-2xl bg-amber-50 px-5 py-4 text-sm font-semibold text-amber-800">Action needed: please upload the requested documents below.</p>
         )}
+      </div>
+
+      {app.decision && <DecisionBanner d={app.decision} />}
+      <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
+        <div className="space-y-6">
+          {app.quote && <QuoteCard id={app.id} q={app.quote} currency={app.pay.currency} onChange={load} />}
+          {app.payments?.length > 0 && <PaymentsCard payments={app.payments} currency={app.pay.currency} />}
+          <StepsCard steps={app.steps || []} />
+        </div>
+        <div className="space-y-6">{app.advisor && <AdvisorCard a={app.advisor} refNo={app.refNo} />}</div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
@@ -126,6 +123,7 @@ export default function ApplicationDetail({ id }: { id: string }) {
               <div key={m.id} className={cn('flex', m.fromAdmin ? 'justify-start' : 'justify-end')}>
                 <div className={cn('max-w-[80%] rounded-2xl px-4 py-2.5 text-sm shadow-sm', m.fromAdmin ? 'bg-white text-ink rounded-bl-sm' : 'bg-ink text-white rounded-br-sm')}>
                   {m.fromAdmin && <p className="text-[0.65rem] font-extrabold uppercase tracking-wider text-gold-deep mb-0.5">Consultant</p>}
+                  {!m.fromAdmin && m.channel === 'whatsapp' && <p className="text-[0.65rem] font-extrabold uppercase tracking-wider text-emerald-300 mb-0.5">Via WhatsApp</p>}
                   <p className="whitespace-pre-line">{m.body}</p>
                   <p className={cn('mt-1 text-[0.65rem]', m.fromAdmin ? 'text-ink/40' : 'text-white/45')}>{formatDateTime(m.createdAt)}</p>
                 </div>

@@ -171,6 +171,67 @@ model Application {
   updatedAt     DateTime   @updatedAt
   documents     Document[]
   messages      Message[]
+  payments      Payment[]
+  /// secret link token for the client's file (portal links, payment returns, PDFs)
+  token         String?    @unique
+  /// current step id in the step list (Admin > Application steps)
+  stageId       String?
+  stageStatus   String?
+  stageDates    String?
+  nextStep      String?
+  expected      String?
+  /// JSON: lines, serviceFee, vatPct, notes, validUntil, sentAt, acceptedAt
+  quote         String?
+  /// JSON: result (approved|rejected|on_hold|withdrawn), reason, at, refNo, validTo
+  decision      String?
+  advisorName   String?
+  advisorPhone  String?
+  assignee      String?
+  language      String     @default("en")
+}
+
+model Payment {
+  id            String      @id @default(cuid())
+  applicationId String
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  label         String
+  amount        Float
+  fee           Float       @default(0)
+  card          String?
+  status        String      @default("due")
+  method        String?
+  link          String?
+  receiptNo     String?     @unique
+  provider      String?
+  providerId    String?
+  providerRef   String?
+  txn           String?
+  slipPath      String?
+  tries         Int         @default(0)
+  startedAt     DateTime?
+  paidAt        DateTime?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@index([applicationId])
+  @@index([providerId])
+}
+
+model NotifyLog {
+  id            String   @id @default(cuid())
+  channel       String
+  direction     String   @default("out")
+  to            String
+  event         String
+  text          String?
+  ok            Boolean  @default(false)
+  error         String?
+  providerId    String?
+  applicationId String?
+  createdAt     DateTime @default(now())
+
+  @@index([to])
+  @@index([createdAt])
 }
 
 model Document {
@@ -182,6 +243,7 @@ model Document {
   mime          String?
   size          Int         @default(0)
   uploadedBy    String      @default("customer")
+  shared        Boolean     @default(true)
   createdAt     DateTime    @default(now())
 }
 
@@ -194,6 +256,7 @@ model Message {
   body          String
   fromAdmin     Boolean     @default(false)
   read          Boolean     @default(false)
+  channel       String      @default("portal")
   createdAt     DateTime    @default(now())
 }
 

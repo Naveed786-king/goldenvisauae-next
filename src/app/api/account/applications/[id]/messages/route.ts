@@ -2,6 +2,7 @@ import { prisma } from '@/lib/db';
 import { ok, fail, rateLimit } from '@/lib/api';
 import { getSession } from '@/lib/auth';
 import { notifyAdmin, escapeHtml } from '@/lib/mail';
+import { notifyTeam } from '@/lib/portal/notify';
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -16,5 +17,6 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const msg = await prisma.message.create({ data: { applicationId: id, senderId: s.sub, body: text, fromAdmin: false } });
   await prisma.application.update({ where: { id }, data: { seen: false } });
   notifyAdmin(`New message on ${app.refNo} from ${s.name}`, `<p><b>${escapeHtml(s.name)}</b> wrote:</p><blockquote>${escapeHtml(text)}</blockquote>`, undefined, 'messages');
+  void notifyTeam('teamMessage', { name: app.fullName, ref: app.refNo, text: text.slice(0, 500) }, app.id, { email: false });
   return ok({ message: msg });
 }

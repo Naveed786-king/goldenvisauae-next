@@ -3,7 +3,9 @@ import { ok, fail, rateLimit, clientIp, isEmail } from '@/lib/api';
 import { getSession, hashPassword, startSession, isStaff, checkPassword } from '@/lib/auth';
 import { savePrivateFile } from '@/lib/upload';
 import { makeRef } from '@/lib/utils';
-import { notifyAdmin, rowsTable, sendMail, escapeHtml } from '@/lib/mail';
+import { notifyAdmin, rowsTable } from '@/lib/mail';
+import { ensureToken, setStage, stepsFor } from '@/lib/portal/files';
+import { notifyClient, notifyTeam } from '@/lib/portal/notify';
 
 export async function POST(req: Request) {
   if (!rateLimit('apply:' + clientIp(req), 5, 10 * 60_000)) return fail('Too many submissions. Please try again later.', 429);
@@ -96,13 +98,16 @@ export async function POST(req: Request) {
     app.email || undefined,
     'applications'
   );
-  if (app.email) {
-    sendMail({
-      to: app.email,
-      subject: `Application received — ${refNo}`,
-      html: `<p>Dear ${escapeHtml(fullName)},</p><p>Thank you! We have received your application for <b>${escapeHtml(service)}</b>.</p><p>Your reference number is <b style="font-size:18px">${refNo}</b>.</p><p>You can track your application, upload documents and message your consultant from your account at any time.</p>`,
-    });
+  // first step, secret link token, welcome message (email + WhatsApp) and the team's WhatsApp alert
+  try {
+    await ensureToken(app);
+    const steps = await stepsFor(service);
+    if (steps[0]) await setStage(app.id, steps[0].id);
+  } catch (e) {
+    console.error('[apply] step setup failed', (e as Error).message);
   }
+  void notifyClient(app, 'welcome');
+  void notifyTeam('teamApplication', { name: fullName, phone, email: app.email || '', service, ref: refNo }, app.id, { email: false });
 
   return ok({ ok: true, id: app.id, refNo });
 }

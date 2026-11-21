@@ -10,7 +10,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   if (!s) return new Response('Unauthorized', { status: 401 });
   const doc = await prisma.document.findUnique({ where: { id }, include: { application: true } });
   if (!doc) return new Response('Not found', { status: 404 });
-  if (!isStaff(s.role) && doc.application.userId !== s.sub) return new Response('Forbidden', { status: 403 });
+  if (!isStaff(s.role) && (doc.application.userId !== s.sub || doc.shared === false)) return new Response('Forbidden', { status: 403 });
   const p = resolveStored(doc.path);
   if (!p) return new Response('Not found', { status: 404 });
   try {

@@ -13,7 +13,7 @@ export default async function AccountPage() {
   const apps = await prisma.application.findMany({
     where: { userId: s!.sub },
     orderBy: { createdAt: 'desc' },
-    include: { _count: { select: { documents: true } }, messages: { where: { fromAdmin: true, read: false }, select: { id: true } } },
+    include: { _count: { select: { documents: true, payments: { where: { status: 'due' } } } }, messages: { where: { fromAdmin: true, read: false }, select: { id: true } } },
   });
   const unread = apps.reduce((n, a) => n + a.messages.length, 0);
   return (
@@ -53,6 +53,7 @@ export default async function AccountPage() {
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-mono text-xs font-bold text-ink/50">{a.refNo}</span>
                     <StatusBadge status={a.status} />
+                    {a._count.payments > 0 && <span className="rounded-full bg-gold px-2 py-0.5 text-[0.65rem] font-bold text-ink">Payment due</span>}
                     {a.messages.length > 0 && <span className="rounded-full bg-red-500 px-2 py-0.5 text-[0.65rem] font-bold text-white">{a.messages.length} new message{a.messages.length > 1 ? 's' : ''}</span>}
                   </div>
                   <p className="mt-2 font-bold text-ink">{a.service}</p>
