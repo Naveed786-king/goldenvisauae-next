@@ -105,6 +105,50 @@ jobs:
           RES=$(curl -s -b cookies.txt -X POST http://localhost:3000/api/admin/translations -H 'Content-Type: application/json' -d '{"action":"test","locale":"de"}')
           echo "Translation test: $RES"
           echo "$RES" | grep -q '"result"'
+          # --- client system: apply → quote → accept → payment → mark paid → PDFs ---
+          node -e "
+            const B='http://localhost:3000';
+            const adminCookie=require('fs').readFileSync('cookies.txt','utf8').split('\n').filter(l=>l.includes('rgv_session')).map(l=>'rgv_session='+l.split('\t').pop()).join('');
+            const die=(m,x)=>{console.log('::error title=Client system::'+m, x?JSON.stringify(x).slice(0,400):'');process.exit(1)};
+            (async()=>{
+              const fd=new FormData();
+              for(const [k,v] of Object.entries({service:'UAE Golden Visa',fullName:'Client Test',email:'client.ci@example.com',phone:'+971501234567',password:'ClientPass123',nationality:'India'})) fd.append(k,v);
+              const r=await fetch(B+'/api/apply',{method:'POST',body:fd,redirect:'manual'});
+              const ap=await r.json(); if(!r.ok) die('apply failed',ap);
+              const cc=(r.headers.getSetCookie?r.headers.getSetCookie():[]).map(c=>c.split(';')[0]).join('; ');
+              const A=(u,o={})=>fetch(B+u,{...o,headers:{'Content-Type':'application/json',cookie:adminCookie,origin:B}}).then(async x=>({s:x.status,j:await x.json().catch(()=>({}))}));
+              const C=(u,o={})=>fetch(B+u,{...o,headers:{'Content-Type':'application/json',cookie:cc,origin:B}}).then(async x=>({s:x.status,j:await x.json().catch(()=>({}))}));
+              let g=await A('/api/admin/applications/'+ap.id); if(g.s!==200) die('admin view',g.j);
+              if(!g.j.application.steps?.length||!g.j.application.steps.find(s=>s.current)) die('steps missing',g.j.application.steps);
+              console.log('Steps:',g.j.application.steps.length,'current:',g.j.application.steps.find(s=>s.current).name);
+              let x=await A('/api/admin/applications/'+ap.id+'/file',{method:'POST',body:JSON.stringify({action:'quote',lines:[{label:'ICP fee',amount:'4000'}],serviceFee:'5000',vatPct:'5',send:true,notify:false})}); if(x.s!==200) die('quote',x.j);
+              let c=await C('/api/account/applications/'+ap.id); if(c.s!==200||!c.j.application.quote) die('client quote',c.j);
+              if(Math.abs(c.j.application.quote.total-9250)>0.01) die('quote total',c.j.application.quote);
+              if('token' in c.j.application) die('token leaked to client JSON');
+              x=await C('/api/account/applications/'+ap.id+'/accept',{method:'POST'}); if(x.s!==200) die('accept',x.j);
+              x=await A('/api/admin/applications/'+ap.id+'/file',{method:'POST',body:JSON.stringify({action:'payment',label:'Golden Visa full payment',amount:'9250',notify:false})}); if(x.s!==200) die('payment',x.j);
+              g=await A('/api/admin/applications/'+ap.id); const p=g.j.application.payments[0]; if(!p||p.status!=='due') die('payment due',g.j.application.payments);
+              const quotePdf=g.j.application.links.quotePdf.replace(/^https?:\/\/[^/]+/,'');
+              let pr=await fetch(B+quotePdf); if(pr.status!==200||!(pr.headers.get('content-type')||'').includes('pdf')) die('quote pdf '+pr.status);
+              const payPage=await fetch(B+'/pay/'+quotePdf.split('/')[3]+'/'+p.id); if(payPage.status!==200) die('pay page '+payPage.status);
+              x=await A('/api/admin/applications/'+ap.id+'/file',{method:'POST',body:JSON.stringify({action:'markPaid',pid:p.id})}); if(x.s!==200) die('mark paid',x.j);
+              x=await A('/api/admin/applications/'+ap.id+'/file',{method:'POST',body:JSON.stringify({action:'markPaid',pid:p.id})}); if(x.s===200) die('paid twice');
+              g=await A('/api/admin/applications/'+ap.id); const pp=g.j.application.payments[0]; if(pp.status!=='paid'||!pp.receiptNo) die('paid',pp);
+              const cur=g.j.application.steps.find(s=>s.current); if(cur.id!=='paid') die('step after payment',cur);
+              pr=await fetch(B+g.j.application.links.receipt[pp.id].replace(/^https?:\/\/[^/]+/,'')); if(pr.status!==200||!(pr.headers.get('content-type')||'').includes('pdf')) die('receipt pdf '+pr.status);
+              const bad=await fetch(B+'/api/portal/'+'0'.repeat(32)+'/quote'); if(bad.status!==404) die('wrong token must be 404');
+              x=await A('/api/admin/applications/'+ap.id+'/file',{method:'POST',body:JSON.stringify({action:'decision',result:'approved',reason:'Approved by ICP',notify:false})}); if(x.s!==200) die('decision',x.j);
+              c=await C('/api/account/applications/'+ap.id); if(c.j.application.decision?.result!=='approved') die('client decision',c.j.application.decision);
+              const wa=await fetch(B+'/api/whatsapp/webhook',{method:'POST',body:'{}'}); if(wa.status!==401) die('whatsapp webhook must refuse unsigned calls, got '+wa.status);
+              const st=await fetch(B+'/api/pay/webhook/stripe',{method:'POST',body:'{}'}); if(st.status!==400) die('stripe webhook must refuse unsigned calls, got '+st.status);
+              for (const k of ['payments','whatsapp','clientMail','pdf','steps','portal']) { const r=await A('/api/admin/settings/'+k); if(r.s!==200) die('settings '+k,r.j); }
+              console.log('Client system flow OK: quote, accept, payment, receipt',pp.receiptNo,'decision');
+            })().catch(e=>die(e.message))"
+          code=$(curl -s -o /dev/null -w "%{http_code}" -H "Host: app.goldenvisauae.ai" http://localhost:3000/); echo "portal host / -> $code"; [ "$code" = "307" ]
+          curl -s -o /dev/null -w "%{redirect_url}\n" -H "Host: app.goldenvisauae.ai" http://localhost:3000/ | grep -q '/account' || { echo "::error title=Check failed::portal host goes to /account"; exit 1; }
+          code=$(curl -s -o /dev/null -w "%{http_code}" -H "Host: app.goldenvisauae.ai" http://localhost:3000/login); echo "portal host /login -> $code"; [ "$code" = "200" ]
+          curl -s -o /dev/null -w "%{redirect_url}\n" -H "Host: app.goldenvisauae.ai" http://localhost:3000/blog | grep -q 'localhost:3000/blog' || { echo "::error title=Check failed::portal host sends other pages to the main site"; exit 1; }
+          code=$(curl -s -o /dev/null -w "%{http_code}" -b cookies.txt http://localhost:3000/admin/client-system); echo "/admin/client-system -> $code"; [ "$code" = "200" ]
           echo "All smoke tests passed"
       - name: Server log
         if: always()
@@ -179,3 +223,31 @@ jobs:
       - name: Server log
         if: always()
         run: tail -n 120 server.log || true
+
+  # The live site keeps its data: the new tables and columns must apply on top of the current database
+  # without asking to accept data loss (the server runs "prisma db push" on every start).
+  schema-upgrade:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install
+        run: npm install --no-audit --no-fund
+      - name: Old schema with data, then the new schema
+        run: |
+          set -e
+          export DATABASE_URL="file:$PWD/upgrade.db"
+          git show origin/main:prisma/schema.prisma > old.prisma
+          npx prisma db push --skip-generate --schema old.prisma
+          sqlite3 upgrade.db "INSERT INTO User (id,name,email,passwordHash,role,createdAt,updatedAt) VALUES ('u1','Old Client','old@example.com','x','CUSTOMER',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP);"
+          sqlite3 upgrade.db "INSERT INTO Application (id,refNo,userId,service,fullName,createdAt,updatedAt) VALUES ('a1','GV-OLD-1','u1','UAE Golden Visa','Old Client',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP);"
+          sqlite3 upgrade.db "INSERT INTO Application (id,refNo,userId,service,fullName,createdAt,updatedAt) VALUES ('a2','GV-OLD-2','u1','Emirates ID','Old Client',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP);"
+          npx prisma db push --skip-generate --schema prisma/schema.prisma
+          n=$(sqlite3 upgrade.db "SELECT count(*) FROM Application;"); echo "Applications after upgrade: $n"; [ "$n" = "2" ]
+          sqlite3 upgrade.db "SELECT count(*) FROM Payment;" && sqlite3 upgrade.db "SELECT count(*) FROM NotifyLog;"
+          echo "Schema upgrade keeps the data"

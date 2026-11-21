@@ -20,7 +20,9 @@ function sameSite(origin: string, req: NextRequest): boolean {
   return own.includes(o);
 }
 // endpoints other systems call (they never send a browser Origin anyway)
-const foreignOriginAllowed = (p: string) => p.startsWith('/api/cron/');
+const foreignOriginAllowed = (p: string) => p.startsWith('/api/cron/') || p.startsWith('/api/pay/webhook/') || p === '/api/whatsapp/webhook';
+// pages served on the client dashboard subdomain
+const PORTAL_PATHS = ['/account', '/login', '/register', '/forgot-password', '/reset-password', '/apply', '/pay'];
 
 export async function middleware(req: NextRequest) {
   // 1) Language prefix: /ar/about-us -> render /about-us in Arabic
@@ -31,6 +33,18 @@ export async function middleware(req: NextRequest) {
   const locale = split.locale === DEFAULT_LOCALE && req.headers.get('x-locale-rewrite') === '1' && isLocale(prev) ? prev : split.locale;
   const path = split.path;
   const pathname = path;
+
+  // Client dashboard subdomain (app.goldenvisauae.ai): serves the account pages; everything else lives on the main site
+  const reqHost = bare(String(req.headers.get('x-forwarded-host') || req.headers.get('host') || '').split(',')[0].trim());
+  const portalHost = bare(process.env.PORTAL_HOST || 'app.goldenvisauae.ai');
+  const onPortal = !!reqHost && reqHost === portalHost;
+  if (onPortal && !pathname.startsWith('/api/')) {
+    if (pathname === '/' || pathname === '') return NextResponse.redirect(new URL(locale === DEFAULT_LOCALE ? '/account' : `/${locale}/account`, req.url));
+    if (!PORTAL_PATHS.some((p) => pathname === p || pathname.startsWith(p + '/'))) {
+      const main = (process.env.NEXT_PUBLIC_SITE_URL || 'https://goldenvisauae.ai').replace(/\/+$/, '');
+      return NextResponse.redirect(main + req.nextUrl.pathname + req.nextUrl.search);
+    }
+  }
 
   // Requests that change something must come from this website itself (stops other sites from
   // sending forms or scripts to our API with a visitor's login). Requests without an Origin (server
@@ -83,6 +97,7 @@ export async function middleware(req: NextRequest) {
   const headers = new Headers(req.headers);
   headers.set('x-locale', locale);
   headers.set('x-pathname', pathname);
+  if (onPortal) headers.set('x-portal', '1');
 
   if (locale !== DEFAULT_LOCALE) {
     const url = req.nextUrl.clone();

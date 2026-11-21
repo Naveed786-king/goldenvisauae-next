@@ -14,9 +14,54 @@ import {
 import { defaultDesign, DesignSettings } from './design';
 import { defaultFees, FeeSettings, feeLabelLists } from './fees';
 import { defaultOffer, OfferSettings, OFFER_TEXT_KEYS } from './offer';
+import {
+  defaultPayments,
+  defaultWhatsApp,
+  defaultClientMail,
+  defaultPdf,
+  defaultSteps,
+  defaultPortal,
+  type PaymentSettings,
+  type WhatsAppSettings,
+  type ClientMailSettings,
+  type PdfSettings,
+  type StepSettings,
+  type PortalSettings,
+} from './portal/config';
 
-type Map = { site: SiteSettings; header: HeaderSettings; footer: FooterSettings; smtp: SmtpSettings; translation: TranslationSettings; design: DesignSettings; fees: FeeSettings; offer: OfferSettings };
-const DEFAULTS: Map = { site: defaultSite, header: defaultHeader, footer: defaultFooter, smtp: defaultSmtp, translation: defaultTranslation, design: defaultDesign, fees: defaultFees, offer: defaultOffer };
+type Map = {
+  site: SiteSettings;
+  header: HeaderSettings;
+  footer: FooterSettings;
+  smtp: SmtpSettings;
+  translation: TranslationSettings;
+  design: DesignSettings;
+  fees: FeeSettings;
+  offer: OfferSettings;
+  payments: PaymentSettings;
+  whatsapp: WhatsAppSettings;
+  clientMail: ClientMailSettings;
+  pdf: PdfSettings;
+  steps: StepSettings;
+  portal: PortalSettings;
+};
+const DEFAULTS: Map = {
+  site: defaultSite,
+  header: defaultHeader,
+  footer: defaultFooter,
+  smtp: defaultSmtp,
+  translation: defaultTranslation,
+  design: defaultDesign,
+  fees: defaultFees,
+  offer: defaultOffer,
+  payments: defaultPayments,
+  whatsapp: defaultWhatsApp,
+  clientMail: defaultClientMail,
+  pdf: defaultPdf,
+  steps: defaultSteps,
+  portal: defaultPortal,
+};
+export type SettingKey = keyof Map;
 
 function deepMerge<T>(base: T, over: any): T {
   if (Array.isArray(base)) return (Array.isArray(over) ? over : base) as T;

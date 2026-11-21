@@ -36,6 +36,7 @@ import {
   Megaphone,
   Palette,
   DatabaseBackup,
+  CreditCard,
 } from 'lucide-react';
 import { Toaster, toast } from './ui';
 import { cn, formatDateTime } from '@/lib/utils';
@@ -50,6 +51,7 @@ const NAV = [
       { href: '/admin/leads', label: 'Leads & enquiries', icon: Inbox, badge: 'newLeads' },
       { href: '/admin/applications', label: 'Applications', icon: FolderKanban, badge: 'apps' },
       { href: '/admin/customers', label: 'Customers', icon: Users },
+      { href: '/admin/client-system', label: 'Client system', icon: CreditCard, adminOnly: true },
       { href: '/admin/subscribers', label: 'Subscribers', icon: Mail },
       { href: '/admin/chatbot', label: 'AI chatbot', icon: Bot, adminOnly: true },
     ],

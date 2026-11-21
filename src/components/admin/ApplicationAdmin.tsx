@@ -3,10 +3,10 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Send, Upload, FileText, Trash2, Save, Mail, Phone, LoaderCircle } from 'lucide-react';
-import { APPLICATION_STATUSES } from '@/lib/defaults';
-import { StatusBadge, Progress } from '@/components/ui/Status';
+import { StatusBadge } from '@/components/ui/Status';
+import FileAdmin, { NotifyLogCard } from './FileAdmin';
 import { SocialIcon } from '@/components/ui/Icon';
-import { Btn, Card, Spinner, api, toast, Toggle } from './ui';
+import { Btn, Card, Spinner, api, toast } from './ui';
 import { cn, formatDate, formatDateTime } from '@/lib/utils';
 
 export default function ApplicationAdmin({ id, isAdmin }: { id: string; isAdmin: boolean }) {
@@ -17,6 +17,7 @@ export default function ApplicationAdmin({ id, isAdmin }: { id: string; isAdmin:
   const [emailMsg, setEmailMsg] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [privateDoc, setPrivateDoc] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const chatRef = useRef<HTMLDivElement>(null);
   const loaded = useRef(false);
@@ -43,8 +44,8 @@ export default function ApplicationAdmin({ id, isAdmin }: { id: string; isAdmin:
   async function save() {
     setSaving(true);
     try {
-      await api(`/api/admin/applications/${id}`, 'PUT', form);
-      toast('Application updated' + (form.notify && form.status !== app.status ? ' — client notified' : ''));
+      await api(`/api/admin/applications/${id}`, 'PUT', { adminNote: form.adminNote });
+      toast('Note saved');
       load();
     } catch (e: any) {
       toast(e.message, 'error');
@@ -66,9 +67,10 @@ export default function ApplicationAdmin({ id, isAdmin }: { id: string; isAdmin:
     setUploading(true);
     const fd = new FormData();
     Array.from(list).forEach((f) => fd.append('files', f));
+    if (privateDoc) fd.append('private', '1');
     try {
       await api(`/api/admin/applications/${id}/documents`, 'POST', fd);
-      toast('Document shared with client');
+      toast(privateDoc ? 'Document saved (team only)' : 'Document shared with the client');
       load();
     } catch (e: any) {
       toast(e.message, 'error');
@@ -113,42 +115,16 @@ export default function ApplicationAdmin({ id, isAdmin }: { id: string; isAdmin:
 
       <div className="grid gap-6 xl:grid-cols-[1fr_380px]">
         <div className="space-y-6 min-w-0">
-          <Card title="Update status" className="p-0">
-            <div className="grid gap-4 p-5 md:grid-cols-2">
-              <div>
-                <label className="admin-label">Status</label>
-                <select
-                  className="admin-input"
-                  value={form.status}
-                  onChange={(e) => {
-                    const s = APPLICATION_STATUSES.find((x) => x.value === e.target.value)!;
-                    setForm({ ...form, status: s.value, progress: s.progress });
-                  }}
-                >
-                  {APPLICATION_STATUSES.map((s) => (
-                    <option key={s.value} value={s.value}>
-                      {s.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="admin-label">Progress: {form.progress}%</label>
-                <input type="range" min={0} max={100} step={5} value={form.progress} onChange={(e) => setForm({ ...form, progress: Number(e.target.value) })} className="mt-3 w-full accent-[var(--brand-gold)]" />
-              </div>
-              <div className="md:col-span-2">
-                <label className="admin-label">Note for the client (shown in their portal)</label>
-                <textarea className="admin-input min-h-[80px]" value={form.adminNote} onChange={(e) => setForm({ ...form, adminNote: e.target.value })} placeholder="e.g. Please upload a clear copy of your passport and Oqood." />
-              </div>
-              <div className="md:col-span-2 flex flex-wrap items-center justify-between gap-3">
-                <Toggle checked={form.notify} onChange={(v) => setForm({ ...form, notify: v })} label="Email the client when status changes" />
+          <FileAdmin app={app} reload={load} />
+
+          <Card title="Note for the client (shown at the top of their file)" className="p-0">
+            <div className="space-y-3 p-5">
+              <textarea className="admin-input min-h-[70px]" value={form.adminNote} onChange={(e) => setForm({ ...form, adminNote: e.target.value })} placeholder="e.g. Please upload a clear copy of your passport and title deed." />
+              <div className="flex justify-end">
                 <Btn onClick={save} loading={saving}>
-                  <Save className="h-4 w-4" /> Save changes
+                  <Save className="h-4 w-4" /> Save note
                 </Btn>
               </div>
-            </div>
-            <div className="px-5 pb-5">
-              <Progress value={app.progress} />
             </div>
           </Card>
 
@@ -160,7 +136,7 @@ export default function ApplicationAdmin({ id, isAdmin }: { id: string; isAdmin:
                   <div className={cn('max-w-[80%] rounded-2xl px-4 py-2.5 text-sm shadow-sm', m.fromAdmin ? 'bg-ink text-white rounded-br-sm' : 'bg-white text-gray-800 rounded-bl-sm ring-1 ring-gray-200')}>
                     <p className={cn('mb-0.5 text-[0.65rem] font-bold uppercase tracking-wider', m.fromAdmin ? 'text-gold' : 'text-gray-400')}>{m.fromAdmin ? m.sender?.name || 'Team' : app.fullName}</p>
                     <p className="whitespace-pre-line">{m.body}</p>
-                    <p className={cn('mt-1 text-[0.65rem]', m.fromAdmin ? 'text-white/40' : 'text-gray-400')}>{formatDateTime(m.createdAt)}</p>
+                    <p className={cn('mt-1 text-[0.65rem]', m.fromAdmin ? 'text-white/40' : 'text-gray-400')}>{formatDateTime(m.createdAt)}{m.channel === 'whatsapp' ? ' · via WhatsApp' : ''}</p>
                   </div>
                 </div>
               ))}
@@ -185,7 +161,7 @@ export default function ApplicationAdmin({ id, isAdmin }: { id: string; isAdmin:
                 </Btn>
               </div>
               <label className="mt-2 flex items-center gap-2 text-xs text-gray-500">
-                <input type="checkbox" checked={emailMsg} onChange={(e) => setEmailMsg(e.target.checked)} className="accent-[var(--brand-gold)]" /> Also send by email
+                <input type="checkbox" checked={emailMsg} onChange={(e) => setEmailMsg(e.target.checked)} className="accent-[var(--brand-gold)]" /> Also send by email and WhatsApp
               </label>
             </form>
           </Card>
@@ -242,8 +218,11 @@ export default function ApplicationAdmin({ id, isAdmin }: { id: string; isAdmin:
             title={`Documents (${app.documents.length})`}
             actions={
               <>
+                <label className="flex items-center gap-1 text-[0.7rem] text-gray-500">
+                  <input type="checkbox" checked={privateDoc} onChange={(e) => setPrivateDoc(e.target.checked)} className="accent-[var(--brand-gold)]" /> Team only
+                </label>
                 <Btn size="sm" variant="dark" onClick={() => fileRef.current?.click()} loading={uploading}>
-                  <Upload className="h-3.5 w-3.5" /> Share file
+                  <Upload className="h-3.5 w-3.5" /> {privateDoc ? 'Add file' : 'Share file'}
                 </Btn>
                 <input ref={fileRef} type="file" multiple hidden onChange={(e) => upload(e.target.files)} />
               </>
@@ -258,7 +237,7 @@ export default function ApplicationAdmin({ id, isAdmin }: { id: string; isAdmin:
                   <a href={`/api/files/${d.id}`} target="_blank" rel="noopener noreferrer" className="flex-1 truncate font-medium hover:text-gold-deep">
                     {d.name}
                   </a>
-                  <span className={cn('rounded px-1.5 py-0.5 text-[0.6rem] font-bold', d.uploadedBy === 'admin' ? 'bg-ink text-gold' : 'bg-blue-100 text-blue-700')}>{d.uploadedBy === 'admin' ? 'US' : 'CLIENT'}</span>
+                  <span className={cn('rounded px-1.5 py-0.5 text-[0.6rem] font-bold', d.uploadedBy === 'admin' ? 'bg-ink text-gold' : 'bg-blue-100 text-blue-700')}>{d.uploadedBy === 'admin' ? (d.shared === false ? 'TEAM ONLY' : 'US') : 'CLIENT'}</span>
                   <button onClick={() => delDoc(d.id)} className="text-gray-300 hover:text-red-600" title="Delete">
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -266,6 +245,7 @@ export default function ApplicationAdmin({ id, isAdmin }: { id: string; isAdmin:
               ))}
             </ul>
           </Card>
+          <NotifyLogCard log={app.log} />
         </div>
       </div>
     </div>
