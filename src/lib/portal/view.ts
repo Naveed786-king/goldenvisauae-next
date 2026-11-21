@@ -2,12 +2,13 @@
 import type { Application, Payment } from '@prisma/client';
 import { getSetting } from '@/lib/settings';
 import { STEP_STATE_LABEL } from './config';
-import { charged, decisionOf, DECISION_LABEL, quoteGov, quoteOf, quoteTotal, quoteVat, stageDatesOf, stageStatusOf, stepState, stepsFor, tokenLinks } from './files';
+import { charged, currentStageId, decisionOf, DECISION_LABEL, quoteGov, quoteOf, quoteTotal, quoteVat, stageDatesOf, stageStatusOf, stepState, stepsFor, tokenLinks } from './files';
 import { payOnline } from './payments';
 
-export async function stepView(a: Pick<Application, 'service' | 'stageId' | 'stageStatus' | 'stageDates'>) {
+export async function stepView(a: Pick<Application, 'service' | 'stageId' | 'stageStatus' | 'stageDates' | 'status'>) {
   const steps = await stepsFor(a.service);
-  const cur = steps.findIndex((s) => s.id === a.stageId);
+  const curId = currentStageId(a, steps);
+  const cur = steps.findIndex((s) => s.id === curId);
   const over = stageStatusOf(a);
   const dates = stageDatesOf(a);
   return steps.map((s, i) => {

@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/db';
 import { ok, fail } from '@/lib/api';
 import { getSession } from '@/lib/auth';
-import { money, quoteOf, quoteTotal, setStage, stepsFor } from '@/lib/portal/files';
+import { currentStageId, money, quoteOf, quoteTotal, setStage, stepsFor } from '@/lib/portal/files';
 import { notifyClient, notifyTeam } from '@/lib/portal/notify';
 
 export const dynamic = 'force-dynamic';
@@ -21,7 +21,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
   await prisma.application.update({ where: { id }, data: { quote: JSON.stringify(q), seen: false } });
   await prisma.message.create({ data: { applicationId: id, senderId: s.sub, fromAdmin: false, body: '✅ I accept the quotation.' } });
   const steps = await stepsFor(app.service);
-  const cur = steps.findIndex((x) => x.id === app.stageId);
+  const cur = steps.findIndex((x) => x.id === currentStageId(app, steps));
   const okIdx = steps.findIndex((x) => x.id === 'quote-ok');
   if (okIdx >= 0 && cur < okIdx) await setStage(id, 'quote-ok');
   void notifyClient(app, 'confirmed', { total: money(quoteTotal(q)) });

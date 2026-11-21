@@ -73,6 +73,23 @@ export function stepState(i: number, cur: number, id: string, overrides: Record<
   return i === cur + 1 && i < total ? 'progress' : 'pending';
 }
 
+/** Files from before the step list have only a status: the matching step is shown until the team picks one */
+const STATUS_STEP: Record<string, string[]> = {
+  submitted: ['enquiry'],
+  under_review: ['elig-check', 'docs-check'],
+  documents_required: ['elig-check', 'docs-check'],
+  processing: ['submitted'],
+  initial_approval: ['entry-permit', 'in-process'],
+  medical_biometrics: ['medical', 'in-process'],
+  approved: ['approved'],
+  completed: ['eid-delivered', 'completed'],
+};
+export function currentStageId(a: { stageId?: string | null; status?: string }, steps: StepDef[]): string | null {
+  if (a.stageId && steps.some((s) => s.id === a.stageId)) return a.stageId;
+  for (const id of STATUS_STEP[a.status || ''] || []) if (steps.some((s) => s.id === id)) return id;
+  return null;
+}
+
 /** Progress in % from the current step (keeps the old progress bar meaningful) */
 export function progressFor(steps: StepDef[], stageId?: string | null) {
   const i = steps.findIndex((s) => s.id === stageId);

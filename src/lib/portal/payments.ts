@@ -8,7 +8,7 @@ import type { Application, Payment } from '@prisma/client';
 import { prisma } from '@/lib/db';
 import { getSetting } from '@/lib/settings';
 import type { PayProvider, PaymentSettings } from './config';
-import { charged, money, quoteOf, quoteTotal, setStage, stepsFor, tokenLinks } from './files';
+import { charged, currentStageId, money, quoteOf, quoteTotal, setStage, stepsFor, tokenLinks } from './files';
 
 export const PROVIDERS: { id: PayProvider; name: string; note: string }[] = [
   { id: 'none', name: 'Manual (payment links)', note: 'Paste a payment link on each payment request and press "Mark paid" yourself.' },
@@ -235,7 +235,7 @@ export async function settle(paymentId: string, method: string, txn: string): Pr
   if (cfg.autoStage) {
     const open = await prisma.payment.count({ where: { applicationId: a.id, status: 'due' } });
     const steps = await stepsFor(a.service);
-    const cur = steps.findIndex((s) => s.id === a.stageId);
+    const cur = steps.findIndex((s) => s.id === currentStageId(a, steps));
     const paidIdx = steps.findIndex((s) => s.id === 'paid');
     if (!open && paidIdx >= 0 && cur < paidIdx) await setStage(a.id, 'paid');
   }
