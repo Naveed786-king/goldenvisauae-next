@@ -2,7 +2,7 @@ import { prisma } from '@/lib/db';
 import { ok, fail } from '@/lib/api';
 import { requireStaff } from '@/lib/auth';
 import { STEP_STATE_LABEL, type StepState } from '@/lib/portal/config';
-import { DECISION_LABEL, money, quoteOf, quoteTotal, setStage, stageStatusOf, stepsFor, tokenLinks, type Decision, type DecisionResult, type Quote } from '@/lib/portal/files';
+import { currentStageId, DECISION_LABEL, money, quoteOf, quoteTotal, setStage, stageStatusOf, stepsFor, tokenLinks, type Decision, type DecisionResult, type Quote } from '@/lib/portal/files';
 import { notifyClient } from '@/lib/portal/notify';
 import { settle } from '@/lib/portal/payments';
 
@@ -66,7 +66,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       await prisma.application.update({ where: { id }, data: { quote: JSON.stringify(q) } });
       if (b.send) {
         const steps = await stepsFor(a.service);
-        const cur = steps.findIndex((x) => x.id === a.stageId);
+        const cur = steps.findIndex((x) => x.id === currentStageId(a, steps));
         const qi = steps.findIndex((x) => x.id === 'quote-sent');
         if (qi >= 0 && cur < qi) await setStage(id, 'quote-sent');
         await note(`📄 Your quotation is ready: ${money(quoteTotal(q))}. You can view, accept and pay it in your dashboard.`);
@@ -83,7 +83,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       if (link && !/^https:\/\//.test(link)) return fail('The payment link must start with https://');
       const p = await prisma.payment.create({ data: { applicationId: id, label, amount, link: link || null } });
       const steps = await stepsFor(a.service);
-      const cur = steps.findIndex((x) => x.id === a.stageId);
+      const cur = steps.findIndex((x) => x.id === currentStageId(a, steps));
       const wi = steps.findIndex((x) => x.id === 'pay-wait');
       if (wi >= 0 && cur < wi) await setStage(id, 'pay-wait');
       await note(`💳 Payment request: ${label}, ${money(amount)}. Pay securely in your dashboard.`);
