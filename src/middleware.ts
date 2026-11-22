@@ -38,6 +38,14 @@ export async function middleware(req: NextRequest) {
   const reqHost = bare(String(req.headers.get('x-forwarded-host') || req.headers.get('host') || '').split(',')[0].trim());
   const portalHost = bare(process.env.PORTAL_HOST || 'app.goldenvisauae.ai');
   const onPortal = !!reqHost && reqHost === portalHost;
+  // CLIENT_APP_URL set (e.g. https://app.goldenvisauae.ai): applications, sign-in and the client dashboard
+  // run on that separate client system, so these pages on the website send visitors there.
+  const clientApp = (process.env.CLIENT_APP_URL || '').replace(/\/+$/, '');
+  if (clientApp && !onPortal && !pathname.startsWith('/api/')) {
+    const to: Record<string, string> = { '/account': '/', '/login': '/login/', '/register': '/register/', '/forgot-password': '/forgot/', '/reset-password': '/forgot/', '/apply': '/apply/', '/pay': '/' };
+    const hit = Object.keys(to).find((p) => pathname === p || pathname.startsWith(p + '/'));
+    if (hit) return NextResponse.redirect(clientApp + to[hit] + req.nextUrl.search, 302);
+  }
   if (onPortal && !pathname.startsWith('/api/')) {
     if (pathname === '/' || pathname === '') return NextResponse.redirect(new URL(locale === DEFAULT_LOCALE ? '/account' : `/${locale}/account`, req.url));
     if (!PORTAL_PATHS.some((p) => pathname === p || pathname.startsWith(p + '/'))) {
