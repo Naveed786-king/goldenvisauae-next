@@ -47,10 +47,15 @@ export function StepPanel({ app, act }: { app: any; act: (b: any, d: string) => 
   const [busy, setBusy] = useState(false);
   const chosen = app.steps.find((s: any) => s.id === stageId);
   return (
-    <Card title="Application step" className="p-0">
+    <Card title="Status" actions={<span className="rounded-full bg-[#fbf4dd] px-2.5 py-1 text-xs font-bold text-[#8a6a14]">Step {Math.max(0, app.steps.findIndex((s: any) => s.current)) + 1} of {app.steps.length}</span>} className="p-0">
+      <div className="px-5 pt-5">
+        <span className="block h-2 overflow-hidden rounded-full bg-gray-100">
+          <span className="block h-full rounded-full bg-gradient-to-r from-[#e8c766] to-[#b8862f]" style={{ width: `${app.steps.length ? Math.round(((Math.max(0, app.steps.findIndex((s: any) => s.current)) + 1) / app.steps.length) * 100) : 0}%` }} />
+        </span>
+      </div>
       <div className="grid gap-4 p-5 md:grid-cols-2">
         <div>
-          <label className="admin-label">Move the file to</label>
+          <label className="admin-label">Current stage</label>
           <select className="admin-input" value={stageId} onChange={(e) => setStageId(e.target.value)}>
             {Array.from(new Set(app.steps.map((s: any) => s.group))).map((g: any) => (
               <optgroup key={g} label={g}>
@@ -70,7 +75,7 @@ export function StepPanel({ app, act }: { app: any; act: (b: any, d: string) => 
           <Toggle checked={notify} onChange={setNotify} label="Tell the client (email + WhatsApp)" />
         </div>
         <div className="md:col-span-2">
-          <label className="admin-label">Message the client sees for this step</label>
+          <label className="admin-label">Next step shown to the client</label>
           <textarea className="admin-input min-h-[70px]" value={next} onChange={(e) => setNext(e.target.value)} placeholder={chosen?.next || ''} />
           <p className="mt-1 text-xs text-gray-400">Leave empty to use the standard text shown above in grey.</p>
         </div>

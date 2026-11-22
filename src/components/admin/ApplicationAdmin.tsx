@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Send, Upload, FileText, Trash2, Save, Mail, Phone, LoaderCircle } from 'lucide-react';
+import { Send, Upload, FileText, Trash2, Save, Mail, Phone, LoaderCircle } from 'lucide-react';
 import { StatusBadge } from '@/components/ui/Status';
 import FileAdmin, { NotifyLogCard } from './FileAdmin';
 import { SocialIcon } from '@/components/ui/Icon';
@@ -97,21 +97,49 @@ export default function ApplicationAdmin({ id, isAdmin }: { id: string; isAdmin:
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center gap-3">
-        <Link href="/admin/applications" className="rounded-lg p-2 text-gray-500 hover:bg-white" aria-label="Back">
-          <ArrowLeft className="h-5 w-5" />
-        </Link>
-        <div className="flex-1 min-w-0">
-          <p className="font-mono text-xs font-bold text-gray-400">{app.refNo}</p>
-          <h1 className="truncate text-2xl font-extrabold">{app.fullName}</h1>
-        </div>
-        <StatusBadge status={app.status} className="text-sm" />
-        {isAdmin && (
-          <Btn variant="danger" onClick={delApp}>
-            <Trash2 className="h-4 w-4" />
-          </Btn>
-        )}
-      </div>
+      {(() => {
+        const steps = app.steps || [];
+        const ci = Math.max(0, steps.findIndex((x: any) => x.current));
+        const paid = (app.payments || []).filter((p: any) => p.status === 'paid').reduce((t: number, p: any) => t + p.amount, 0);
+        const due = (app.payments || []).filter((p: any) => p.status !== 'paid').reduce((t: number, p: any) => t + p.amount, 0);
+        const money = (n: number) => `AED ${Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        const link: string = app.links?.file || '';
+        const wa = `https://wa.me/${String(app.phone || '').replace(/\D/g, '')}?text=${encodeURIComponent(`Hello ${app.fullName}, you can follow your file ${app.refNo} here: ${link}`)}`;
+        return (
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-start gap-3">
+              <div className="min-w-0 flex-1">
+                <p className="text-[0.7rem] font-extrabold uppercase tracking-[0.18em] text-gray-400">
+                  <Link href="/admin/applications" className="hover:text-gray-700">Applications</Link> / {app.refNo}
+                </p>
+                <h1 className="font-display text-3xl font-semibold text-gray-900">{app.fullName} · {app.service}</h1>
+              </div>
+              <StatusBadge status={app.status} className="text-sm" />
+              {isAdmin && (
+                <Btn variant="danger" onClick={delApp}>
+                  <Trash2 className="h-4 w-4" />
+                </Btn>
+              )}
+            </div>
+            <div className="inline-flex flex-wrap items-center gap-2 rounded-xl bg-[#fbf4dd] px-3 py-2 ring-1 ring-[#efe0a8]">
+              <span className="text-[0.68rem] font-extrabold uppercase tracking-wider text-[#8a6a14]">Service selected</span>
+              <b className="text-sm text-gray-900">{app.service}</b>
+              <span className="rounded-full bg-gray-900 px-2.5 py-0.5 text-[0.68rem] font-bold text-[#f2d27a]">{steps.length} steps</span>
+              {app.familyMembers > 0 && <span className="rounded-full bg-gray-900 px-2.5 py-0.5 text-[0.68rem] font-bold text-[#f2d27a]">{app.familyMembers + 1} people</span>}
+            </div>
+            <p className="flex flex-wrap items-center gap-2 text-xs text-gray-500">
+              Opened {formatDateTime(app.createdAt)} · updated {formatDateTime(app.updatedAt)}
+              {due > 0 ? <span className="rounded-full bg-red-50 px-2 py-0.5 font-bold text-red-700">Due {money(due)}</span> : paid > 0 ? <span className="rounded-full bg-emerald-50 px-2 py-0.5 font-bold text-emerald-700">Paid {money(paid)}</span> : null}
+              {steps.length > 0 && <span className="rounded-full bg-[#fbf4dd] px-2 py-0.5 font-bold text-[#8a6a14]">Step {ci + 1} of {steps.length}: {steps[ci]?.name}</span>}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {app.phone && <a href={wa} target="_blank" rel="noopener noreferrer" className="rounded-xl bg-gradient-to-b from-[#e8c766] to-[#c9a032] px-4 py-2 text-sm font-bold text-[#1a1406]">Send portal link on WhatsApp</a>}
+              <button type="button" onClick={() => { navigator.clipboard?.writeText(link); toast('Link copied'); }} className="rounded-xl bg-white px-4 py-2 text-sm font-bold ring-1 ring-gray-200">Copy portal link</button>
+              <a href={link} target="_blank" rel="noopener noreferrer" className="rounded-xl bg-white px-4 py-2 text-sm font-bold ring-1 ring-gray-200">Open client view ↗</a>
+            </div>
+          </div>
+        );
+      })()}
 
       <div className="grid gap-6 xl:grid-cols-[1fr_380px]">
         <div className="space-y-6 min-w-0">
@@ -128,7 +156,10 @@ export default function ApplicationAdmin({ id, isAdmin }: { id: string; isAdmin:
             </div>
           </Card>
 
-          <Card title="Conversation" actions={<span className="flex items-center gap-1.5 text-xs text-emerald-600"><span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" /> Live</span>} className="p-0 overflow-hidden">
+        </div>
+
+        <div className="space-y-6">
+          <Card title="Messages" actions={<span className="flex items-center gap-1.5 text-xs text-emerald-600"><span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" /> Live</span>} className="p-0 overflow-hidden">
             <div ref={chatRef} className="h-[420px] space-y-3 overflow-y-auto bg-gray-50 p-5 thin-scroll">
               {app.messages.length === 0 && <p className="py-12 text-center text-sm text-gray-400">No messages yet.</p>}
               {app.messages.map((m: any) => (
@@ -165,9 +196,6 @@ export default function ApplicationAdmin({ id, isAdmin }: { id: string; isAdmin:
               </label>
             </form>
           </Card>
-        </div>
-
-        <div className="space-y-6">
           <Card title="Client" className="p-0">
             <div className="p-5 text-sm">
               <p className="font-bold">{app.user?.name}</p>
