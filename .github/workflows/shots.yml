@@ -58,6 +58,10 @@ jobs:
             console.log(name, 'login', r.status());
             for (const path of ['/account', '/account/applications', '/account/quotes', '/account/payments', '/account/messages', '/account/documents']) {
               await p.goto('http://localhost:3000' + path, { waitUntil: 'networkidle' });
+              if (name === 'phone') {
+                const wide = await p.evaluate(() => [...document.querySelectorAll('body *')].filter((e) => e.getBoundingClientRect().right > innerWidth + 2 && e.getBoundingClientRect().width < innerWidth * 1.5).slice(0, 8).map((e) => `${e.tagName}.${String(e.className).slice(0, 90)} r=${Math.round(e.getBoundingClientRect().right)}`));
+                console.log(path, JSON.stringify(wide));
+              }
               await p.screenshot({ path: `shots/${name}${path.replace(/\//g, '-')}.png`, fullPage: true });
             }
             await ctx.close();
