@@ -52,11 +52,10 @@ jobs:
           for (const [name, vp] of [['desktop', { width: 1366, height: 900 }], ['phone', { width: 390, height: 844 }]]) {
             const ctx = await b.newContext({ viewport: vp, deviceScaleFactor: 1 });
             const p = await ctx.newPage();
-            await p.goto('http://localhost:3000/login');
-            await p.fill('input[type=email]', 'sara@example.com');
-            await p.fill('input[type=password]', 'ClientPass123');
-            await p.keyboard.press('Enter');
-            await p.waitForURL(/account/, { timeout: 20000 }).catch(() => {});
+            await p.goto('http://localhost:3000/login', { waitUntil: 'networkidle' });
+            await p.waitForTimeout(1500);
+            const r = await p.request.post('http://localhost:3000/api/auth/login', { data: { email: 'sara@example.com', password: 'ClientPass123' } });
+            console.log(name, 'login', r.status());
             for (const path of ['/account', '/account/applications', '/account/quotes', '/account/payments', '/account/messages', '/account/documents']) {
               await p.goto('http://localhost:3000' + path, { waitUntil: 'networkidle' });
               await p.screenshot({ path: `shots/${name}${path.replace(/\//g, '-')}.png`, fullPage: true });
