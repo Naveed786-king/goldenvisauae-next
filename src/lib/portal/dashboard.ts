@@ -61,7 +61,7 @@ export const loadDashboard = cache(async (userId: string) => {
                 : unread
                   ? 'msg'
                   : 'progress';
-      const pct = key === 'done' ? 100 : steps.length ? Math.max(5, Math.round(((idx + (key === 'done' ? 1 : 0.5)) / steps.length) * 100)) : a.progress;
+      const pct = key === 'done' ? 100 : steps.length ? Math.max(5, Math.round(((idx + 0.5) / steps.length) * 100)) : a.progress;
       return {
         id: a.id,
         ref: a.refNo,
