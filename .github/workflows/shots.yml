@@ -2,6 +2,8 @@ name: Dashboard screenshots
 
 on:
   workflow_dispatch:
+  push:
+    branches: [client-dashboard]
 
 jobs:
   shots:
