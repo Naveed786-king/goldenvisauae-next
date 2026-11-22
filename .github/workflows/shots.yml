@@ -3,7 +3,7 @@ name: Dashboard screenshots
 on:
   workflow_dispatch:
   push:
-    branches: [abu-dashboard]
+    branches: [abu-dashboard, abu-apply]
 
 permissions:
   contents: write
@@ -55,9 +55,13 @@ jobs:
             const p = await ctx.newPage();
             await p.goto(B + '/portal/login', { waitUntil: 'networkidle' });
             await p.screenshot({ path: `shots/${name}-login.png`, fullPage: true });
+            await p.goto(B + '/portal/apply', { waitUntil: 'networkidle' });
+            await p.screenshot({ path: `shots/${name}-apply-public.png`, fullPage: true });
+            const card = p.locator('.aw-card').first();
+            if (await card.count()) { await card.click(); await p.locator('.apply-nav .btn-red').click(); await p.waitForTimeout(500); await p.screenshot({ path: `shots/${name}-apply-details.png`, fullPage: true }); }
             const r = await p.request.post(B + '/api/auth/login', { data: { email: 'sara@example.com', password: 'ClientPass123' } });
             console.log(name, 'login', r.status());
-            for (const path of ['/portal', '/portal/files', '/portal/quotes', '/portal/invoices', '/portal/statement', '/portal/services', '/portal/account']) {
+            for (const path of ['/portal', '/portal/apply', '/portal/files', '/portal/quotes', '/portal/invoices', '/portal/statement', '/portal/services', '/portal/account']) {
               const res = await p.goto(B + path, { waitUntil: 'networkidle' });
               console.log(path, res && res.status());
               if (name === 'phone') {

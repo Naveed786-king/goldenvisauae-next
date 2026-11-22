@@ -53,7 +53,8 @@ jobs:
           check /official-sources 200
           check /blog 200
           check /blog/uae-golden-visa-cost-price-breakdown-by-category 200
-          check /apply 200
+          check /apply 307
+          check /portal/apply 200
           check /login 307
           check /portal/login 200
           check /admin/login 200

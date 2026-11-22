@@ -56,7 +56,7 @@ export async function middleware(req: NextRequest) {
   // Sign-in and the client area of the website open the new client dashboard (on this address under /portal,
   // or on the dashboard address when CLIENT_APP_URL is set).
   if (!onPortal && !process.env.CLIENT_APP_URL) {
-    const to: Record<string, string> = { '/account': '/portal', '/login': '/portal/login', '/register': '/portal/register', '/forgot-password': '/portal/forgot' };
+    const to: Record<string, string> = { '/account': '/portal', '/login': '/portal/login', '/register': '/portal/register', '/forgot-password': '/portal/forgot', '/apply': '/portal/apply' };
     const hit = Object.keys(to).find((p) => raw === p || raw.startsWith(p + '/'));
     if (hit) return NextResponse.redirect(new URL(to[hit] + req.nextUrl.search, req.url), 307);
   }
