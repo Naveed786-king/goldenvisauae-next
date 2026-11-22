@@ -97,8 +97,8 @@ export default async function AccountPage() {
                 <span className="min-w-0 flex-1">
                   <b className="block text-sm text-ink">{x.title}</b>
                   <small className="block truncate text-xs text-ink/55">{x.text}</small>
+                  <span className="mt-1 block text-xs font-extrabold text-gold-deep">{x.cta} →</span>
                 </span>
-                <span className="shrink-0 text-xs font-extrabold text-gold-deep">{x.cta} →</span>
               </Link>
             ))}
           </div>

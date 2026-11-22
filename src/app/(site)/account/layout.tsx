@@ -20,8 +20,8 @@ export default async function AccountLayout({ children }: { children: React.Reac
   const counts = { files: d.files.length, quotes: d.totals.quotes, due: d.totals.dueCount, docs: d.totals.docs, unread: d.totals.unread };
   return (
     <section className="theme-sand min-h-[70vh] pt-[6.5rem] sm:pt-[7.5rem]">
-      <div className="container-x grid gap-6 py-6 md:py-10 lg:grid-cols-[260px_minmax(0,1fr)] lg:gap-8">
-        <aside className="lg:sticky lg:top-28 lg:self-start">
+      <div className="container-x grid grid-cols-[minmax(0,1fr)] gap-6 py-6 md:py-10 lg:grid-cols-[260px_minmax(0,1fr)] lg:gap-8">
+        <aside className="min-w-0 lg:sticky lg:top-28 lg:self-start">
           <div className="rounded-[2rem] bg-white/60 p-3 ring-1 ring-ink/5 lg:p-4">
             <div className="hidden items-center gap-3 px-2 pb-4 pt-1 lg:flex">
               <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl font-display text-xl font-semibold text-[#1a1406]" style={{ background: 'var(--gold-grad)' }}>

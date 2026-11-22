@@ -92,7 +92,7 @@ export const loadDashboard = cache(async (userId: string) => {
   // what happened lately, newest first
   const feed: { kind: FeedKind; title: string; text: string; at: string; fileId: string; ref: string; amount?: number; href?: string }[] = [];
   for (const f of files) {
-    for (const [id, at] of Object.entries(f.stageDates)) if (at && f.stepNames[id]) feed.push({ kind: 'stage', title: 'Step completed', text: `${f.stepNames[id]} · ${f.ref}`, at, fileId: f.id, ref: f.ref });
+    for (const [id, at] of Object.entries(f.stageDates)) if (at && f.stepNames[id]) feed.push({ kind: 'stage', title: 'Application update', text: `${f.stepNames[id]} · ${f.ref}`, at, fileId: f.id, ref: f.ref });
     for (const p of f.payments) {
       if (p.status === 'paid') feed.push({ kind: 'paid', title: 'Payment received', text: `${p.label} · ${f.ref}`, at: p.at, fileId: f.id, ref: f.ref, amount: p.total, href: p.receipt });
       if (p.status === 'due') feed.push({ kind: 'due', title: 'Payment requested', text: `${p.label} · ${f.ref}`, at: p.at, fileId: f.id, ref: f.ref, amount: p.total, href: p.pay });

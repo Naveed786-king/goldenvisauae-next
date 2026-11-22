@@ -54,7 +54,7 @@ export function FileRow({ f, cur, t }: { f: DashFile; cur: string; t: TFunc }) {
         <span className="mt-2 flex flex-wrap gap-1.5">
           <KeyPill k={f.key} t={t} />
           {f.due > 0 && f.key !== 'pay' && <span className="rounded-full bg-red-100 px-2.5 py-0.5 text-[0.68rem] font-extrabold uppercase text-red-700">{fmtMoney(f.due, cur)}</span>}
-          {f.unread > 0 && f.key !== 'msg' && <span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-[0.68rem] font-extrabold uppercase text-blue-700">{f.unread} {t('new message')}</span>}
+          {f.unread > 0 && f.key !== 'msg' && <span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-[0.68rem] font-extrabold uppercase text-blue-700">{f.unread} {t(f.unread > 1 ? 'new messages' : 'new message')}</span>}
           {f.expected && <span className="rounded-full bg-ink/5 px-2.5 py-0.5 text-[0.68rem] font-bold text-ink/60">{t('Expected')} {f.expected}</span>}
         </span>
       </span>
