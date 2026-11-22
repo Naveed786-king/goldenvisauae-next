@@ -117,9 +117,11 @@ export async function portalBase() {
   return (p.url || siteUrl()).replace(/\/+$/, '');
 }
 
-/** Link to the client's file in the dashboard (they sign in, then land on their file) */
-export async function fileLink(a: Pick<Application, 'id'>) {
-  return `${await portalBase()}/account/applications/${a.id}`;
+/** Link to the client's file in the client dashboard (its secret link: opens the file, sign-in offered there) */
+export async function fileLink(a: Pick<Application, 'id'> & { token?: string | null }) {
+  const token = a.token || (await ensureToken({ id: a.id, token: (await prisma.application.findUnique({ where: { id: a.id }, select: { token: true } }))?.token ?? null }));
+  const p = (await getSetting('portal')).url.replace(/\/+$/, '');
+  return p ? `${p}/t/${token}` : `${siteUrl()}/portal/t/${token}`;
 }
 
 /** Links that work without signing in (secret token): used in WhatsApp and emails, and by Meta to fetch PDFs */

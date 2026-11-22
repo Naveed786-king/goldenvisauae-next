@@ -21,8 +21,8 @@ function sameSite(origin: string, req: NextRequest): boolean {
 }
 // endpoints other systems call (they never send a browser Origin anyway)
 const foreignOriginAllowed = (p: string) => p.startsWith('/api/cron/') || p.startsWith('/api/pay/webhook/') || p === '/api/whatsapp/webhook';
-// pages served on the client dashboard subdomain
-const PORTAL_PATHS = ['/account', '/login', '/register', '/forgot-password', '/reset-password', '/apply', '/pay'];
+// pages of the client dashboard (served from /portal on the dashboard address)
+const PORTAL_PAGES = new Set(['', 'files', 'orders', 'quotes', 'invoices', 'statement', 'calendar', 'requests', 'services', 'apply', 'login', 'register', 'forgot', 't']);
 
 export async function middleware(req: NextRequest) {
   // 1) Language prefix: /ar/about-us -> render /about-us in Arabic
@@ -38,20 +38,25 @@ export async function middleware(req: NextRequest) {
   const reqHost = bare(String(req.headers.get('x-forwarded-host') || req.headers.get('host') || '').split(',')[0].trim());
   const portalHost = bare(process.env.PORTAL_HOST || 'app.goldenvisauae.ai');
   const onPortal = !!reqHost && reqHost === portalHost;
-  // CLIENT_APP_URL set (e.g. https://app.goldenvisauae.ai): applications, sign-in and the client dashboard
-  // run on that separate client system, so these pages on the website send visitors there.
+  const main = (process.env.NEXT_PUBLIC_SITE_URL || 'https://goldenvisauae.ai').replace(/\/+$/, '');
+  const raw = req.nextUrl.pathname;
+  // Client dashboard (app.goldenvisauae.ai): the dashboard pages live under /portal (own design and page frame).
+  if (onPortal && !raw.startsWith('/api/') && !raw.startsWith('/portal')) {
+    const first = raw.split('/')[1] || '';
+    // older links in emails and WhatsApp
+    if (first === 'account') return NextResponse.rewrite(new URL((raw.replace(/\/+$/, '') === '/account' ? '/portal/account' : '/portal') + req.nextUrl.search, req.url));
+    if (first === 'forgot-password') return NextResponse.rewrite(new URL('/portal/forgot' + req.nextUrl.search, req.url));
+    if (PORTAL_PAGES.has(first)) return NextResponse.rewrite(new URL('/portal' + (raw === '/' ? '' : raw) + req.nextUrl.search, req.url));
+    // website pages, admin, reset-password and the payment pages are on the main site
+    return NextResponse.redirect(main + raw + req.nextUrl.search);
+  }
+  if (raw.startsWith('/portal')) return NextResponse.next();
+  // CLIENT_APP_URL set (https://app.goldenvisauae.ai): sign-in and the client area of the website open the dashboard there.
   const clientApp = (process.env.CLIENT_APP_URL || '').replace(/\/+$/, '');
   if (clientApp && !onPortal && !pathname.startsWith('/api/')) {
-    const to: Record<string, string> = { '/account': '/', '/login': '/login/', '/register': '/register/', '/forgot-password': '/forgot/', '/reset-password': '/forgot/', '/apply': '/apply/', '/pay': '/' };
+    const to: Record<string, string> = { '/account': '/', '/login': '/login', '/register': '/register', '/forgot-password': '/forgot' };
     const hit = Object.keys(to).find((p) => pathname === p || pathname.startsWith(p + '/'));
     if (hit) return NextResponse.redirect(clientApp + to[hit] + req.nextUrl.search, 302);
-  }
-  if (onPortal && !pathname.startsWith('/api/')) {
-    if (pathname === '/' || pathname === '') return NextResponse.redirect(new URL(locale === DEFAULT_LOCALE ? '/account' : `/${locale}/account`, req.url));
-    if (!PORTAL_PATHS.some((p) => pathname === p || pathname.startsWith(p + '/'))) {
-      const main = (process.env.NEXT_PUBLIC_SITE_URL || 'https://goldenvisauae.ai').replace(/\/+$/, '');
-      return NextResponse.redirect(main + req.nextUrl.pathname + req.nextUrl.search);
-    }
   }
 
   // Requests that change something must come from this website itself (stops other sites from
