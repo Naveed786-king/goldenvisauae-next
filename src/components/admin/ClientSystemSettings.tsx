@@ -254,7 +254,7 @@ function WhatsAppTab() {
         <div className="p-5">
           <p className="mb-4 text-xs text-gray-500">
             Inside 24 hours after a client wrote to you, the full text from the Messages tab is sent. Outside that window Meta only delivers approved templates: write the template name for each message
-            (its body values are the words shown on the right, in that order, without the link). A template name ending in <b>_file</b> also carries the PDF (quote or receipt).
+            (its body values are the words shown on the right, in that order, without the link). A template name ending in <b>_file</b> or with <b>_pdf_</b> in it also carries the PDF (quote or receipt); names ending in <b>_btn_v1</b> have an “Open my file” button. Use “Create all templates in Meta” below to get them all.
           </p>
           <div className="space-y-2">
             {EVENTS.map((e) => (
@@ -270,6 +270,7 @@ function WhatsAppTab() {
         </div>
       </Card>
       <SaveBar save={() => save()} saving={saving} />
+      <MetaTemplatesCard reload={async () => { try { const r = await api<any>('/api/admin/settings/whatsapp'); if (r?.value) setValue(r.value); } catch {} }} />
       <Card title="Send a test" className="p-0">
         <div className="flex flex-wrap items-end gap-3 p-5">
           <Field label="WhatsApp number">
@@ -282,6 +283,54 @@ function WhatsAppTab() {
         </div>
       </Card>
     </div>
+  );
+}
+
+/** The same WhatsApp templates as the Abu Dhabi Golden Visa site: sent to Meta for approval in one click,
+ *  then the approved names are filled in above ("Check approval"). */
+function MetaTemplatesCard({ reload }: { reload: () => void }) {
+  const [busy, setBusy] = useState('');
+  const [msg, setMsg] = useState('');
+  const [rows, setRows] = useState<{ name: string; status: string }[]>([]);
+  async function run(action: 'create' | 'sync') {
+    setBusy(action);
+    try {
+      const r = await api<{ result: { ok: boolean; msg: string; rows?: { name: string; status: string }[] } }>('/api/admin/client-system/templates', 'POST', { action });
+      setMsg(r.result.msg);
+      if (r.result.rows) setRows(r.result.rows);
+      toast(r.result.ok ? 'Done' : 'See the message below', r.result.ok ? 'success' : 'error');
+      if (action === 'sync') reload();
+    } catch (e: any) {
+      toast(e.message, 'error');
+    } finally {
+      setBusy('');
+    }
+  }
+  return (
+    <Card title="Approved message templates (Meta)" className="p-0">
+      <div className="space-y-3 p-5">
+        <p className="text-xs text-gray-500">
+          One click sends every message template to Meta for approval: file opened, status update, quote with PDF, order confirmed, payment request, payment received with the receipt PDF, new message, new
+          document, decision, and the team alerts. Each has an “Open my file” button. Approval usually takes a few minutes; then press “Check approval” and the approved names are filled in above.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <Btn loading={busy === 'create'} onClick={() => run('create')}>Create all templates in Meta</Btn>
+          <Btn variant="dark" loading={busy === 'sync'} onClick={() => run('sync')}>Check approval</Btn>
+          <a className="rounded-xl bg-white px-4 py-2 text-sm font-bold ring-1 ring-gray-200" href="https://business.facebook.com/wa/manage/message-templates/" target="_blank" rel="noopener noreferrer">Open templates in Meta ↗</a>
+        </div>
+        {msg && <p className="rounded-xl bg-gray-50 p-3 text-xs text-gray-700">{msg}</p>}
+        {rows.length > 0 && (
+          <ul className="grid gap-1 text-xs md:grid-cols-2">
+            {rows.map((r) => (
+              <li key={r.name} className="flex justify-between gap-2 rounded-lg bg-gray-50 px-3 py-1.5">
+                <span className="font-mono">{r.name}</span>
+                <b className={r.status === 'approved' ? 'text-emerald-700' : r.status.startsWith('rejected') ? 'text-red-600' : 'text-amber-700'}>{r.status}</b>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </Card>
   );
 }
 

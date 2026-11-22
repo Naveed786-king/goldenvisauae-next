@@ -19,7 +19,7 @@ function explainMailError(e: any): string {
   return msg || 'Unknown error';
 }
 
-export async function sendMail(opts: { to: string | string[]; subject: string; html: string; replyTo?: string }) {
+export async function sendMail(opts: { to: string | string[]; subject: string; html: string; replyTo?: string; attachments?: { filename: string; content: Buffer }[] }) {
   try {
     const smtp = await getSetting('smtp');
     const site = await getSetting('site');
@@ -41,6 +41,7 @@ export async function sendMail(opts: { to: string | string[]; subject: string; h
       subject: String(opts.subject || '').replace(/[\r\n]+/g, ' ').slice(0, 250),
       html: wrap(opts.html, site.name),
       replyTo: opts.replyTo && /^[^\s@<>,;"]+@[^\s@<>,;"]+\.[^\s@<>,;"]+$/.test(opts.replyTo.trim()) ? opts.replyTo.trim() : undefined,
+      attachments: opts.attachments?.length ? opts.attachments : undefined,
     });
     lastMailError = '';
     return true;

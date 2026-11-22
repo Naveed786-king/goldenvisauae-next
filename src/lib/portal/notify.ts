@@ -79,8 +79,14 @@ export async function notifyClient(
     const text = fillTpl(tpl?.body || '', v).replace(/\n{3,}/g, '\n\n').trim();
     const jobs: Promise<unknown>[] = [];
     if (tpl?.on !== false && app.email && text) {
+      // the quote or receipt PDF also goes with the email as an attachment
+      const pdf = opts.file
+        ? await fetch(opts.file.link, { signal: AbortSignal.timeout(20000) })
+            .then(async (r) => (r.ok && /pdf/i.test(r.headers.get('content-type') || '') ? Buffer.from(await r.arrayBuffer()) : null))
+            .catch(() => null)
+        : null;
       jobs.push(
-        sendMail({ to: app.email, subject: fillTpl(tpl.subject, v), html: emailHtml(text, cfg.signOff, BUTTON[event] || 'Open my dashboard') }).then((ok) =>
+        sendMail({ to: app.email, subject: fillTpl(tpl.subject, v), html: emailHtml(text, cfg.signOff, BUTTON[event] || 'Open my dashboard'), attachments: pdf ? [{ filename: opts.file!.name, content: pdf }] : undefined }).then((ok) =>
           prisma.notifyLog.create({ data: { channel: 'email', to: app.email!, event, text: fillTpl(tpl.subject, v).slice(0, 300), ok, applicationId: app.id } }).catch(() => null)
         )
       );

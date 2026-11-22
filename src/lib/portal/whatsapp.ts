@@ -103,8 +103,19 @@ export async function sendWhatsApp(m: WaSend): Promise<{ ok: boolean; error: str
   const keys = NOTIFY_EVENTS.find((e) => e.key === m.event)?.vars.filter((k) => k !== 'link') || [];
   const components: any[] = [];
   // templates whose name ends in _file carry the PDF in their header
-  if (m.file && /_file(_v\d+)?$/.test(name)) components.push({ type: 'header', parameters: [{ type: 'document', document: { link: m.file.link, filename: m.file.name } }] });
+  // (_file at the end, or _pdf_ in the name for the Meta-approved set from Admin → Client system → WhatsApp)
+  const pdfTpl = /_file(_v\d+)?$/.test(name) || /_pdf_/.test(name);
+  if (pdfTpl && m.file) components.push({ type: 'header', parameters: [{ type: 'document', document: { link: m.file.link, filename: m.file.name } }] });
+  if (pdfTpl && !m.file) return log(false, `Not sent: template ${name} needs the PDF, but none came with this message.`, m.text);
   components.push({ type: 'body', parameters: keys.map((k) => ({ type: 'text', text: flat(m.vars[k]) })) });
+  // templates ending in _btn_vN have an "Open my file" button: the client's secret file link, or the file in the admin for team alerts
+  if (/_btn_v\d+$/.test(name)) {
+    const team = NOTIFY_EVENTS.find((e) => e.key === m.event)?.to === 'team';
+    let param = team ? m.applicationId || '' : (String(m.vars.link || '').match(/[a-f0-9]{32}/) || [''])[0];
+    if (!team && !param && m.applicationId) param = (await prisma.application.findUnique({ where: { id: m.applicationId }, select: { token: true } }))?.token || '';
+    if (!param) return log(false, `Not sent: template ${name} needs the file link, but it is missing.`, m.text);
+    components.push({ type: 'button', sub_type: 'url', index: '0', parameters: [{ type: 'text', text: param }] });
+  }
   const r = await post(w, { messaging_product: 'whatsapp', to: number, type: 'template', template: { name, language: { code: w.templateLang || 'en' }, components } });
   return log(r.ok, r.error, `[template ${name}] ${m.text}`, r.id);
 }

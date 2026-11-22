@@ -250,12 +250,11 @@ async function afterPaid(appId: string, pid: string, confirmed: boolean) {
   const { notifyClient, notifyTeam } = await import('./notify');
   const links = await tokenLinks(a);
   if (confirmed) await notifyClient(a, 'confirmed', { total: money(quoteTotal(quoteOf(a))) });
-  const cfg = await getSetting('payments');
   await notifyClient(
     a,
     'paid',
     { item: p.label, amount: money(charged(p)), receipt: p.receiptNo || '' },
-    cfg.receiptWa ? { file: { link: links.receiptPdf(p.id), name: `Receipt ${p.receiptNo}.pdf` } } : {}
+    { file: { link: links.receiptPdf(p.id), name: `Receipt ${p.receiptNo}.pdf` } }
   );
   await notifyTeam('teamPayment', { name: a.fullName, ref: a.refNo, item: p.label, amount: money(charged(p)) }, a.id);
 }
