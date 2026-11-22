@@ -5,6 +5,9 @@ on:
   push:
     branches: [client-dashboard]
 
+permissions:
+  contents: write
+
 jobs:
   shots:
     runs-on: ubuntu-latest
@@ -63,6 +66,13 @@ jobs:
           await b.close();
           EOF
           mkdir -p shots && node shot.mjs
+      - name: Publish screenshots to the ci-shots branch
+        if: always()
+        run: |
+          cd shots
+          git init -q -b ci-shots && git add -A
+          git -c user.name=ci -c user.email=ci@example.com commit -qm "dashboard screenshots" || exit 0
+          git push -qf "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}" ci-shots
       - uses: actions/upload-artifact@v4
         if: always()
         with:
