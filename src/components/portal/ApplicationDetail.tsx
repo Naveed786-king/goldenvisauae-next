@@ -112,7 +112,7 @@ export default function ApplicationDetail({ id }: { id: string }) {
 
       <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
         {/* Chat */}
-        <div className="flex flex-col rounded-[2rem] bg-white ring-1 ring-ink/5 overflow-hidden h-[560px]">
+        <div id="chat" className="flex scroll-mt-28 flex-col rounded-[2rem] bg-white ring-1 ring-ink/5 overflow-hidden h-[560px]">
           <div className="flex items-center justify-between border-b border-ink/5 px-6 py-4">
             <h3 className="font-bold text-ink">Messages with your consultant</h3>
             <span className="flex items-center gap-1.5 text-xs text-emerald-600"><span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" /> Live</span>
