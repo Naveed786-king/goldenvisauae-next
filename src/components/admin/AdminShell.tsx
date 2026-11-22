@@ -37,6 +37,10 @@ import {
   Palette,
   DatabaseBackup,
   CreditCard,
+  ListChecks,
+  Wallet,
+  MessageCircle,
+  FileStack,
 } from 'lucide-react';
 import { Toaster, toast } from './ui';
 import { cn, formatDateTime } from '@/lib/utils';
@@ -50,7 +54,11 @@ const NAV = [
     items: [
       { href: '/admin/leads', label: 'Leads & enquiries', icon: Inbox, badge: 'newLeads' },
       { href: '/admin/applications', label: 'Applications', icon: FolderKanban, badge: 'apps' },
+      { href: '/admin/steps', label: 'Application steps', icon: ListChecks, adminOnly: true },
       { href: '/admin/customers', label: 'Customers', icon: Users },
+      { href: '/admin/payments', label: 'Online payments', icon: Wallet, adminOnly: true },
+      { href: '/admin/whatsapp', label: 'WhatsApp', icon: MessageCircle, adminOnly: true },
+      { href: '/admin/documents', label: 'Emails & PDFs', icon: FileStack, adminOnly: true },
       { href: '/admin/client-system', label: 'Client system', icon: CreditCard, adminOnly: true },
       { href: '/admin/subscribers', label: 'Subscribers', icon: Mail },
       { href: '/admin/chatbot', label: 'AI chatbot', icon: Bot, adminOnly: true },

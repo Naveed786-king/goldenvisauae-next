@@ -43,6 +43,43 @@ function Field({ label, children, hint }: { label: string; children: React.React
   );
 }
 
+type TabKey = (typeof TABS)[number][0];
+const PAGES: Record<string, { eyebrow: string; title: string; subtitle: string; tabs: TabKey[] }> = {
+  steps: { eyebrow: 'Applications', title: 'Application steps', subtitle: 'The steps of every client file, the text the client sees for each step, and which steps send a message.', tabs: ['steps'] },
+  payments: { eyebrow: 'Money', title: 'Online payments', subtitle: 'Card payment provider, bank transfer details and receipts.', tabs: ['payments'] },
+  whatsapp: { eyebrow: 'Messages', title: 'WhatsApp', subtitle: 'WhatsApp Cloud API, approved templates and a test message.', tabs: ['whatsapp'] },
+  documents: { eyebrow: 'Messages', title: 'Emails & PDFs', subtitle: 'The texts of every email and WhatsApp to clients and your team, and the quote and receipt PDFs.', tabs: ['clientMail', 'pdf'] },
+};
+
+/** One part of the client system on its own page (Abu Dhabi Golden Visa admin layout). */
+export function ClientSystemPage({ page }: { page: keyof typeof PAGES }) {
+  const p = PAGES[page];
+  const [tab, setTab] = useState<TabKey>(p.tabs[0]);
+  return (
+    <div className="space-y-6">
+      <div>
+        <p className="text-[0.7rem] font-extrabold uppercase tracking-[0.18em] text-gray-400">{p.eyebrow}</p>
+        <h1 className="font-display text-3xl font-semibold text-gray-900">{p.title}</h1>
+        <p className="mt-1 text-sm text-gray-500">{p.subtitle}</p>
+      </div>
+      {p.tabs.length > 1 && (
+        <div className="flex flex-wrap gap-2">
+          {p.tabs.map((k) => (
+            <button key={k} type="button" onClick={() => setTab(k)} className={cn('rounded-xl px-4 py-2 text-sm font-bold ring-1', tab === k ? 'bg-gradient-to-b from-[#e8c766] to-[#c9a032] text-[#1a1406] ring-transparent' : 'bg-white text-gray-700 ring-gray-200')}>
+              {k === 'clientMail' ? 'Email & WhatsApp texts' : 'Quote & receipt PDFs'}
+            </button>
+          ))}
+        </div>
+      )}
+      {tab === 'payments' && <PaymentsTab />}
+      {tab === 'whatsapp' && <WhatsAppTab />}
+      {tab === 'clientMail' && <MessagesTab />}
+      {tab === 'pdf' && <PdfTab />}
+      {tab === 'steps' && <StepsTab />}
+    </div>
+  );
+}
+
 export default function ClientSystemSettings() {
   const [tab, setTab] = useState<(typeof TABS)[number][0]>('portal');
   return (
