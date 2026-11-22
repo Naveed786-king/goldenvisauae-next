@@ -34,6 +34,7 @@ export default function FileAdmin({ app, reload }: { app: any; reload: () => voi
       <QuotePanel app={app} act={act} />
       <PaymentsPanel app={app} act={act} />
       <DecisionPanel app={app} act={act} />
+      <ClientLinkPanel app={app} act={act} />
     </div>
   );
 }
@@ -336,6 +337,48 @@ function DecisionPanel({ app, act }: { app: any; act: (b: any, d: string) => Pro
         </div>
       </Card>
     </div>
+  );
+}
+
+/** Client dashboard link of the file and the team member it is assigned to. */
+function ClientLinkPanel({ app, act }: { app: any; act: (b: any, d: string) => Promise<boolean> }) {
+  const [who, setWho] = useState(app.assignee || '');
+  const link: string = app.links?.file || '';
+  const wa = `https://wa.me/${String(app.phone || '').replace(/\D/g, '')}?text=${encodeURIComponent(`Hello ${app.fullName}, you can follow your file ${app.refNo} here: ${link}`)}`;
+  return (
+    <Card title="Client dashboard & team" className="p-0">
+      <div className="space-y-4 p-5">
+        <div>
+          <label className="admin-label">Link to this file in the client dashboard</label>
+          <div className="flex flex-wrap items-center gap-2">
+            <input className="admin-input min-w-0 flex-1" readOnly value={link} onFocus={(e) => e.currentTarget.select()} />
+            <a href={link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-lg bg-gray-100 px-3 py-2 text-xs font-bold text-gray-700">Open</a>
+            <button type="button" onClick={() => { navigator.clipboard?.writeText(link); toast('Link copied'); }} className="inline-flex items-center gap-1.5 rounded-lg bg-gray-100 px-3 py-2 text-xs font-bold text-gray-700">
+              <Copy className="h-3.5 w-3.5" /> Copy
+            </button>
+            {app.phone && (
+              <a href={wa} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-bold text-white">Send on WhatsApp</a>
+            )}
+          </div>
+          <p className="mt-1 text-xs text-gray-400">The client opens their file with this private link, no password needed. Share it only with the client.</p>
+        </div>
+        <div>
+          <label className="admin-label">Assigned to</label>
+          <div className="flex flex-wrap gap-2">
+            <select className="admin-input min-w-0 flex-1" value={who} onChange={(e) => setWho(e.target.value)}>
+              <option value="">Nobody</option>
+              {(app.team || []).map((m: any) => (
+                <option key={m.email} value={m.email.toLowerCase()}>{m.name} ({m.email})</option>
+              ))}
+            </select>
+            <Btn variant="dark" onClick={() => act({ action: 'assign', email: who }, 'Assignment saved')}>
+              <Save className="h-4 w-4" /> Save
+            </Btn>
+          </div>
+          <p className="mt-1 text-xs text-gray-400">Without an advisor on the file, the client sees this team member as their contact.</p>
+        </div>
+      </div>
+    </Card>
   );
 }
 

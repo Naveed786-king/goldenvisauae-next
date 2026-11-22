@@ -126,6 +126,11 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       await prisma.application.update({ where: { id }, data: { advisorName: String(b.name || '').trim().slice(0, 120) || null, advisorPhone: String(b.phone || '').trim().slice(0, 40) || null } });
       return ok();
     }
+    case 'assign': {
+      const email = String(b.email || '').trim().toLowerCase().slice(0, 160);
+      await prisma.application.update({ where: { id }, data: { assignee: email || null } });
+      return ok();
+    }
     default:
       return fail('Unknown action');
   }
