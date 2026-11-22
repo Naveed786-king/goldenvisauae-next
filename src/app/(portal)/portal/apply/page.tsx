@@ -24,13 +24,15 @@ async function applyServices(): Promise<ApplyService[]> {
     return {
       id: r.slug || r.id,
       label: r.title,
-      group: golden ? 'Golden Visa' : r.category === 'additional' ? 'Other services' : 'Family & residency',
+      group: golden ? 'Golden Visa' : /visa|family|dependant|newborn|maid|nanny|emirates id|medical|residen/i.test(r.title) ? 'Family & residency' : 'Other services',
       note: r.subtitle || undefined,
       price: r.price || undefined,
       docs: golden ? GOLDEN_DOCS : OTHER_DOCS,
       family: fam,
     };
   });
+  const ORDER = ['Golden Visa', 'Family & residency', 'Other services'];
+  list.sort((a, b) => ORDER.indexOf(a.group) - ORDER.indexOf(b.group));
   return list.length ? list : [{ id: 'golden-visa', label: 'UAE Golden Visa', group: 'Golden Visa', docs: GOLDEN_DOCS, family: true }];
 }
 
