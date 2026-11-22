@@ -1,0 +1,70 @@
+name: Dashboard screenshots
+
+on:
+  workflow_dispatch:
+
+jobs:
+  shots:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      DATABASE_URL: file:./ci.db
+      JWT_SECRET: ci-secret-ci-secret-ci-secret-ci-secret-1234
+      NEXT_PUBLIC_SITE_URL: http://localhost:3000
+      ADMIN_EMAIL: admin@example.com
+      ADMIN_PASSWORD: CiPassword123
+      UPLOAD_DIR: uploads
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --no-audit --no-fund
+      - run: npm run build
+      - name: Start
+        run: |
+          npm start > server.log 2>&1 &
+          for i in $(seq 1 60); do curl -sf http://localhost:3000/api/auth/me >/dev/null && break; sleep 2; done
+      - name: Sample client with a quote, a payment and a message
+        run: |
+          set -e
+          B=http://localhost:3000
+          A=$(curl -sf -c client.txt -X POST $B/api/apply -F service="UAE Golden Visa" -F fullName="Sara Ahmed" -F email=sara@example.com -F phone=+971500000001 -F password=ClientPass123 -F consent=true)
+          echo "$A"; ID=$(echo "$A" | node -pe 'JSON.parse(require("fs").readFileSync(0)).id')
+          curl -sf -X POST $B/api/apply -b client.txt -F service="Family & Dependant Visa" -F fullName="Sara Ahmed" -F phone=+971500000001 > /dev/null
+          curl -sf -c admin.txt -X POST $B/api/auth/login -H 'Content-Type: application/json' -d '{"email":"admin@example.com","password":"CiPassword123","admin":true}' > /dev/null
+          F=$B/api/admin/applications/$ID/file
+          curl -sf -b admin.txt -X POST $F -H 'Content-Type: application/json' -d '{"action":"quote","lines":[{"label":"Government fees","amount":4800}],"serviceFee":2500,"vatPct":5,"send":true,"notify":false}'; echo
+          curl -sf -b admin.txt -X POST $F -H 'Content-Type: application/json' -d '{"action":"payment","label":"Visa issuance fee","amount":1250,"notify":false}'; echo
+          curl -sf -b admin.txt -X POST $B/api/admin/applications/$ID/messages -H 'Content-Type: application/json' -d '{"body":"Hello Sara, your documents look good. Please accept the quotation so we can start."}'; echo
+      - name: Screenshots
+        run: |
+          npm i --no-save --no-audit --no-fund playwright@1.49.0
+          npx playwright install --with-deps chromium
+          cat > shot.mjs <<'EOF'
+          import { chromium } from 'playwright';
+          const b = await chromium.launch();
+          for (const [name, vp] of [['desktop', { width: 1366, height: 900 }], ['phone', { width: 390, height: 844 }]]) {
+            const ctx = await b.newContext({ viewport: vp, deviceScaleFactor: 1 });
+            const p = await ctx.newPage();
+            await p.goto('http://localhost:3000/login');
+            await p.fill('input[type=email]', 'sara@example.com');
+            await p.fill('input[type=password]', 'ClientPass123');
+            await p.keyboard.press('Enter');
+            await p.waitForURL(/account/, { timeout: 20000 }).catch(() => {});
+            for (const path of ['/account', '/account/applications', '/account/quotes', '/account/payments', '/account/messages', '/account/documents']) {
+              await p.goto('http://localhost:3000' + path, { waitUntil: 'networkidle' });
+              await p.screenshot({ path: `shots/${name}${path.replace(/\//g, '-')}.png`, fullPage: true });
+            }
+            await ctx.close();
+          }
+          await b.close();
+          EOF
+          mkdir -p shots && node shot.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: shots
+          path: |
+            shots
+            server.log
