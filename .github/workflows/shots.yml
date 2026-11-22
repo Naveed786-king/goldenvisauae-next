@@ -80,6 +80,18 @@ jobs:
             }
             await ctx.close();
           }
+          {
+            const ctx = await b.newContext({ viewport: { width: 1366, height: 900 }, deviceScaleFactor: 1 });
+            const p = await ctx.newPage();
+            await p.goto(B + '/admin/login', { waitUntil: 'networkidle' });
+            const r = await p.request.post(B + '/api/auth/login', { data: { email: 'admin@example.com', password: 'CiPassword123', admin: true } });
+            console.log('admin login', r.status());
+            await p.goto(B + '/admin/applications', { waitUntil: 'networkidle' });
+            await p.screenshot({ path: 'shots/admin-applications.png', fullPage: true });
+            const href = await p.evaluate(() => [...document.querySelectorAll('a[href^="/admin/applications/"]')].map((x) => x.getAttribute('href')).find((h) => h && !h.includes('?')));
+            if (href) { await p.goto(B + href, { waitUntil: 'networkidle' }); await p.waitForTimeout(1500); await p.screenshot({ path: 'shots/admin-file.png', fullPage: true }); }
+            await ctx.close();
+          }
           await b.close();
           EOF
           mkdir -p shots && node shot.mjs
