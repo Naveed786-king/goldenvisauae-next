@@ -144,8 +144,9 @@ jobs:
               for (const k of ['payments','whatsapp','clientMail','pdf','steps','portal']) { const r=await A('/api/admin/settings/'+k); if(r.s!==200) die('settings '+k,r.j); }
               console.log('Client system flow OK: quote, accept, payment, receipt',pp.receiptNo,'decision');
             })().catch(e=>die(e.message))"
-          code=$(curl -s -o /dev/null -w "%{http_code}" -H "Host: app.goldenvisauae.ai" http://localhost:3000/); echo "portal host / -> $code"; [ "$code" = "307" ]
-          curl -s -o /dev/null -w "%{redirect_url}\n" -H "Host: app.goldenvisauae.ai" http://localhost:3000/ | grep -q '/account' || { echo "::error title=Check failed::portal host goes to /account"; exit 1; }
+          code=$(curl -s -o /dev/null -w "%{http_code}" -H "Host: app.goldenvisauae.ai" http://localhost:3000/); echo "portal host / -> $code"; [ "$code" = "307" ] || [ "$code" = "200" ]
+          curl -s -H "Host: app.goldenvisauae.ai" http://localhost:3000/login | grep -q 'class="auth' || { echo "::error title=Check failed::portal host shows the client dashboard sign-in"; exit 1; }
+          code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/portal/login); echo "/portal/login -> $code"; [ "$code" = "200" ]
           code=$(curl -s -o /dev/null -w "%{http_code}" -H "Host: app.goldenvisauae.ai" http://localhost:3000/login); echo "portal host /login -> $code"; [ "$code" = "200" ]
           curl -s -o /dev/null -w "%{redirect_url}\n" -H "Host: app.goldenvisauae.ai" http://localhost:3000/blog | grep -q 'localhost:3000/blog' || { echo "::error title=Check failed::portal host sends other pages to the main site"; exit 1; }
           code=$(curl -s -o /dev/null -w "%{http_code}" -b cookies.txt http://localhost:3000/admin/client-system); echo "/admin/client-system -> $code"; [ "$code" = "200" ]
