@@ -53,6 +53,13 @@ export async function middleware(req: NextRequest) {
   if (raw.startsWith('/portal')) return NextResponse.next();
   // file links (/t/<secret>) also open on the main address, e.g. while the dashboard address forwards here
   if (/^\/t\/[a-f0-9]{32}(\/|$)/.test(raw)) return NextResponse.rewrite(new URL('/portal' + raw + req.nextUrl.search, req.url));
+  // Sign-in and the client area of the website open the new client dashboard (on this address under /portal,
+  // or on the dashboard address when CLIENT_APP_URL is set).
+  if (!onPortal && !process.env.CLIENT_APP_URL) {
+    const to: Record<string, string> = { '/account': '/portal', '/login': '/portal/login', '/register': '/portal/register', '/forgot-password': '/portal/forgot' };
+    const hit = Object.keys(to).find((p) => raw === p || raw.startsWith(p + '/'));
+    if (hit) return NextResponse.redirect(new URL(to[hit] + req.nextUrl.search, req.url), 307);
+  }
   // CLIENT_APP_URL set (https://app.goldenvisauae.ai): sign-in and the client area of the website open the dashboard there.
   const clientApp = (process.env.CLIENT_APP_URL || '').replace(/\/+$/, '');
   if (clientApp && !onPortal && !pathname.startsWith('/api/')) {
