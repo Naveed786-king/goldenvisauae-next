@@ -1,7 +1,8 @@
 'use client';
 // Admin → Client system: dashboard address & advisor, payments, WhatsApp, client messages, PDFs, steps.
-import { useState } from 'react';
-import { Save, Send, Plus, Trash2, ArrowUp, ArrowDown } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { Save, Send, Plus } from 'lucide-react';
+import { GOLDEN_STEPS, OTHER_STEPS } from '@/lib/portal/config';
 import { Btn, Card, PageTitle, Spinner, api, toast, Toggle } from './ui';
 import { useSetting } from './SettingsEditors';
 import { cn } from '@/lib/utils';
@@ -446,12 +447,59 @@ function PdfTab() {
   );
 }
 
+/** WhatsApp style text box: *bold*, _italic_, ~strike~, emoji, and a preview of the message. */
+function WaBox({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder?: string }) {
+  const ref = useRef<HTMLTextAreaElement>(null);
+  const wrap = (m: string) => {
+    const t = ref.current;
+    if (!t) return;
+    const [x, y] = [t.selectionStart, t.selectionEnd];
+    const sel = value.slice(x, y) || 'text';
+    onChange(value.slice(0, x) + m + sel + m + value.slice(y));
+    setTimeout(() => { t.focus(); t.setSelectionRange(x + m.length, x + m.length + sel.length); }, 0);
+  };
+  const put = (e: string) => {
+    const t = ref.current;
+    const x = t ? t.selectionStart : value.length;
+    onChange(value.slice(0, x) + e + value.slice(x));
+  };
+  const html = value
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/(^|[\s(])\*([^*\n]+)\*/g, '$1<b>$2</b>').replace(/(^|[\s(])_([^_\n]+)_/g, '$1<i>$2</i>').replace(/(^|[\s(])~([^~\n]+)~/g, '$1<s>$2</s>')
+    .replace(/\n/g, '<br>');
+  return (
+    <div className="overflow-hidden rounded-xl ring-1 ring-gray-200 focus-within:ring-[#c9a032]">
+      <div className="flex flex-wrap items-center gap-1 border-b border-gray-100 bg-gray-50 px-2 py-1">
+        <button type="button" onClick={() => wrap('*')} className="rounded px-2 py-0.5 text-sm font-extrabold hover:bg-white" title="Bold">B</button>
+        <button type="button" onClick={() => wrap('_')} className="rounded px-2 py-0.5 text-sm italic hover:bg-white" title="Italic">I</button>
+        <button type="button" onClick={() => wrap('~')} className="rounded px-2 py-0.5 text-sm line-through hover:bg-white" title="Strike">S</button>
+        <span className="mx-1 h-4 w-px bg-gray-200" />
+        {['✅', '📄', '💳', '📅', '🎉', '⏳', '📎', '🙏'].map((e) => (
+          <button key={e} type="button" onClick={() => put(e)} className="rounded px-1 py-0.5 hover:bg-white">{e}</button>
+        ))}
+      </div>
+      <textarea ref={ref} rows={3} className="block w-full resize-y border-0 bg-white px-3 py-2 text-sm outline-none" value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} />
+      {value.trim() && (
+        <div className="border-t border-gray-100 bg-[#efeae2] px-3 py-2">
+          <div className="max-w-[90%] rounded-lg rounded-tl-none bg-white px-3 py-2 text-[13px] leading-snug text-gray-800 shadow-sm" dangerouslySetInnerHTML={{ __html: html }} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Application steps (the Abu Dhabi Golden Visa layout): per service list, numbered steps with sections,
+ *  the WhatsApp message of each step, how many open files are on it, move / add / remove, restore. */
 function StepsTab() {
   const { value: v, setValue, save, saving } = useSetting<any>('steps');
   const [which, setWhich] = useState<'golden' | 'other'>('golden');
+  const [counts, setCounts] = useState<any>(null);
+  useEffect(() => { api<any>('/api/admin/client-system/step-counts').then(setCounts).catch(() => null); }, []);
   if (!v) return <Spinner />;
   const list: any[] = v[which] || [];
+  const per: Record<string, number> = counts?.[which]?.perStep || {};
   const setList = (l: any[]) => setValue({ ...v, [which]: l });
+  const upd = (i: number, p: any) => setList(list.map((x, k) => (k === i ? { ...x, ...p } : x)));
   const move = (i: number, d: number) => {
     const l = [...list];
     const j = i + d;
@@ -459,56 +507,108 @@ function StepsTab() {
     [l[i], l[j]] = [l[j], l[i]];
     setList(l);
   };
+  const add = (i: number) => {
+    const l = [...list];
+    let n = l.length + 1;
+    while (l.some((x) => x.id === `step-${n}`)) n++;
+    l.splice(i + 1, 0, { id: `step-${n}`, name: '', group: l[i]?.group || 'Processing', next: '' });
+    setList(l);
+  };
+  const del = (i: number) => {
+    const s = list[i];
+    const n = per[s.id] || 0;
+    if (!window.confirm(n ? `${n} file(s) are on “${s.name}”. They will show the step before it. Remove this step?` : `Remove “${s.name || 'this step'}”?`)) return;
+    setList(list.filter((_, k) => k !== i));
+  };
+  const groups = Array.from(new Set(list.map((x) => x.group).filter(Boolean)));
+  const label = which === 'golden' ? 'Golden Visa' : 'Other services';
+  const KEEP = ['quote-sent', 'quote-ok', 'pay-wait', 'paid', 'approved'];
   return (
-    <div className="space-y-4">
-      <div className="flex gap-2">
-        <button type="button" onClick={() => setWhich('golden')} className={cn('rounded-full px-4 py-2 text-sm font-bold', which === 'golden' ? 'bg-gold text-ink' : 'bg-white ring-1 ring-gray-200')}>
-          Golden Visa services
-        </button>
-        <button type="button" onClick={() => setWhich('other')} className={cn('rounded-full px-4 py-2 text-sm font-bold', which === 'other' ? 'bg-gold text-ink' : 'bg-white ring-1 ring-gray-200')}>
-          Other services
-        </button>
-      </div>
-      <p className="text-xs text-gray-500">
-        Keep the ids quote-sent, quote-ok, pay-wait, paid and approved: quotes, payments and decisions move files to those steps automatically.
-      </p>
-      {list.map((s, i) => (
-        <Card key={i} className="p-0">
-          <div className="grid gap-3 p-4 md:grid-cols-[1fr_1fr_160px_auto]">
-            <input className="admin-input" value={s.name} onChange={(e) => setList(list.map((x, k) => (k === i ? { ...x, name: e.target.value } : x)))} placeholder="Step name" />
-            <input className="admin-input" value={s.group} onChange={(e) => setList(list.map((x, k) => (k === i ? { ...x, group: e.target.value } : x)))} placeholder="Group" />
-            <input className="admin-input font-mono text-xs" value={s.id} onChange={(e) => setList(list.map((x, k) => (k === i ? { ...x, id: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') } : x)))} placeholder="id" />
-            <div className="flex items-center gap-1">
-              <button type="button" onClick={() => move(i, -1)} className="p-1 text-gray-400 hover:text-gray-700" aria-label="Up">
-                <ArrowUp className="h-4 w-4" />
-              </button>
-              <button type="button" onClick={() => move(i, 1)} className="p-1 text-gray-400 hover:text-gray-700" aria-label="Down">
-                <ArrowDown className="h-4 w-4" />
-              </button>
-              <button type="button" onClick={() => confirm('Remove this step?') && setList(list.filter((_, k) => k !== i))} className="p-1 text-gray-300 hover:text-red-600" aria-label="Remove">
-                <Trash2 className="h-4 w-4" />
-              </button>
-            </div>
-            <textarea className="admin-input min-h-[56px] md:col-span-3" value={s.next} onChange={(e) => setList(list.map((x, k) => (k === i ? { ...x, next: e.target.value } : x)))} placeholder="What the client reads at this step" />
-            <Toggle checked={s.notify !== false} onChange={(x) => setList(list.map((y, k) => (k === i ? { ...y, notify: x } : y)))} label="Notify" />
+    <div className="space-y-5">
+      <h2 className="font-display text-2xl font-semibold text-gray-900">The steps your clients <span className="text-[#b8862f]">see and follow.</span></h2>
+      <nav className="flex flex-wrap gap-2" aria-label="Service">
+        {(['golden', 'other'] as const).map((k) => (
+          <button key={k} type="button" onClick={() => setWhich(k)} className={cn('inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold ring-1', which === k ? 'bg-gradient-to-b from-[#e8c766] to-[#c9a032] text-[#1a1406] ring-transparent' : 'bg-white text-gray-700 ring-gray-200')}>
+            {k === 'golden' ? 'Golden Visa' : 'Other services'}
+            {counts?.[k]?.files ? <em className="rounded-full bg-gray-900 px-2 py-0.5 text-[0.65rem] not-italic text-[#f2d27a]">{counts[k].files}</em> : null}
+          </button>
+        ))}
+      </nav>
+      <Card className="p-0">
+        <div className="space-y-4 p-5">
+          <div>
+            <h3 className="text-lg font-bold text-gray-900">{label} <small className="font-normal text-gray-400">· {list.length} steps</small></h3>
+            <p className="mt-1 text-xs text-gray-500">
+              Each list has its own steps; a file follows the steps of its service. Rename a step, change the message the client gets, move it up or down, add or remove steps. Untick “Send this message on
+              WhatsApp &amp; email” for steps the client does not need to hear about. Keep the steps quote-sent, quote-ok, pay-wait, paid and approved: quotes, payments and decisions move files to them
+              automatically.
+            </p>
           </div>
-        </Card>
-      ))}
-      <div className="flex justify-between">
-        <Btn variant="ghost" onClick={() => setList([...list, { id: `step-${list.length + 1}`, name: 'New step', group: list[list.length - 1]?.group || 'Processing', next: '' }])}>
-          <Plus className="h-4 w-4" /> Add step
-        </Btn>
-        <Btn
-          onClick={() => {
-            const ids = list.map((s) => s.id);
-            if (ids.some((x) => !x) || new Set(ids).size !== ids.length) return toast('Every step needs its own id', 'error');
-            save();
-          }}
-          loading={saving}
-        >
-          <Save className="h-4 w-4" /> Save steps
-        </Btn>
-      </div>
+          <datalist id="step-groups">{groups.map((g) => <option key={g} value={g} />)}</datalist>
+          <ol className="space-y-3">
+            {list.map((s, i) => {
+              const newGroup = i === 0 || list[i - 1].group !== s.group;
+              return (
+                <li key={i}>
+                  {newGroup && s.group && <p className="mb-2 mt-4 text-[0.7rem] font-extrabold uppercase tracking-[0.16em] text-[#8a6a14]">{s.group}</p>}
+                  <div className="grid gap-3 rounded-2xl bg-white p-4 ring-1 ring-gray-200 md:grid-cols-[44px_1fr_auto]">
+                    <span className="grid h-10 w-10 place-items-center rounded-xl bg-[#fbf4dd] font-mono text-sm font-bold text-[#8a6a14]">{String(i + 1).padStart(2, '0')}</span>
+                    <div className="min-w-0 space-y-2">
+                      <div className="grid gap-2 md:grid-cols-[1fr_200px_150px]">
+                        <input className="admin-input" aria-label="Step name" value={s.name} onChange={(e) => upd(i, { name: e.target.value })} placeholder="Step name, e.g. Medical test" />
+                        <input className="admin-input" aria-label="Section" list="step-groups" value={s.group} onChange={(e) => upd(i, { group: e.target.value })} placeholder="Section" />
+                        <input className="admin-input font-mono text-xs" aria-label="Step id" title={KEEP.includes(s.id) ? 'Used by quotes, payments and decisions: keep this id' : 'Step id'} readOnly={KEEP.includes(s.id)} value={s.id} onChange={(e) => upd(i, { id: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') })} placeholder="id" />
+                      </div>
+                      <WaBox value={s.next || ''} onChange={(x) => upd(i, { next: x })} placeholder="Message the client sees at this step" />
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <label className="flex items-center gap-2 text-sm text-gray-700">
+                          <input type="checkbox" className="accent-[#c9a032]" checked={s.notify !== false} onChange={(e) => upd(i, { notify: e.target.checked })} /> Send this message on WhatsApp &amp; email
+                        </label>
+                        {per[s.id] ? <small className="text-xs text-gray-500">{per[s.id]} file(s) on this step now</small> : null}
+                      </div>
+                    </div>
+                    <div className="flex flex-row flex-wrap items-start gap-1 md:flex-col">
+                      <button type="button" className="rounded-lg bg-white px-2.5 py-1 text-xs font-bold ring-1 ring-gray-200 disabled:opacity-40" onClick={() => move(i, -1)} disabled={i === 0} title="Move up">↑</button>
+                      <button type="button" className="rounded-lg bg-white px-2.5 py-1 text-xs font-bold ring-1 ring-gray-200 disabled:opacity-40" onClick={() => move(i, 1)} disabled={i === list.length - 1} title="Move down">↓</button>
+                      <button type="button" className="rounded-lg bg-white px-2.5 py-1 text-xs font-bold ring-1 ring-gray-200" onClick={() => add(i)} title="Add a step below">+ Add</button>
+                      <button type="button" className="rounded-lg bg-white px-2.5 py-1 text-xs font-bold text-red-600 ring-1 ring-red-100 disabled:opacity-40" onClick={() => del(i)} disabled={list.length <= 2 || KEEP.includes(s.id)} title="Remove this step">Remove</button>
+                    </div>
+                  </div>
+                </li>
+              );
+            })}
+          </ol>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <Btn variant="ghost" onClick={() => add(list.length - 1)}><Plus className="h-4 w-4" /> Add a step at the end</Btn>
+            <Btn
+              onClick={() => {
+                const ids = list.map((x) => x.id);
+                if (ids.some((x) => !x) || new Set(ids).size !== ids.length) return toast('Every step needs its own id', 'error');
+                if (list.some((x) => !String(x.name || '').trim())) return toast('Every step needs a name', 'error');
+                save();
+              }}
+              loading={saving}
+            >
+              <Save className="h-4 w-4" /> Save {label} steps
+            </Btn>
+          </div>
+          <details className="rounded-xl bg-gray-50 p-3 text-sm">
+            <summary className="cursor-pointer font-semibold text-gray-700">Go back to the standard {label} steps</summary>
+            <div className="mt-2 flex items-center gap-2">
+              <Btn
+                variant="dark"
+                onClick={() => {
+                  if (!window.confirm(`Replace the ${label} steps with the standard ones? Press Save afterwards.`)) return;
+                  setList((which === 'golden' ? GOLDEN_STEPS : OTHER_STEPS).map((x) => ({ ...x })));
+                }}
+              >
+                Restore the standard steps
+              </Btn>
+              <span className="text-xs text-gray-500">Then press Save.</span>
+            </div>
+          </details>
+        </div>
+      </Card>
     </div>
   );
 }
