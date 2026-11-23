@@ -35,7 +35,7 @@ export default async function PayPage({ params, searchParams }: { params: Promis
             <span className="font-display text-3xl font-bold text-ink">{money(p.amount, cur)}</span>
           </div>
           {p.status === 'paid' && <p className="mt-4 rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">This payment is already paid. Receipt {p.receiptNo}. Thank you!</p>}
-          {sp.error && <p className="mt-4 rounded-2xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">The payment page could not be opened. Please try again, or pay by bank transfer below.</p>}
+          {sp.error && <p className="mt-4 rounded-2xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">The payment page could not be opened. Please try again, or pay by bank transfer below.{sp.why && <span className="mt-1 block text-xs font-normal text-red-600">Card provider said: {String(sp.why).slice(0, 160)}</span>}</p>}
           {cfg.payText && p.status !== 'paid' && <p className="mt-4 whitespace-pre-line text-sm text-ink/70">{cfg.payText}</p>}
         </div>
 

@@ -46,7 +46,10 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ toke
     await prisma.payment.update({ where: { id: p.id }, data: { provider: r.provider, providerId: r.providerId, providerRef: r.providerRef, startedAt: new Date(), tries: { increment: 1 } } });
     return NextResponse.redirect(r.url, 303);
   } catch (e) {
-    console.error('[pay] checkout not started:', (e as Error).message);
-    return NextResponse.redirect(`${page}?error=1`, 303);
+    const why = String((e as Error).message || 'unknown').replace(/\s+/g, ' ').slice(0, 160);
+    console.error('[pay] checkout not started:', why);
+    // kept in the WhatsApp/email log as well, so the team can see why the card page did not open
+    await prisma.notifyLog.create({ data: { channel: 'payment', direction: 'out', to: a.refNo, event: 'checkout', text: `${cfg.provider}: ${p.label}`, ok: false, error: why, applicationId: a.id } }).catch(() => null);
+    return NextResponse.redirect(`${page}?error=1&why=${encodeURIComponent(why)}`, 303);
   }
 }
