@@ -41,7 +41,9 @@ export type CardKind = 'local' | 'intl';
 export function cardFee(c: PaymentSettings, amount: number, card: CardKind) {
   if (!c.feeOn) return 0;
   const pct = card === 'intl' ? c.feeIntlPct : c.feeLocalPct;
-  return Math.round(((amount * (Number(pct) || 0)) / 100 + (Number(c.feeFixed) || 0)) * 100) / 100;
+  // Ziina: (amount × fee % + fixed AED) + VAT on that fee
+  const base = (amount * (Number(pct) || 0)) / 100 + (Number(c.feeFixed) || 0);
+  return Math.round(base * (1 + Number(c.feeVatPct ?? 5) / 100) * 100) / 100;
 }
 
 const fils = (n: number) => Math.round(n * 100);

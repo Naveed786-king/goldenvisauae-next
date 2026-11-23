@@ -49,7 +49,7 @@ export default async function PayPage({ params, searchParams }: { params: Promis
                   return (
                     <a key={k} href={`${base}?card=${k}`} className="rounded-2xl border border-ink/10 p-4 transition hover:border-gold hover:shadow-md">
                       <p className="font-bold text-ink">{k === 'local' ? 'UAE bank card' : 'International card'}</p>
-                      <p className="mt-1 text-xs text-ink/55">Card fee {money(fee, cur)}</p>
+                      <p className="mt-1 text-xs text-ink/55">Card fee {money(fee, cur)} · {k === 'intl' ? cfg.feeIntlPct : cfg.feeLocalPct}% + AED {cfg.feeFixed}{Number(cfg.feeVatPct ?? 5) ? ` + ${cfg.feeVatPct ?? 5}% VAT` : ''}</p>
                       <p className="mt-2 font-display text-xl font-bold text-ink">{money(charged({ amount: p.amount, fee }), cur)}</p>
                     </a>
                   );

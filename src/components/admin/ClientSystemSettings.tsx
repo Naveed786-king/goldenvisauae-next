@@ -248,6 +248,7 @@ function PaymentsTab() {
               <Field label="UAE card %">{inp('feeLocalPct')}</Field>
               <Field label="International card %">{inp('feeIntlPct')}</Field>
               <Field label="Fixed fee (AED)">{inp('feeFixed')}</Field>
+              <Field label="VAT on the card fee (%)">{inp('feeVatPct', '5')}</Field>
             </>
           )}
         </div>
@@ -271,7 +272,7 @@ function PaymentsTab() {
           )}
         </div>
       </Card>
-      <SaveBar save={() => save({ ...v, feeLocalPct: Number(v.feeLocalPct) || 0, feeIntlPct: Number(v.feeIntlPct) || 0, feeFixed: Number(v.feeFixed) || 0 })} saving={saving} />
+      <SaveBar save={() => save({ ...v, feeLocalPct: Number(v.feeLocalPct) || 0, feeIntlPct: Number(v.feeIntlPct) || 0, feeFixed: Number(v.feeFixed) || 0, feeVatPct: v.feeVatPct === '' || v.feeVatPct === undefined ? 5 : Number(v.feeVatPct) || 0 })} saving={saving} />
       <PayTest />
     </div>
   );

@@ -28,6 +28,8 @@ export type PaymentSettings = {
   feeLocalPct: number;
   feeIntlPct: number;
   feeFixed: number;
+  /** VAT on the card fee (%), as Ziina charges it */
+  feeVatPct?: number;
   /** bank transfer as a second way to pay (the client uploads the transfer slip) */
   bankOn: boolean;
   bankName: string;
@@ -58,9 +60,10 @@ export const defaultPayments: PaymentSettings = {
   autoStage: true,
   receiptWa: true,
   feeOn: false,
-  feeLocalPct: 2.99,
-  feeIntlPct: 3.99,
+  feeLocalPct: 2.6,
+  feeIntlPct: 4.1,
   feeFixed: 1,
+  feeVatPct: 5,
   bankOn: false,
   bankName: '',
   bankHolder: '',
