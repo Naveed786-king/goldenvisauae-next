@@ -107,7 +107,8 @@ export async function startCheckout(a: App, p: Payment, returnUrl: string, cance
       const j = await jfetch('https://api-v2.ziina.com/api/payment_intent', {
         method: 'POST',
         headers: { Authorization: ziinaAuth(c), 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount: fils(total), currency_code: cur, message: desc, success_url: returnUrl, cancel_url: cancelUrl, failure_url: `${returnUrl}&failed=1`, test: c.test }),
+        // Ziina refuses long messages: file number and a short label only
+        body: JSON.stringify({ amount: fils(total), currency_code: cur, message: `${a.refNo} ${p.label}`.replace(/\s+/g, ' ').trim().slice(0, 40).trim(), success_url: returnUrl, cancel_url: cancelUrl, failure_url: `${returnUrl}&failed=1`, test: c.test }),
       });
       return { url: j.redirect_url, providerId: j.id, providerRef: ref, provider: 'ziina' };
     }
