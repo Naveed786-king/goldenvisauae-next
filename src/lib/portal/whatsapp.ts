@@ -99,6 +99,9 @@ export async function sendWhatsApp(m: WaSend): Promise<{ ok: boolean; error: str
   }
 
   const name = (w.templates?.[m.event] || '').trim();
+  // like the Abu Dhabi site: a client update without its own approved template goes out through the approved "new message" template
+  if (!name && !/^team/.test(m.event) && m.event !== 'message' && (w.templates?.message || '').trim())
+    return sendWhatsApp({ ...m, event: 'message', vars: { ...m.vars, text: m.text }, force: true });
   if (!name) return log(false, 'Not sent: the client has not written in the last 24 hours and no approved template is set for this message (Admin → WhatsApp).', m.text);
   const keys = NOTIFY_EVENTS.find((e) => e.key === m.event)?.vars.filter((k) => k !== 'link') || [];
   const components: any[] = [];
