@@ -62,6 +62,10 @@ export function ClientSystemPage({ page }: { page: keyof typeof PAGES }) {
       <div className="space-y-6">
         <PageHead eyebrow="Application steps" title="Application steps" />
         <StepsTab />
+        <div>
+          <h2 className="mb-3 font-display text-2xl font-semibold text-gray-900">Client dashboard</h2>
+          <PortalTab />
+        </div>
       </div>
     );
   }
@@ -73,7 +77,10 @@ export function ClientSystemPage({ page }: { page: keyof typeof PAGES }) {
         <PaymentsOverview part="kpi" />
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
           <PaymentsTab />
-          <PaymentsOverview part="hooks" />
+          <div className="space-y-6">
+            <PaymentsOverview part="hooks" />
+            <HowClientsPay />
+          </div>
         </div>
         <PaymentsOverview part="list" />
       </div>
@@ -268,7 +275,33 @@ function PaymentsTab() {
         </div>
       </Card>
       <SaveBar save={() => save({ ...v, feeLocalPct: Number(v.feeLocalPct) || 0, feeIntlPct: Number(v.feeIntlPct) || 0, feeFixed: Number(v.feeFixed) || 0 })} saving={saving} />
+      <PayTest />
     </div>
+  );
+}
+
+function PayTest() {
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<{ ok: boolean; msg: string } | null>(null);
+  return (
+    <div className="flex flex-wrap items-center gap-3">
+      <Btn variant="outline" loading={busy} onClick={async () => { setBusy(true); try { setMsg(await api<{ ok: boolean; msg: string }>('/api/admin/client-system/pay-test', 'POST')); } catch (e: any) { setMsg({ ok: false, msg: e.message }); } setBusy(false); }}>Test connection</Btn>
+      {msg && <span className={cn('rounded-xl px-3 py-2 text-sm', msg.ok ? 'bg-emerald-50 text-emerald-800' : 'bg-red-50 text-red-700')}>{msg.msg}</span>}
+    </div>
+  );
+}
+
+function HowClientsPay() {
+  return (
+    <Card title="How clients pay" className="p-0">
+      <ol className="list-decimal space-y-2 p-5 ps-9 text-sm leading-relaxed text-gray-700">
+        <li><b>Your merchant account:</b> open an account with Ziina, Stripe, TotalPay, N-Genius or Telr in your company’s name, linked to your company bank account. Paste its keys here. All card money goes from the client to <b>your</b> bank account; the website never holds money.</li>
+        <li>In a client file, write the quote (items, qty, price, service fee + VAT) and press <b>Save and send to client</b>. The client gets WhatsApp + email with the order link.</li>
+        <li>The client opens the order page and presses <b>Pay &amp; confirm</b>, or pays by bank transfer and uploads the slip.</li>
+        <li>Secure card page → <b>Payment received</b>. The order is confirmed and the client gets “Order confirmed” on WhatsApp.</li>
+        <li>The receipt PDF is created and sent on WhatsApp and email. Extra amounts later: file › Payments › Request a payment.</li>
+      </ol>
+    </Card>
   );
 }
 
@@ -278,6 +311,8 @@ function WhatsAppTab({ part = 'all' }: { part?: 'all' | 'setup' | 'auto' | 'test
   const [to, setTo] = useState('');
   const [testing, setTesting] = useState(false);
   const [showTok, setShowTok] = useState(false);
+  const [testText, setTestText] = useState('');
+  const [testMode, setTestMode] = useState<'template' | 'plain'>('template');
   const { value: mail } = useSetting<any>('clientMail');
   if (!v) return <Spinner />;
   // a WhatsApp text that is the same as the email text is not stored: it then follows the email text
@@ -290,7 +325,7 @@ function WhatsAppTab({ part = 'all' }: { part?: 'all' | 'setup' | 'auto' | 'test
   async function test() {
     setTesting(true);
     try {
-      const r = await api<{ result: { ok: boolean; error: string } }>('/api/admin/client-system/test', 'POST', { to });
+      const r = await api<{ result: { ok: boolean; error: string } }>('/api/admin/client-system/test', 'POST', { to, text: testText, mode: testMode });
       toast(r.result.ok ? 'Test message sent — check WhatsApp' : r.result.error, r.result.ok ? 'success' : 'error');
     } catch (e: any) {
       toast(e.message, 'error');
@@ -353,6 +388,15 @@ function WhatsAppTab({ part = 'all' }: { part?: 'all' | 'setup' | 'auto' | 'test
       )}
       {show('auto') && (
       <div className="space-y-3">
+        <Card className="p-0">
+          <div className="flex flex-wrap items-center justify-between gap-3 p-5">
+            <div>
+              <h3 className="text-lg font-bold text-gray-900">Step messages, one for every step of every service</h3>
+              <p className="text-sm text-gray-500">When a file moves to a new step, the client gets that step’s own text. Edit them per service on Application steps.</p>
+            </div>
+            <a href="/admin/steps" className="rounded-xl bg-gradient-to-b from-[#e8c766] to-[#b8862f] px-4 py-2 text-sm font-bold text-white">Edit step messages</a>
+          </div>
+        </Card>
         <p className="text-xs text-gray-500">
           Each message below goes out automatically. Inside 24 hours after a client wrote to you, this text is sent. Outside that window Meta only delivers approved templates: the template name is filled in by “Create all templates in Meta” on the Setup tab. Names ending in <b>_file</b> or with <b>_pdf_</b> carry the PDF (quote or receipt); names ending in <b>_btn_v1</b> have an “Open my file” button.
         </p>
@@ -381,13 +425,22 @@ function WhatsAppTab({ part = 'all' }: { part?: 'all' | 'setup' | 'auto' | 'test
       {show('test') && (
       <Card title="Send a test" className="p-0">
         <div className="flex flex-wrap items-end gap-3 p-5">
-          <Field label="WhatsApp number">
+          <Field label="Send to (with country code)">
             <input className="admin-input" value={to} onChange={(e) => setTo(e.target.value)} placeholder="+9715…" />
           </Field>
+          <div className="w-full">
+            <Field label="Message">
+              <textarea className="admin-input min-h-[70px]" value={testText} onChange={(e) => setTestText(e.target.value)} placeholder="Test message from your website: WhatsApp is connected ✅" />
+            </Field>
+          </div>
+          <div className="w-full space-y-1.5 text-sm text-gray-700">
+            <label className="flex items-center gap-2"><input type="radio" className="accent-[#b8862f]" checked={testMode === 'template'} onChange={() => setTestMode('template')} /> Approved template (works any time, like real client updates)</label>
+            <label className="flex items-center gap-2"><input type="radio" className="accent-[#b8862f]" checked={testMode === 'plain'} onChange={() => setTestMode('plain')} /> Plain text (only if they wrote to you in the last 24 h)</label>
+          </div>
           <Btn variant="dark" loading={testing} onClick={test}>
             <Send className="h-4 w-4" /> Send test
           </Btn>
-          <p className="w-full text-xs text-gray-400">Save first. If this number has not written to you in the last 24 hours, Meta's “hello_world” template is used.</p>
+          <p className="w-full text-xs text-gray-400">Save first. Plain text to a number that has not written to you in the last 24 hours sends Meta's “hello_world” template instead.</p>
         </div>
       </Card>
       )}
@@ -509,7 +562,24 @@ function MessageLog({ channel }: { channel: 'whatsapp' | 'email' }) {
   const [rows, setRows] = useState<any[] | null>(null);
   useEffect(() => { api<any>(`/api/admin/client-system/overview?what=log&channel=${channel}`).then((r) => setRows(r.rows)).catch(() => setRows([])); }, [channel]);
   return (
-    <Card title={channel === 'email' ? 'Email log' : 'Message log'} className="p-0">
+    <Card
+      title={channel === 'email' ? 'Email log' : 'Message log'}
+      actions={
+        rows && rows.length > 0 ? (
+          <button
+            type="button"
+            className="rounded-lg px-3 py-1.5 text-xs font-bold text-red-600 ring-1 ring-red-100 hover:bg-red-50"
+            onClick={async () => {
+              if (!window.confirm('Clear the whole log?')) return;
+              try { await api(`/api/admin/client-system/overview?channel=${channel}`, 'DELETE'); setRows([]); toast('Log cleared'); } catch (e: any) { toast(e.message, 'error'); }
+            }}
+          >
+            Clear the log
+          </button>
+        ) : undefined
+      }
+      className="p-0"
+    >
       {!rows ? <div className="p-5"><Spinner /></div> : rows.length === 0 ? <p className="p-5 text-sm text-gray-500">Nothing sent yet.</p> : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -575,7 +645,7 @@ function PaymentsOverview({ part }: { part: 'kpi' | 'list' | 'hooks' }) {
       {d.rows.length === 0 ? <p className="p-5 text-sm text-gray-500">No payments yet.</p> : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead><tr className="text-left text-[0.68rem] font-extrabold uppercase tracking-wider text-gray-400"><th className="px-5 py-2">Date</th><th className="px-3 py-2">Client</th><th className="px-3 py-2">File</th><th className="px-3 py-2">Description</th><th className="px-3 py-2 text-right">Amount</th><th className="px-3 py-2">Status</th><th className="px-3 py-2">Method</th></tr></thead>
+            <thead><tr className="text-left text-[0.68rem] font-extrabold uppercase tracking-wider text-gray-400"><th className="px-5 py-2">Date</th><th className="px-3 py-2">Client</th><th className="px-3 py-2">File</th><th className="px-3 py-2">Description</th><th className="px-3 py-2 text-right">Amount</th><th className="px-3 py-2">Status</th><th className="px-3 py-2">Method</th><th className="px-3 py-2" /></tr></thead>
             <tbody className="divide-y divide-gray-100">
               {d.rows.map((r: any) => (
                 <tr key={r.id}>
@@ -584,8 +654,9 @@ function PaymentsOverview({ part }: { part: 'kpi' | 'list' | 'hooks' }) {
                   <td className="px-3 py-2"><a className="font-mono text-xs font-bold hover:underline" href={`/admin/applications/${r.appId}`}>{r.ref}</a></td>
                   <td className="px-3 py-2 text-gray-600">{r.label}{r.receiptNo ? <span className="block text-xs text-gray-400">Receipt {r.receiptNo}</span> : null}</td>
                   <td className="px-3 py-2 text-right font-semibold">{fmtAed(r.amount)}</td>
-                  <td className="px-3 py-2"><span className={cn('rounded-full px-2.5 py-0.5 text-[0.7rem] font-bold', r.status === 'paid' ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700')}>{r.status === 'paid' ? 'Paid' : 'Waiting'}</span></td>
-                  <td className="px-3 py-2 text-xs text-gray-500">{r.method || '—'}</td>
+                  <td className="px-3 py-2"><span className={cn('rounded-full px-2.5 py-0.5 text-[0.7rem] font-bold', r.status === 'paid' ? 'bg-emerald-50 text-emerald-700' : r.status === 'checkout' ? 'bg-[#fbf0cf] text-[#8a6a14]' : 'bg-red-50 text-red-700')}>{r.status === 'paid' ? 'Paid' : r.status === 'checkout' ? 'Checkout opened' : 'Due'}</span></td>
+                  <td className="px-3 py-2 text-xs text-gray-500">{r.method || '—'}{r.txn ? <small className="block text-gray-400">{String(r.txn).slice(0, 26)}</small> : null}</td>
+                  <td className="px-3 py-2">{r.receipt && <a className="rounded-lg bg-white px-2.5 py-1 text-xs font-bold ring-1 ring-gray-200" href={r.receipt} target="_blank" rel="noopener noreferrer">Receipt</a>}</td>
                 </tr>
               ))}
             </tbody>
@@ -698,6 +769,31 @@ function PdfTab() {
           <Field label="Footer (empty: company name, address, phone, email from Site settings)">
             <input className="admin-input" value={v.footer} onChange={(e) => set('footer', e.target.value)} />
           </Field>
+        </div>
+        <Field label="Quote label (top right)">
+          <input className="admin-input" value={v.quoteLabel ?? ''} onChange={(e) => set('quoteLabel', e.target.value)} placeholder="QUOTATION" />
+        </Field>
+        <Field label="Receipt label (top right)">
+          <input className="admin-input" value={v.receiptLabel ?? ''} onChange={(e) => set('receiptLabel', e.target.value)} placeholder="PAYMENT RECEIPT" />
+        </Field>
+        <div className="grid gap-2 md:col-span-2 md:grid-cols-2">
+          <Toggle checked={v.showLogo !== false} onChange={(x) => set('showLogo', x)} label="Show the logo" />
+          <Toggle checked={v.showDate !== false} onChange={(x) => set('showDate', x)} label="Show the date" />
+          <Toggle checked={v.pageNumbers !== false} onChange={(x) => set('pageNumbers', x)} label="Page numbers (when more than one page)" />
+          <Toggle checked={!!v.showCompany} onChange={(x) => set('showCompany', x)} label="Show the company block" />
+        </div>
+        {v.showCompany && (
+          <div className="md:col-span-2">
+            <Field label="Company block at the bottom (one line each; empty: from Site settings)">
+              <textarea className="admin-input min-h-[80px]" value={v.company ?? ''} onChange={(e) => set('company', e.target.value)} />
+            </Field>
+          </div>
+        )}
+        <div className="flex flex-wrap gap-2 md:col-span-2">
+          <a className="rounded-xl bg-white px-4 py-2 text-sm font-bold ring-1 ring-gray-200" href="/api/admin/client-system/preview?kind=quote" target="_blank" rel="noopener noreferrer">Preview quote ↗</a>
+          <a className="rounded-xl bg-white px-4 py-2 text-sm font-bold ring-1 ring-gray-200" href="/api/admin/client-system/preview?kind=receipt" target="_blank" rel="noopener noreferrer">Preview receipt ↗</a>
+          <a className="rounded-xl bg-white px-4 py-2 text-sm font-bold ring-1 ring-gray-200" href="/api/admin/client-system/preview?kind=email" target="_blank" rel="noopener noreferrer">Preview email ↗</a>
+          <span className="self-center text-xs text-gray-400">Save first: the preview uses the saved settings.</span>
         </div>
         <div className="md:col-span-2">
           <SaveBar save={() => save()} saving={saving} />

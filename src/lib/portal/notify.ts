@@ -13,7 +13,7 @@ type Vars = Record<string, string | number | undefined>;
 export const fillTpl = (tpl: string, vars: Vars) => String(tpl || '').replace(/\{(\w+)\}/g, (_, k) => (vars[k] === undefined || vars[k] === null ? '' : String(vars[k])));
 
 /** Email body: "Label: value" lines become a neat table, a line with only a link becomes a button */
-function emailHtml(text: string, signOff: string, buttonLabel: string) {
+export function emailHtml(text: string, signOff: string, buttonLabel: string) {
   const out: string[] = [];
   let rows: [string, string][] = [];
   const flush = () => {

@@ -108,7 +108,7 @@ export async function makePdf(d: PdfDoc): Promise<Uint8Array> {
   };
 
   // header: logo left, document label right
-  const png = await logoPng(site.logo);
+  const png = cfg.showLogo === false ? null : await logoPng(site.logo);
   let logoH = 0;
   if (png) {
     const img = await doc.embedPng(png);
@@ -117,12 +117,12 @@ export async function makePdf(d: PdfDoc): Promise<Uint8Array> {
   } else {
     page.drawText(t(site.name), { x: M, y: y - 20, size: 16, font: bold, color: INK });
   }
-  const label = d.kind === 'quote' ? 'QUOTATION' : 'PAYMENT RECEIPT';
+  const label = t((d.kind === 'quote' ? cfg.quoteLabel : cfg.receiptLabel) || (d.kind === 'quote' ? 'QUOTATION' : 'PAYMENT RECEIPT'), 40).toUpperCase();
   const lw = bold.widthOfTextAtSize(label, 9.5) + 24;
   page.drawRectangle({ x: W - M - lw, y: y - 22, width: lw, height: 22, color: INK });
   page.drawText(label, { x: W - M - lw + 12, y: y - 15, size: 9.5, font: bold, color: rgb(0.95, 0.84, 0.48) });
   const date = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
-  page.drawText(date, { x: W - M - reg.widthOfTextAtSize(date, 9), y: y - 38, size: 9, font: reg, color: SOFT });
+  if (cfg.showDate !== false) page.drawText(date, { x: W - M - reg.widthOfTextAtSize(date, 9), y: y - 38, size: 9, font: reg, color: SOFT });
   y -= Math.max(logoH, 44) + 14;
   page.drawRectangle({ x: M, y, width: CW, height: 1.6, color: GOLD });
   y -= 26;
@@ -197,12 +197,21 @@ export async function makePdf(d: PdfDoc): Promise<Uint8Array> {
     if (cfg.signTitle) para(cfg.signTitle, { size: 9, color: SOFT });
   }
 
+  if (cfg.showCompany) {
+    const lines = (cfg.company || [site.name, site.address, site.phoneDisplay, site.emailGeneral].filter(Boolean).join('\n')).split('\n').map((l) => l.trim()).filter(Boolean).slice(0, 6);
+    if (lines.length) {
+      ensure(20 + lines.length * 13);
+      y -= 18;
+      lines.forEach((l, i) => para(l, { size: i === 0 ? 10 : 8.5, font: i === 0 ? bold : reg, color: i === 0 ? INK : SOFT }));
+    }
+  }
+
   const pages = doc.getPages();
   pages.forEach((p, i) => {
     const top = FOOT - 6;
     p.drawLine({ start: { x: M, y: top }, end: { x: W - M, y: top }, thickness: 0.6, color: LINE });
     flines.forEach((l, k) => p.drawText(l, { x: (W - reg.widthOfTextAtSize(l, 7.5)) / 2, y: top - 14 - k * 11, size: 7.5, font: reg, color: SOFT }));
-    if (pages.length > 1) {
+    if (pages.length > 1 && cfg.pageNumbers !== false) {
       const n = `Page ${i + 1} of ${pages.length}`;
       p.drawText(n, { x: W - M - reg.widthOfTextAtSize(n, 7.5), y: top + 6, size: 7.5, font: reg, color: SOFT });
     }

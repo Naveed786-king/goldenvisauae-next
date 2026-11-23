@@ -1,5 +1,5 @@
 import { ok, fail } from '@/lib/api';
-import { requireStaff } from '@/lib/auth';
+import { requireAdmin, requireStaff } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
@@ -10,7 +10,7 @@ export async function GET(req: Request) {
   const u = new URL(req.url);
   const what = u.searchParams.get('what');
   if (what === 'payments') {
-    const rows = await prisma.payment.findMany({ orderBy: { createdAt: 'desc' }, take: 500, include: { application: { select: { id: true, refNo: true, fullName: true } } } });
+    const rows = await prisma.payment.findMany({ orderBy: { createdAt: 'desc' }, take: 500, include: { application: { select: { id: true, refNo: true, fullName: true, token: true } } } });
     const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
     const paid = rows.filter((p) => p.status === 'paid');
     const sum = (l: typeof rows) => Math.round(l.reduce((s, p) => s + p.amount, 0) * 100) / 100;
@@ -21,7 +21,7 @@ export async function GET(req: Request) {
         waiting: sum(rows.filter((p) => p.status !== 'paid')),
         open: rows.filter((p) => p.status !== 'paid').length,
       },
-      rows: rows.map((p) => ({ id: p.id, at: (p.paidAt || p.createdAt).toISOString(), client: p.application?.fullName || '', ref: p.application?.refNo || '', appId: p.application?.id || '', label: p.label, amount: p.amount, status: p.status, method: p.method || '', receiptNo: p.receiptNo || '' })),
+      rows: rows.map((p) => ({ id: p.id, at: (p.paidAt || p.createdAt).toISOString(), client: p.application?.fullName || '', ref: p.application?.refNo || '', appId: p.application?.id || '', label: p.label, amount: p.amount, status: p.status === 'paid' ? 'paid' : p.providerId ? 'checkout' : 'due', method: p.method || '', txn: p.txn || '', receiptNo: p.receiptNo || '', receipt: p.status === 'paid' && p.application?.token ? `/api/portal/${p.application.token}/receipt/${p.id}` : '' })),
     });
   }
   if (what === 'log') {
@@ -33,4 +33,12 @@ export async function GET(req: Request) {
     return ok({ rows: rows.map((r) => ({ id: r.id, at: r.createdAt.toISOString(), to: r.to, event: r.event, direction: r.direction, ok: r.ok, error: r.error || '', text: (r.text || '').slice(0, 300), appId: r.applicationId || '', ref: (r.applicationId && ref.get(r.applicationId)) || '' })) });
   }
   return fail('Unknown request', 400);
+}
+
+/** Clears the WhatsApp or email log (Admin > WhatsApp / Emails & PDFs). */
+export async function DELETE(req: Request) {
+  if (!(await requireAdmin())) return fail('Admins only', 403);
+  const channel = new URL(req.url).searchParams.get('channel') === 'email' ? 'email' : 'whatsapp';
+  await prisma.notifyLog.deleteMany({ where: { channel } });
+  return ok({});
 }

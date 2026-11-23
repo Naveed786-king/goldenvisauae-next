@@ -3,7 +3,7 @@ import { prisma } from '@/lib/db';
 import { getSession } from '@/lib/auth';
 import { currentStageId, decisionOf, metaOf, quoteOf, quoteTotal, stepsFor } from '@/lib/portal/files';
 import { formatDate } from '@/lib/utils';
-import { DeleteFileButton } from '@/components/admin/DeleteFileButton';
+import { DeleteFileButton, BulkDeleteButton, BulkCheck } from '@/components/admin/DeleteFileButton';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Applications' };
@@ -28,7 +28,7 @@ export default async function ApplicationsPage({ searchParams }: { searchParams:
 
   const rows = await prisma.application.findMany({
     orderBy: { updatedAt: 'desc' },
-    include: { payments: { select: { amount: true, status: true } }, _count: { select: { messages: true } } },
+    include: { payments: { select: { amount: true, status: true } }, _count: { select: { messages: true } }, messages: { where: { fromAdmin: false, read: false }, select: { id: true } } },
     take: 1000,
   });
   const files = await Promise.all(
@@ -41,14 +41,27 @@ export default async function ApplicationsPage({ searchParams }: { searchParams:
       const paid = a.payments.filter((p) => p.status === 'paid').reduce((s, p) => s + p.amount, 0);
       const due = a.payments.filter((p) => p.status !== 'paid').reduce((s, p) => s + p.amount, 0);
       const total = qt.sentAt ? quoteTotal(qt) : 0;
-      const pay = due > 0 ? { cls: 'bg-red-50 text-red-700', text: `Due · ${fmt(due)}` } : paid > 0 && paid >= total ? { cls: 'bg-emerald-50 text-emerald-700', text: `Paid in full · ${fmt(paid)}` } : paid > 0 ? { cls: 'bg-amber-50 text-amber-700', text: `Part paid · ${fmt(paid)}` } : qt.sentAt ? { cls: 'bg-amber-50 text-amber-800', text: `Quote sent · ${fmt(total)}` } : { cls: 'bg-gray-100 text-gray-500', text: 'No quote yet' };
+      // as on the Abu Dhabi list: total is the larger of the quote and what was requested
+      const all = Math.max(total, paid + due);
+      const remaining = Math.max(0, Math.round((all - paid) * 100) / 100);
+      const pay =
+        all <= 0
+          ? { state: 'none' as const, cls: 'text-gray-400', text: 'No quote yet', paid, remaining, due }
+          : paid <= 0
+            ? { state: 'unpaid' as const, cls: 'bg-red-50 text-red-700', text: 'Not paid', paid, remaining, due }
+            : remaining > 0.009
+              ? { state: 'partial' as const, cls: 'bg-amber-50 text-amber-700', text: 'Part paid', paid, remaining, due }
+              : { state: 'paid' as const, cls: 'bg-emerald-50 text-emerald-700', text: `Paid in full · ${fmt(paid)}`, paid, remaining, due };
+      const m = metaOf(a);
       return {
         a,
         step: steps[idx]?.name || 'Application received',
         pct: steps.length ? Math.round(((idx + 1) / steps.length) * 100) : 10,
         decision: d.result || 'awaiting',
-        archived: ARCHIVED.has(a.status) || d.result === 'withdrawn' || metaOf(a).archived,
+        archived: ARCHIVED.has(a.status) || d.result === 'withdrawn' || m.archived,
         pay,
+        m,
+        unread: a.messages.length,
       };
     }),
   );
@@ -78,7 +91,7 @@ export default async function ApplicationsPage({ searchParams }: { searchParams:
           <input name="q" defaultValue={sp.q || ''} placeholder="Search ref, name, phone" className="admin-input w-56" />
           <button className="rounded-xl bg-white px-4 py-2 text-sm font-bold ring-1 ring-gray-200">Search</button>
           <a href="/api/admin/export?type=applications" className="rounded-xl bg-white px-4 py-2 text-sm font-bold ring-1 ring-gray-200">Export CSV</a>
-          <a href="/portal/apply" target="_blank" className="rounded-xl bg-gradient-to-b from-[#e8c766] to-[#c9a032] px-4 py-2 text-sm font-bold text-[#1a1406]">New application</a>
+          <Link href="/admin/applications/new" className="rounded-xl bg-gradient-to-b from-[#e8c766] to-[#c9a032] px-4 py-2 text-sm font-bold text-[#1a1406]">New application</Link>
         </form>
       </div>
 
@@ -93,9 +106,10 @@ export default async function ApplicationsPage({ searchParams }: { searchParams:
         ))}
       </div>
 
-      <div className="overflow-hidden rounded-2xl bg-white ring-1 ring-gray-100">
+      <form id="bulk-files" className="overflow-hidden rounded-2xl bg-white ring-1 ring-gray-100">
         <div className="flex items-center justify-between border-b border-gray-100 px-5 py-3 text-sm text-gray-500">
           <span>{shown.length} files</span>
+          {isAdmin && shown.length > 0 && <BulkDeleteButton form="bulk-files" />}
         </div>
         {shown.length === 0 ? (
           <p className="px-5 py-12 text-center text-sm text-gray-500">No files here.</p>
@@ -104,6 +118,7 @@ export default async function ApplicationsPage({ searchParams }: { searchParams:
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left text-[0.68rem] font-extrabold uppercase tracking-wider text-gray-400">
+                  {isAdmin && <th className="w-8 pl-5 py-3"><BulkCheck all form="bulk-files" /></th>}
                   <th className="px-5 py-3">Ref</th>
                   <th className="px-3 py-3">Client</th>
                   <th className="hidden px-3 py-3 md:table-cell">Route</th>
@@ -115,8 +130,9 @@ export default async function ApplicationsPage({ searchParams }: { searchParams:
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {shown.map(({ a, step, pct, pay }) => (
+                {shown.map(({ a, step, pct, pay, m, unread, decision }) => (
                   <tr key={a.id} className="align-top transition hover:bg-[#fbf7ea]">
+                    {isAdmin && <td className="w-8 pl-5 py-4"><BulkCheck id={a.id} /></td>}
                     <td className="px-5 py-4">
                       <Link href={`/admin/applications/${a.id}`} className="font-mono text-xs font-bold text-gray-900 hover:underline">{a.refNo}</Link>
                       {!a.seen && <span className="ml-1 rounded bg-red-500 px-1.5 py-0.5 text-[0.6rem] font-bold text-white">NEW</span>}
@@ -127,18 +143,32 @@ export default async function ApplicationsPage({ searchParams }: { searchParams:
                     </td>
                     <td className="hidden px-3 py-4 text-gray-600 md:table-cell">
                       {a.service}
-                      <p className="text-xs text-gray-400">{a.assignee || 'Not assigned'}{a.familyMembers ? ` · ${a.familyMembers + 1} people` : ''}</p>
+                      <p className="text-xs text-gray-600">{a.assignee ? `→ ${a.assignee}` : <span className="text-gray-400">Not assigned</span>}</p>
+                      <p className="text-xs text-gray-400">{m.location === 'out' ? 'Outside UAE' : 'Inside UAE'} · {1 + (m.adults || 0) + (m.kids || 0)} people</p>
                     </td>
                     <td className="w-48 px-3 py-4">
-                      <p className="text-xs font-semibold text-gray-700">{step}</p>
+                      <p className="text-xs font-semibold text-gray-700">
+                        {step}
+                        {decision !== 'awaiting' && (
+                          <span className={`ml-1 rounded-full px-2 py-0.5 text-[0.65rem] font-bold ${decision === 'approved' ? 'bg-emerald-50 text-emerald-700' : decision === 'rejected' ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-700'}`}>{DECISIONS.find(([k]) => k === decision)?.[1]}</span>
+                        )}
+                      </p>
                       <span className="mt-1.5 block h-1.5 overflow-hidden rounded-full bg-gray-100">
                         <span className="block h-full rounded-full bg-gradient-to-r from-[#e8c766] to-[#b8862f]" style={{ width: `${pct}%` }} />
                       </span>
                     </td>
                     <td className="hidden px-3 py-4 lg:table-cell">
-                      <span className={`inline-block rounded-full px-2.5 py-1 text-[0.7rem] font-bold ${pay.cls}`}>{pay.text}</span>
+                      {pay.state === 'none' ? (
+                        <span className="text-xs text-gray-400">No quote yet</span>
+                      ) : (
+                        <>
+                          <span className={`inline-block rounded-full px-2.5 py-1 text-[0.7rem] font-bold ${pay.cls}`}>{pay.text}</span>
+                          {pay.state !== 'paid' && <p className="mt-1 text-xs text-gray-600">Paid {fmt(pay.paid)} · <b>Remaining {fmt(pay.remaining)}</b></p>}
+                          {pay.state !== 'paid' && pay.due > 0 && <p className="text-xs text-gray-400">{fmt(pay.due)} requested</p>}
+                        </>
+                      )}
                     </td>
-                    <td className="hidden px-3 py-4 text-gray-500 lg:table-cell">{a._count.messages}</td>
+                    <td className="hidden px-3 py-4 text-gray-500 lg:table-cell">{unread ? <span className="rounded-full bg-[#fbf0cf] px-2 py-0.5 text-[0.7rem] font-bold text-[#8a6a14]">{unread} new</span> : a._count.messages}</td>
                     <td className="hidden px-3 py-4 text-xs text-gray-500 md:table-cell">{formatDate(a.updatedAt)}</td>
                     {isAdmin && (
                       <td className="px-3 py-4 text-right">
@@ -151,7 +181,7 @@ export default async function ApplicationsPage({ searchParams }: { searchParams:
             </table>
           </div>
         )}
-      </div>
+      </form>
     </div>
   );
 }

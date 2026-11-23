@@ -165,8 +165,23 @@ export type PdfSettings = {
   footer: string;
   signName: string;
   signTitle: string;
+  showLogo?: boolean;
+  showDate?: boolean;
+  pageNumbers?: boolean;
+  quoteLabel?: string;
+  receiptLabel?: string;
+  showCompany?: boolean;
+  /** company block above the footer, one line each (empty: name, address, phone, email from Site settings) */
+  company?: string;
 };
 export const defaultPdf: PdfSettings = {
+  showLogo: true,
+  showDate: true,
+  pageNumbers: true,
+  quoteLabel: 'QUOTATION',
+  receiptLabel: 'PAYMENT RECEIPT',
+  showCompany: false,
+  company: '',
   accent: '#b8901f',
   quoteTitle: 'UAE Golden Visa quotation',
   receiptTitle: 'Payment receipt',
