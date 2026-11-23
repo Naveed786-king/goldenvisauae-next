@@ -16,8 +16,8 @@ const STATES: [string, string][] = [
   ['na', 'Not applicable'],
 ];
 
-export default function FileAdmin({ app, reload }: { app: any; reload: () => void }) {
-  const act = async (body: any, done: string) => {
+export function useFileAct(app: any, reload: () => void) {
+  return async (body: any, done: string) => {
     try {
       await api(`/api/admin/applications/${app.id}/file`, 'POST', body);
       toast(done);
@@ -28,14 +28,32 @@ export default function FileAdmin({ app, reload }: { app: any; reload: () => voi
       return false;
     }
   };
+}
+
+/** Left column of the file page, in the order of the Abu Dhabi file page:
+ *  Status · Assigned to · Authority decision · Quote · Client order page · Payments. */
+export default function FileAdmin({ app, reload }: { app: any; reload: () => void }) {
+  const act = useFileAct(app, reload);
   return (
     <div className="space-y-6">
       <StepPanel app={app} act={act} />
-      <QuotePanel app={app} act={act} />
-      <PaymentsPanel app={app} act={act} />
+      <AssignPanel app={app} act={act} />
       <DecisionPanel app={app} act={act} />
-      <ClientLinkPanel app={app} act={act} />
+      <QuotePanel app={app} act={act} />
+      <OrderPagePanel app={app} />
+      <PaymentsPanel app={app} act={act} />
     </div>
+  );
+}
+
+/** Right column: how the client gets into their file, and the advisor they see. */
+export function PortalAccess({ app, reload }: { app: any; reload: () => void }) {
+  const act = useFileAct(app, reload);
+  return (
+    <>
+      <PortalAccessPanel app={app} />
+      <AdvisorPanel app={app} act={act} />
+    </>
   );
 }
 
@@ -135,7 +153,7 @@ function QuotePanel({ app, act }: { app: any; act: (b: any, d: string) => Promis
   };
   return (
     <Card
-      title="Quotation"
+      title="Quote"
       actions={
         q.sentAt ? (
           <span className={cn('rounded-full px-2.5 py-1 text-xs font-bold', q.acceptedAt ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700')}>
@@ -222,7 +240,7 @@ function PaymentsPanel({ app, act }: { app: any; act: (b: any, d: string) => Pro
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [app.id]);
   return (
-    <Card title={`Payments (${app.payments.length})`} className="p-0">
+    <Card title="Payments" actions={<span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-bold text-gray-600">{app.payments.length}</span>} className="p-0">
       <ul className="space-y-2 p-5">
         {app.payments.length === 0 && <li className="text-sm text-gray-400">No payments yet.</li>}
         {app.payments.map((p: any) => (
@@ -267,7 +285,7 @@ function PaymentsPanel({ app, act }: { app: any; act: (b: any, d: string) => Pro
         ))}
       </ul>
       <div className="space-y-3 border-t border-gray-100 p-5">
-        <p className="text-sm font-bold">New payment request</p>
+        <p className="text-sm font-bold">+ Request a payment</p>
         {app.quoteData.sentAt && <p className="text-xs text-gray-500">Quote total {fmt(app.quoteData.total)} · not yet requested {fmt(Math.max(0, balance))}</p>}
         <div className="grid gap-3 md:grid-cols-[1fr_140px]">
           <input className="admin-input" placeholder="What is it for? e.g. Golden Visa · first instalment" value={label} onChange={(e) => setLabel(e.target.value)} />
@@ -303,11 +321,8 @@ function DecisionPanel({ app, act }: { app: any; act: (b: any, d: string) => Pro
   const [refNo, setRefNo] = useState(d.refNo || '');
   const [validTo, setValidTo] = useState(d.validTo || '');
   const [notify, setNotify] = useState(true);
-  const [name, setName] = useState(app.advisorName || '');
-  const [phone, setPhone] = useState(app.advisorPhone || '');
   return (
-    <div className="grid gap-6 lg:grid-cols-2">
-      <Card title="Authority decision" className="p-0">
+      <Card title="Authority decision" actions={d.result ? <span className={cn('rounded-full px-2.5 py-1 text-xs font-bold', d.result === 'approved' ? 'bg-emerald-50 text-emerald-700' : d.result === 'rejected' ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-700')}>{String(d.result).replace('_', ' ')}</span> : undefined} className="p-0">
         <div className="space-y-3 p-5">
           <select className="admin-input" value={result} onChange={(e) => setResult(e.target.value)}>
             <option value="">No decision yet</option>
@@ -331,6 +346,13 @@ function DecisionPanel({ app, act }: { app: any; act: (b: any, d: string) => Pro
           </Btn>
         </div>
       </Card>
+  );
+}
+
+function AdvisorPanel({ app, act }: { app: any; act: (b: any, d: string) => Promise<boolean> }) {
+  const [name, setName] = useState(app.advisorName || '');
+  const [phone, setPhone] = useState(app.advisorPhone || '');
+  return (
       <Card title="Advisor shown to the client" className="p-0">
         <div className="space-y-3 p-5">
           <input className="admin-input" placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} />
@@ -338,50 +360,81 @@ function DecisionPanel({ app, act }: { app: any; act: (b: any, d: string) => Pro
           <Btn variant="dark" onClick={() => act({ action: 'advisor', name, phone }, 'Advisor saved')}>
             <Save className="h-4 w-4" /> Save advisor
           </Btn>
-          <p className="text-xs text-gray-400">Empty: the default advisor from Admin → Client system is shown.</p>
+          <p className="text-xs text-gray-400">Empty: the assigned team member or the default advisor is shown.</p>
         </div>
       </Card>
-    </div>
   );
 }
 
-/** Client dashboard link of the file and the team member it is assigned to. */
-function ClientLinkPanel({ app, act }: { app: any; act: (b: any, d: string) => Promise<boolean> }) {
+/** Team member responsible for the file. */
+function AssignPanel({ app, act }: { app: any; act: (b: any, d: string) => Promise<boolean> }) {
   const [who, setWho] = useState(app.assignee || '');
+  return (
+    <Card title="Assigned to" className="p-0">
+      <div className="p-5">
+        <div className="flex flex-wrap gap-2">
+          <select className="admin-input min-w-0 flex-1" value={who} onChange={(e) => setWho(e.target.value)}>
+            <option value="">Nobody</option>
+            {(app.team || []).map((m: any) => (
+              <option key={m.email} value={m.email.toLowerCase()}>{m.name} ({m.email})</option>
+            ))}
+          </select>
+          <Btn variant="dark" onClick={() => act({ action: 'assign', email: who }, 'Assignment saved')}>
+            <Save className="h-4 w-4" /> Save
+          </Btn>
+        </div>
+        <p className="mt-2 text-xs text-gray-400">Without an advisor on the file, the client sees this team member as their contact.</p>
+      </div>
+    </Card>
+  );
+}
+
+const linkBtn = 'inline-flex items-center gap-1.5 rounded-lg bg-gray-100 px-3 py-2 text-xs font-bold text-gray-700 hover:bg-gray-200';
+
+/** The page the client sees: their file with the quote to accept and the payments to make. */
+function OrderPagePanel({ app }: { app: any }) {
+  const link: string = app.links?.file || '';
+  const q = app.quoteData || {};
+  return (
+    <Card title="Client order page" className="p-0">
+      <div className="space-y-3 p-5 text-sm">
+        <p className="text-gray-500">
+          {q.acceptedAt ? 'The client accepted the quote.' : q.sentAt ? 'Quote sent, waiting for the client to accept it.' : 'No quote sent yet: the client sees the steps of their file.'}
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <a href={link} target="_blank" rel="noopener noreferrer" className={linkBtn}>Open the order page</a>
+          {q.sentAt && app.links?.quotePdf && (
+            <a href={app.links.quotePdf} target="_blank" rel="noopener noreferrer" className={linkBtn}>
+              <Download className="h-3.5 w-3.5" /> Quote PDF
+            </a>
+          )}
+          <button type="button" onClick={() => { navigator.clipboard?.writeText(link); toast('Link copied'); }} className={linkBtn}>
+            <Copy className="h-3.5 w-3.5" /> Copy link
+          </button>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+/** Private link the client uses to open the file in the dashboard. */
+function PortalAccessPanel({ app }: { app: any }) {
   const link: string = app.links?.file || '';
   const wa = `https://wa.me/${String(app.phone || '').replace(/\D/g, '')}?text=${encodeURIComponent(`Hello ${app.fullName}, you can follow your file ${app.refNo} here: ${link}`)}`;
   return (
-    <Card title="Client dashboard & team" className="p-0">
-      <div className="space-y-4 p-5">
-        <div>
-          <label className="admin-label">Link to this file in the client dashboard</label>
-          <div className="flex flex-wrap items-center gap-2">
-            <input className="admin-input min-w-0 flex-1" readOnly value={link} onFocus={(e) => e.currentTarget.select()} />
-            <a href={link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-lg bg-gray-100 px-3 py-2 text-xs font-bold text-gray-700">Open</a>
-            <button type="button" onClick={() => { navigator.clipboard?.writeText(link); toast('Link copied'); }} className="inline-flex items-center gap-1.5 rounded-lg bg-gray-100 px-3 py-2 text-xs font-bold text-gray-700">
-              <Copy className="h-3.5 w-3.5" /> Copy
-            </button>
-            {app.phone && (
-              <a href={wa} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-bold text-white">Send on WhatsApp</a>
-            )}
-          </div>
-          <p className="mt-1 text-xs text-gray-400">The client opens their file with this private link, no password needed. Share it only with the client.</p>
+    <Card title="Portal access" className="p-0">
+      <div className="space-y-3 p-5">
+        <input className="admin-input w-full" readOnly value={link} onFocus={(e) => e.currentTarget.select()} />
+        <div className="flex flex-wrap gap-2">
+          <a href={link} target="_blank" rel="noopener noreferrer" className={linkBtn}>Open</a>
+          <button type="button" onClick={() => { navigator.clipboard?.writeText(link); toast('Link copied'); }} className={linkBtn}>
+            <Copy className="h-3.5 w-3.5" /> Copy
+          </button>
+          {app.phone && (
+            <a href={wa} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-bold text-white">Send on WhatsApp</a>
+          )}
         </div>
-        <div>
-          <label className="admin-label">Assigned to</label>
-          <div className="flex flex-wrap gap-2">
-            <select className="admin-input min-w-0 flex-1" value={who} onChange={(e) => setWho(e.target.value)}>
-              <option value="">Nobody</option>
-              {(app.team || []).map((m: any) => (
-                <option key={m.email} value={m.email.toLowerCase()}>{m.name} ({m.email})</option>
-              ))}
-            </select>
-            <Btn variant="dark" onClick={() => act({ action: 'assign', email: who }, 'Assignment saved')}>
-              <Save className="h-4 w-4" /> Save
-            </Btn>
-          </div>
-          <p className="mt-1 text-xs text-gray-400">Without an advisor on the file, the client sees this team member as their contact.</p>
-        </div>
+        <p className="text-xs text-gray-400">{app.user ? `Account: ${app.user.email}. ` : 'No account yet: the client can register with this email. '}The private link opens the file without a password. Share it only with the client.</p>
       </div>
     </Card>
   );

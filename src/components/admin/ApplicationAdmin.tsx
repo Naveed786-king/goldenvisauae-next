@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Send, Upload, FileText, Trash2, Save, Mail, Phone, LoaderCircle } from 'lucide-react';
 import { StatusBadge } from '@/components/ui/Status';
-import FileAdmin, { NotifyLogCard } from './FileAdmin';
+import FileAdmin, { PortalAccess, NotifyLogCard } from './FileAdmin';
 import { SocialIcon } from '@/components/ui/Icon';
 import { Btn, Card, Spinner, api, toast } from './ui';
 import { cn, formatDate, formatDateTime } from '@/lib/utils';
@@ -144,17 +144,38 @@ export default function ApplicationAdmin({ id, isAdmin }: { id: string; isAdmin:
       <div className="grid gap-6 xl:grid-cols-[1fr_380px]">
         <div className="space-y-6 min-w-0">
           <FileAdmin app={app} reload={load} />
-
-          <Card title="Note for the client (shown at the top of their file)" className="p-0">
-            <div className="space-y-3 p-5">
-              <textarea className="admin-input min-h-[70px]" value={form.adminNote} onChange={(e) => setForm({ ...form, adminNote: e.target.value })} placeholder="e.g. Please upload a clear copy of your passport and title deed." />
-              <div className="flex justify-end">
-                <Btn onClick={save} loading={saving}>
-                  <Save className="h-4 w-4" /> Save note
+          <Card
+            title={`Documents (${app.documents.length})`}
+            actions={
+              <>
+                <label className="flex items-center gap-1 text-[0.7rem] text-gray-500">
+                  <input type="checkbox" checked={privateDoc} onChange={(e) => setPrivateDoc(e.target.checked)} className="accent-[var(--brand-gold)]" /> Team only
+                </label>
+                <Btn size="sm" variant="dark" onClick={() => fileRef.current?.click()} loading={uploading}>
+                  <Upload className="h-3.5 w-3.5" /> {privateDoc ? 'Add file' : 'Share file'}
                 </Btn>
-              </div>
-            </div>
+                <input ref={fileRef} type="file" multiple hidden onChange={(e) => upload(e.target.files)} />
+              </>
+            }
+            className="p-0"
+          >
+            <ul className="space-y-1.5 p-4">
+              {app.documents.length === 0 && <li className="py-4 text-center text-sm text-gray-400">No documents yet.</li>}
+              {app.documents.map((d: any) => (
+                <li key={d.id} className="flex items-center gap-2 rounded-xl bg-gray-50 px-3 py-2.5 text-sm">
+                  <FileText className="h-4 w-4 shrink-0 text-gold-deep" />
+                  <a href={`/api/files/${d.id}`} target="_blank" rel="noopener noreferrer" className="flex-1 truncate font-medium hover:text-gold-deep">
+                    {d.name}
+                  </a>
+                  <span className={cn('rounded px-1.5 py-0.5 text-[0.6rem] font-bold', d.uploadedBy === 'admin' ? 'bg-ink text-gold' : 'bg-blue-100 text-blue-700')}>{d.uploadedBy === 'admin' ? (d.shared === false ? 'TEAM ONLY' : 'US') : 'CLIENT'}</span>
+                  <button onClick={() => delDoc(d.id)} className="text-gray-300 hover:text-red-600" title="Delete">
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </li>
+              ))}
+            </ul>
           </Card>
+
 
         </div>
 
@@ -196,8 +217,8 @@ export default function ApplicationAdmin({ id, isAdmin }: { id: string; isAdmin:
               </label>
             </form>
           </Card>
-          <Card title="Client" className="p-0">
-            <div className="p-5 text-sm">
+          <Card title="Client details" className="p-0">
+            <div className="border-b border-gray-50 p-5 text-sm">
               <p className="font-bold">{app.user?.name}</p>
               <p className="text-gray-500">{app.user?.email}</p>
               <div className="mt-4 flex flex-wrap gap-2">
@@ -218,8 +239,6 @@ export default function ApplicationAdmin({ id, isAdmin }: { id: string; isAdmin:
                 )}
               </div>
             </div>
-          </Card>
-          <Card title="Application details" className="p-0">
             <dl className="divide-y divide-gray-50 px-5 py-2 text-sm">
               {[
                 ['Service', app.service],
@@ -242,36 +261,16 @@ export default function ApplicationAdmin({ id, isAdmin }: { id: string; isAdmin:
                 ))}
             </dl>
           </Card>
-          <Card
-            title={`Documents (${app.documents.length})`}
-            actions={
-              <>
-                <label className="flex items-center gap-1 text-[0.7rem] text-gray-500">
-                  <input type="checkbox" checked={privateDoc} onChange={(e) => setPrivateDoc(e.target.checked)} className="accent-[var(--brand-gold)]" /> Team only
-                </label>
-                <Btn size="sm" variant="dark" onClick={() => fileRef.current?.click()} loading={uploading}>
-                  <Upload className="h-3.5 w-3.5" /> {privateDoc ? 'Add file' : 'Share file'}
+          <PortalAccess app={app} reload={load} />
+          <Card title="Note for the client (shown at the top of their file)" className="p-0">
+            <div className="space-y-3 p-5">
+              <textarea className="admin-input min-h-[70px]" value={form.adminNote} onChange={(e) => setForm({ ...form, adminNote: e.target.value })} placeholder="e.g. Please upload a clear copy of your passport and title deed." />
+              <div className="flex justify-end">
+                <Btn onClick={save} loading={saving}>
+                  <Save className="h-4 w-4" /> Save note
                 </Btn>
-                <input ref={fileRef} type="file" multiple hidden onChange={(e) => upload(e.target.files)} />
-              </>
-            }
-            className="p-0"
-          >
-            <ul className="space-y-1.5 p-4">
-              {app.documents.length === 0 && <li className="py-4 text-center text-sm text-gray-400">No documents yet.</li>}
-              {app.documents.map((d: any) => (
-                <li key={d.id} className="flex items-center gap-2 rounded-xl bg-gray-50 px-3 py-2.5 text-sm">
-                  <FileText className="h-4 w-4 shrink-0 text-gold-deep" />
-                  <a href={`/api/files/${d.id}`} target="_blank" rel="noopener noreferrer" className="flex-1 truncate font-medium hover:text-gold-deep">
-                    {d.name}
-                  </a>
-                  <span className={cn('rounded px-1.5 py-0.5 text-[0.6rem] font-bold', d.uploadedBy === 'admin' ? 'bg-ink text-gold' : 'bg-blue-100 text-blue-700')}>{d.uploadedBy === 'admin' ? (d.shared === false ? 'TEAM ONLY' : 'US') : 'CLIENT'}</span>
-                  <button onClick={() => delDoc(d.id)} className="text-gray-300 hover:text-red-600" title="Delete">
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </li>
-              ))}
-            </ul>
+              </div>
+            </div>
           </Card>
           <NotifyLogCard log={app.log} />
         </div>
