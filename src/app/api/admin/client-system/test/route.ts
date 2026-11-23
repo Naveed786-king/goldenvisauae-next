@@ -3,7 +3,7 @@ import { requireAdmin } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { getSetting } from '@/lib/settings';
 import { intlNumber, sendWhatsApp, waAdvice, waReady } from '@/lib/portal/whatsapp';
-import { siteUrl } from '@/lib/portal/files';
+import { fileLink } from '@/lib/portal/files';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,7 +18,13 @@ export async function POST(req: Request) {
   const w = await getSetting('whatsapp');
   if (!waReady(w)) return fail('Switch on the Cloud API and save the phone number ID and access token first');
   // approved template: sent like a real client update (works any time once the template is approved)
-  if (mode === 'template') return ok({ result: await sendWhatsApp({ to: number, event: 'message', text: msg, vars: { name: 'there', ref: 'TEST', text: msg, link: siteUrl() }, force: true }) });
+  if (mode === 'template') {
+    // the template's "Open my file" button needs a real file link: the newest file is used for the test
+    const last = await prisma.application.findFirst({ orderBy: { createdAt: 'desc' }, select: { id: true, token: true, refNo: true } });
+    if (!last) return ok({ result: { ok: false, error: 'Open at least one client file first: the template button needs a file link.' } });
+    const link = await fileLink(last);
+    return ok({ result: await sendWhatsApp({ to: number, event: 'message', text: msg, vars: { name: 'there', ref: last.refNo, text: msg, link }, force: true }) });
+  }
   const open = await prisma.notifyLog.findFirst({ where: { channel: 'whatsapp', direction: 'in', to: { endsWith: number.slice(-9) }, createdAt: { gte: new Date(Date.now() - 23.5 * 3600_000) } } });
   const body = open
     ? { messaging_product: 'whatsapp', to: number, type: 'text', text: { body: msg } }
