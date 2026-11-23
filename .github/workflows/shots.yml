@@ -3,7 +3,7 @@ name: Dashboard screenshots
 on:
   workflow_dispatch:
   push:
-    branches: [abu-dashboard, abu-apply, admin-setup-pages]
+    branches: [abu-dashboard, abu-apply, admin-setup-pages, admin-workflow]
 
 permissions:
   contents: write
@@ -90,7 +90,8 @@ jobs:
             await p.screenshot({ path: 'shots/admin-applications.png', fullPage: true });
             const href = await p.evaluate(() => [...document.querySelectorAll('a[href^="/admin/applications/"]')].map((x) => x.getAttribute('href')).find((h) => h && !h.includes('?')));
             if (href) { await p.goto(B + href, { waitUntil: 'networkidle' }); await p.waitForTimeout(1500); await p.screenshot({ path: 'shots/admin-file.png', fullPage: true }); }
-            for (const pg of ['steps', 'payments', 'whatsapp', 'documents']) { await p.goto(B + '/admin/' + pg, { waitUntil: 'networkidle' }); await p.waitForTimeout(1200); await p.screenshot({ path: `shots/admin-${pg}.png`, fullPage: true }); }
+            for (const pg of ['steps', 'payments', 'whatsapp', 'documents']) { await p.goto(B + '/admin/' + pg, { waitUntil: 'networkidle' }); await p.waitForTimeout(1500); await p.screenshot({ path: `shots/admin-${pg}.png`, fullPage: true }); }
+            await p.goto(B + '/admin/whatsapp', { waitUntil: 'networkidle' }); for (const tab of ['Automatic messages', 'Message log']) { await p.getByRole('button', { name: tab }).click(); await p.waitForTimeout(1200); await p.screenshot({ path: `shots/admin-whatsapp-${tab.split(' ')[1]}.png`, fullPage: true }); }
             await ctx.close();
           }
           await b.close();
