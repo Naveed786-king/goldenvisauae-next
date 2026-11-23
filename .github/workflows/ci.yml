@@ -54,9 +54,9 @@ jobs:
           check /blog 200
           check /blog/uae-golden-visa-cost-price-breakdown-by-category 200
           check /apply 307
-          check /portal/apply 200
+          check /portal/apply 307
           check /login 307
-          check /portal/login 200
+          check /portal/login 307
           check /admin/login 200
           check /sitemap.xml 200
           check /robots.txt 200
@@ -148,7 +148,8 @@ jobs:
             })().catch(e=>die(e.message))"
           code=$(curl -s -o /dev/null -w "%{http_code}" -H "Host: app.goldenvisauae.ai" http://localhost:3000/); echo "portal host / -> $code"; [ "$code" = "307" ] || [ "$code" = "200" ]
           curl -s -H "Host: app.goldenvisauae.ai" http://localhost:3000/login | grep -q 'class="auth' || { echo "::error title=Check failed::portal host shows the client dashboard sign-in"; exit 1; }
-          code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/portal/login); echo "/portal/login -> $code"; [ "$code" = "200" ]
+          code=$(curl -s -o /dev/null -w "%{http_code}" -H "Host: app.goldenvisauae.ai" http://localhost:3000/apply); echo "portal host /apply -> $code"; [ "$code" = "200" ]
+          curl -s -o /dev/null -w "%{redirect_url}\n" http://localhost:3000/login | grep -q "app.goldenvisauae.ai/login" || { echo "::error title=Check failed::main site sign-in goes to the dashboard address"; exit 1; }
           code=$(curl -s -o /dev/null -w "%{http_code}" -H "Host: app.goldenvisauae.ai" http://localhost:3000/login); echo "portal host /login -> $code"; [ "$code" = "200" ]
           curl -s -o /dev/null -w "%{redirect_url}\n" -H "Host: app.goldenvisauae.ai" http://localhost:3000/blog | grep -q 'localhost:3000/blog' || { echo "::error title=Check failed::portal host sends other pages to the main site"; exit 1; }
           code=$(curl -s -o /dev/null -w "%{http_code}" -b cookies.txt http://localhost:3000/admin/client-system); echo "/admin/client-system -> $code"; [ "$code" = "200" ]

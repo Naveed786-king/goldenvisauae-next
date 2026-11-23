@@ -50,24 +50,24 @@ export async function middleware(req: NextRequest) {
     // website pages, admin, reset-password and the payment pages are on the main site
     return NextResponse.redirect(main + raw + req.nextUrl.search);
   }
+  // Customers use the dashboard address (app.goldenvisauae.ai): the client pages of the main address send them there.
+  // Requests that arrive through the dashboard address are marked onPortal above, so this never loops.
+  const appUrl = (process.env.CLIENT_APP_URL || `https://${portalHost}`).replace(/\/+$/, '');
+  if (!onPortal && process.env.PORTAL_ON_MAIN !== '1') {
+    if (raw === '/portal' || raw.startsWith('/portal/')) return NextResponse.redirect(appUrl + (raw.slice(7) || '/') + req.nextUrl.search, 307);
+    if (/^\/t\/[a-f0-9]{32}(\/|$)/.test(raw)) return NextResponse.redirect(appUrl + raw + req.nextUrl.search, 307);
+    const to: Record<string, string> = { '/account': '/', '/login': '/login', '/register': '/register', '/forgot-password': '/forgot', '/apply': '/apply' };
+    const hit = Object.keys(to).find((p) => raw === p || raw.startsWith(p + '/'));
+    if (hit) return NextResponse.redirect(appUrl + to[hit] + req.nextUrl.search, 307);
+  }
   if (raw.startsWith('/portal')) return NextResponse.next();
-  // file links (/t/<secret>) also open on the main address, e.g. while the dashboard address forwards here
+  // PORTAL_ON_MAIN=1 (fallback): the client pages stay on the main address under /portal
   if (/^\/t\/[a-f0-9]{32}(\/|$)/.test(raw)) return NextResponse.rewrite(new URL('/portal' + raw + req.nextUrl.search, req.url));
-  // Sign-in and the client area of the website open the new client dashboard (on this address under /portal,
-  // or on the dashboard address when CLIENT_APP_URL is set).
-  if (!onPortal && !process.env.CLIENT_APP_URL) {
+  if (!onPortal) {
     const to: Record<string, string> = { '/account': '/portal', '/login': '/portal/login', '/register': '/portal/register', '/forgot-password': '/portal/forgot', '/apply': '/portal/apply' };
     const hit = Object.keys(to).find((p) => raw === p || raw.startsWith(p + '/'));
     if (hit) return NextResponse.redirect(new URL(to[hit] + req.nextUrl.search, req.url), 307);
   }
-  // CLIENT_APP_URL set (https://app.goldenvisauae.ai): sign-in and the client area of the website open the dashboard there.
-  const clientApp = (process.env.CLIENT_APP_URL || '').replace(/\/+$/, '');
-  if (clientApp && !onPortal && !pathname.startsWith('/api/')) {
-    const to: Record<string, string> = { '/account': '/', '/login': '/login', '/register': '/register', '/forgot-password': '/forgot' };
-    const hit = Object.keys(to).find((p) => pathname === p || pathname.startsWith(p + '/'));
-    if (hit) return NextResponse.redirect(clientApp + to[hit] + req.nextUrl.search, 302);
-  }
-
   // Requests that change something must come from this website itself (stops other sites from
   // sending forms or scripts to our API with a visitor's login). Requests without an Origin (server
   // tools, cron) are left to the API's own checks.
