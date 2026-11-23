@@ -62,10 +62,7 @@ export function ClientSystemPage({ page }: { page: keyof typeof PAGES }) {
       <div className="space-y-6">
         <PageHead eyebrow="Application steps" title="Application steps" />
         <StepsTab />
-        <div>
-          <h2 className="mb-3 font-display text-2xl font-semibold text-gray-900">Client dashboard</h2>
-          <PortalTab />
-        </div>
+        <PortalTab />
       </div>
     );
   }

@@ -144,7 +144,7 @@ export default async function ApplicationsPage({ searchParams }: { searchParams:
                     <td className="hidden px-3 py-4 text-gray-600 md:table-cell">
                       {a.service}
                       <p className="text-xs text-gray-600">{a.assignee ? `→ ${a.assignee}` : <span className="text-gray-400">Not assigned</span>}</p>
-                      <p className="text-xs text-gray-400">{m.location === 'out' ? 'Outside UAE' : 'Inside UAE'} · {1 + (m.adults || 0) + (m.kids || 0)} people</p>
+                      <p className="text-xs text-gray-400">{m.location === 'out' ? 'Outside UAE' : 'Inside UAE'} · {1 + (m.adults || 0) + (m.kids || 0)} {1 + (m.adults || 0) + (m.kids || 0) === 1 ? 'person' : 'people'}</p>
                     </td>
                     <td className="w-48 px-3 py-4">
                       <p className="text-xs font-semibold text-gray-700">
