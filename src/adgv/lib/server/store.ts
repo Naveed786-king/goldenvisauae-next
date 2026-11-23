@@ -2,8 +2,9 @@ import 'server-only';
 // The client's files from the database, in the shape the dashboard pages use.
 import type { Application as Row, Document as DocRow, Message as MsgRow, Payment as PayRow } from '@prisma/client';
 import { prisma } from '@/lib/db';
-import { currentStageId, decisionOf, ensureToken, quoteOf, quoteVat, stageDatesOf, stageStatusOf, stepsFor } from '@/lib/portal/files';
+import { currentStageId, decisionOf, ensureToken, metaOf, quoteOf, quoteVat, stageDatesOf, stageStatusOf, stepsFor } from '@/lib/portal/files';
 import type { StageState } from '@/adgv/lib/stage-defs';
+import { stepGroupFor } from '@/lib/portal/config';
 
 export type Payment = { id: string; label: string; amount: number; fee?: number; status: 'due' | 'paid'; link: string; createdAt: string; paidAt?: string; method?: string; receiptNo?: string; slip?: boolean };
 export type Doc = { id: string; name: string; file: string; size: number; at: string; by: 'client' | 'team'; shared: boolean };
@@ -23,7 +24,7 @@ const iso = (d?: Date | null) => (d ? d.toISOString() : undefined);
 const include = { payments: { orderBy: { createdAt: 'asc' as const } }, documents: { orderBy: { createdAt: 'asc' as const } }, messages: { orderBy: { createdAt: 'asc' as const } } };
 
 /** Step group names the dashboard uses: Golden Visa files follow the long list, others the short one. */
-export const groupOf = (service: string) => (/golden/i.test(service || '') ? 'Golden Visa' : 'Other services');
+export const groupOf = (service: string) => stepGroupFor(service);
 
 export async function toApp(a: Full): Promise<Application> {
   const steps = await stepsFor(a.service);
@@ -34,20 +35,21 @@ export async function toApp(a: Full): Promise<Application> {
   const q = quoteOf(a);
   const d = decisionOf(a);
   const token = a.token || (await ensureToken(a));
+  const m = metaOf(a);
   return {
-    id: a.id, ref: a.refNo, token, createdAt: a.createdAt.toISOString(), updatedAt: a.updatedAt.toISOString(), userId: a.userId,
+    id: a.id, ref: a.refNo, token, createdAt: a.createdAt.toISOString(), updatedAt: a.updatedAt.toISOString(), userId: a.userId, archived: !!m.archived,
     client: { name: a.fullName, phone: a.phone || '', email: (a.email || '').toLowerCase(), nationality: a.nationality || '', language: a.language || 'en' },
-    route: a.service, location: 'in', adults: a.familyMembers || 0, kids: 0, service: a.service, stepGroup: groupOf(a.service),
+    route: a.service, location: m.location || 'in', adults: m.adults || 0, kids: m.kids || 0, service: a.service, stepGroup: groupOf(a.service),
     stage: cur, stageDates, stageId: steps[cur]?.id, stageStatus: stageStatusOf(a) as Record<string, StageState>,
     nextStep: a.nextStep || steps[cur]?.next || '', expected: a.expected || '', notes: '',
-    quote: { lines: q.lines, serviceFee: q.serviceFee, vat: quoteVat(q), insurance: q.notes || '—', sentAt: q.sentAt, acceptedAt: q.acceptedAt },
+    quote: { lines: q.lines, serviceFee: q.serviceFee, vat: quoteVat(q), insurance: q.insurance || q.notes || '—', sentAt: q.sentAt, acceptedAt: q.acceptedAt },
     payments: a.payments.map((p) => ({ id: p.id, label: p.label, amount: p.amount, fee: p.fee, status: p.status === 'paid' ? 'paid' : 'due', link: p.link || '', createdAt: p.createdAt.toISOString(), paidAt: iso(p.paidAt), method: p.method || undefined, receiptNo: p.receiptNo || undefined, slip: !!p.slipPath })),
     documents: a.documents.map((x) => ({ id: x.id, name: x.name, file: x.path, size: x.size, at: x.createdAt.toISOString(), by: x.uploadedBy === 'customer' ? 'client' : 'team', shared: x.shared })),
-    requests: [],
+    requests: m.requests || [],
     messages: a.messages.map((m) => ({ id: m.id, by: m.fromAdmin ? 'team' : 'client', at: m.createdAt.toISOString(), text: m.body })),
     advisor: a.advisorName ? { name: a.advisorName, phone: a.advisorPhone || '' } : undefined,
     validUntil: q.validUntil, assignee: a.assignee || undefined, confirmedAt: q.acceptedAt,
-    decision: d.result ? { result: d.result, reason: d.reason || '', at: d.at || '', refNo: d.refNo, validTo: d.validTo } : undefined,
+    decision: d.result ? { result: d.result, reason: d.reason || '', at: d.at || '', refNo: d.refNo, validTo: d.validTo, nextAction: d.nextAction } : undefined,
   };
 }
 

@@ -6,18 +6,27 @@ import { getSetting } from '@/lib/settings';
 import { safeJson } from '@/lib/utils';
 import type { StepDef, StepState } from './config';
 
-export type QuoteLine = { label: string; amount: number };
+export type QuoteLine = { label: string; amount: number; qty?: number; unit?: number };
 export type Quote = {
   lines: QuoteLine[];
   serviceFee: number;
   vatPct: number;
   notes: string;
+  insurance?: string;
   validUntil?: string;
   sentAt?: string;
   acceptedAt?: string;
 };
 export type DecisionResult = 'approved' | 'rejected' | 'on_hold' | 'withdrawn';
-export type Decision = { result?: DecisionResult; reason?: string; at?: string; refNo?: string; validTo?: string };
+export type Decision = { result?: DecisionResult; reason?: string; at?: string; refNo?: string; validTo?: string; nextAction?: string; by?: string; history?: { result: DecisionResult; at: string; reason?: string }[] };
+
+/** Extra details of a file (Admin > file > Client details, documents list, archive) */
+export type FileMeta = { contact?: string; location?: 'in' | 'out'; adults?: number; kids?: number; requests?: string[]; archived?: boolean; reviewAskedAt?: string; privateNotes?: string };
+export const metaOf = (a: { meta?: string | null; familyMembers?: number }): FileMeta => {
+  const m = safeJson<FileMeta>(a.meta ?? null, {});
+  return { ...m, location: m.location === 'out' ? 'out' : 'in', adults: m.adults ?? a.familyMembers ?? 0, kids: m.kids ?? 0, requests: Array.isArray(m.requests) ? m.requests : [] };
+};
+export const DEFAULT_REQUESTS = ['Passport copy (valid 6+ months)', 'Passport photo (white background)', 'Emirates ID (if inside the UAE)', 'Proof for the Golden Visa (title deed, salary certificate, trade licence…)'];
 
 export const DECISION_LABEL: Record<DecisionResult, string> = {
   approved: 'Approved',
@@ -35,11 +44,12 @@ export function quoteOf(a: Pick<Application, 'quote'>): Quote {
   const q = safeJson<any>(a.quote, {});
   return {
     lines: (Array.isArray(q.lines) ? q.lines : [])
-      .map((l: any) => ({ label: String(l?.label || '').slice(0, 200), amount: num(l?.amount) }))
+      .map((l: any) => ({ label: String(l?.label || '').slice(0, 200), amount: num(l?.amount), ...(l?.qty ? { qty: Math.max(1, Math.round(Number(l.qty))) } : {}), ...(l?.unit !== undefined ? { unit: num(l.unit) } : {}) }))
       .filter((l: QuoteLine) => l.label),
     serviceFee: num(q.serviceFee),
     vatPct: q.vatPct === undefined ? 5 : num(q.vatPct),
     notes: String(q.notes || ''),
+    insurance: q.insurance ? String(q.insurance) : undefined,
     validUntil: q.validUntil || undefined,
     sentAt: q.sentAt || undefined,
     acceptedAt: q.acceptedAt || undefined,
@@ -62,7 +72,10 @@ export const charged = (p: Pick<Payment, 'amount' | 'fee'>) => num(p.amount + (p
 /** Golden Visa services follow the long step list, every other service the short one */
 export async function stepsFor(service: string): Promise<StepDef[]> {
   const s = await getSetting('steps');
-  const list = /golden/i.test(service) ? s.golden : s.other;
+  const { stepGroupFor } = await import('./config');
+  const g = stepGroupFor(service);
+  const own = s.groups?.[g];
+  const list = g === 'Golden Visa' ? s.golden : Array.isArray(own) && own.length ? own : s.other;
   return Array.isArray(list) && list.length ? list : (await import('./config')).GOLDEN_STEPS;
 }
 

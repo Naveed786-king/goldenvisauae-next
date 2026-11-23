@@ -2,12 +2,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Send, Upload, FileText, Trash2, Save, Mail, Phone, LoaderCircle } from 'lucide-react';
+import { Send, Trash2, Save } from 'lucide-react';
 import { StatusBadge } from '@/components/ui/Status';
-import FileAdmin, { PortalAccess, NotifyLogCard } from './FileAdmin';
+import FileAdmin, { ClientDetails, PortalAccess, NotifyLogCard } from './FileAdmin';
 import { SocialIcon } from '@/components/ui/Icon';
 import { Btn, Card, Spinner, api, toast } from './ui';
-import { cn, formatDate, formatDateTime } from '@/lib/utils';
+import { cn, formatDateTime } from '@/lib/utils';
 
 export default function ApplicationAdmin({ id, isAdmin }: { id: string; isAdmin: boolean }) {
   const router = useRouter();
@@ -16,9 +16,6 @@ export default function ApplicationAdmin({ id, isAdmin }: { id: string; isAdmin:
   const [msg, setMsg] = useState('');
   const [emailMsg, setEmailMsg] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [privateDoc, setPrivateDoc] = useState(false);
-  const fileRef = useRef<HTMLInputElement>(null);
   const chatRef = useRef<HTMLDivElement>(null);
   const loaded = useRef(false);
 
@@ -62,29 +59,20 @@ export default function ApplicationAdmin({ id, isAdmin }: { id: string; isAdmin:
     load();
   }
 
-  async function upload(list: FileList | null) {
-    if (!list?.length) return;
-    setUploading(true);
-    const fd = new FormData();
-    Array.from(list).forEach((f) => fd.append('files', f));
-    if (privateDoc) fd.append('private', '1');
+  async function clearChat() {
+    if (!confirm(`Delete all ${app.messages.length} messages in this file? The client will no longer see them.`)) return;
     try {
-      await api(`/api/admin/applications/${id}/documents`, 'POST', fd);
-      toast(privateDoc ? 'Document saved (team only)' : 'Document shared with the client');
+      await api(`/api/admin/applications/${id}/file`, 'POST', { action: 'clearMessages' });
+      toast('Chat cleared');
       load();
     } catch (e: any) {
       toast(e.message, 'error');
-    } finally {
-      setUploading(false);
-      if (fileRef.current) fileRef.current.value = '';
     }
   }
 
-  async function delDoc(docId: string) {
-    if (!confirm('Delete this document?')) return;
-    await api(`/api/admin/applications/${id}/documents?doc=${docId}`, 'DELETE');
-    load();
-  }
+
+
+
 
   async function delApp() {
     if (!confirm('Delete this application and all its documents & messages?')) return;
@@ -144,43 +132,28 @@ export default function ApplicationAdmin({ id, isAdmin }: { id: string; isAdmin:
       <div className="grid gap-6 xl:grid-cols-[1fr_380px]">
         <div className="space-y-6 min-w-0">
           <FileAdmin app={app} reload={load} />
-          <Card
-            title={`Documents (${app.documents.length})`}
-            actions={
-              <>
-                <label className="flex items-center gap-1 text-[0.7rem] text-gray-500">
-                  <input type="checkbox" checked={privateDoc} onChange={(e) => setPrivateDoc(e.target.checked)} className="accent-[var(--brand-gold)]" /> Team only
-                </label>
-                <Btn size="sm" variant="dark" onClick={() => fileRef.current?.click()} loading={uploading}>
-                  <Upload className="h-3.5 w-3.5" /> {privateDoc ? 'Add file' : 'Share file'}
-                </Btn>
-                <input ref={fileRef} type="file" multiple hidden onChange={(e) => upload(e.target.files)} />
-              </>
-            }
-            className="p-0"
-          >
-            <ul className="space-y-1.5 p-4">
-              {app.documents.length === 0 && <li className="py-4 text-center text-sm text-gray-400">No documents yet.</li>}
-              {app.documents.map((d: any) => (
-                <li key={d.id} className="flex items-center gap-2 rounded-xl bg-gray-50 px-3 py-2.5 text-sm">
-                  <FileText className="h-4 w-4 shrink-0 text-gold-deep" />
-                  <a href={`/api/files/${d.id}`} target="_blank" rel="noopener noreferrer" className="flex-1 truncate font-medium hover:text-gold-deep">
-                    {d.name}
-                  </a>
-                  <span className={cn('rounded px-1.5 py-0.5 text-[0.6rem] font-bold', d.uploadedBy === 'admin' ? 'bg-ink text-gold' : 'bg-blue-100 text-blue-700')}>{d.uploadedBy === 'admin' ? (d.shared === false ? 'TEAM ONLY' : 'US') : 'CLIENT'}</span>
-                  <button onClick={() => delDoc(d.id)} className="text-gray-300 hover:text-red-600" title="Delete">
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </Card>
 
 
         </div>
 
         <div className="space-y-6">
-          <Card title="Messages" actions={<span className="flex items-center gap-1.5 text-xs text-emerald-600"><span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" /> Live</span>} className="p-0 overflow-hidden">
+          <Card
+            title="Messages"
+            actions={
+              <span className="flex items-center gap-2">
+                <span className="flex items-center gap-1.5 text-xs text-emerald-600"><span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" /> Live</span>
+                {app.messages.length > 0 && (
+                  <button type="button" onClick={clearChat} className="rounded-xl bg-white px-2.5 py-1.5 text-xs font-bold text-red-600 ring-1 ring-red-100 hover:bg-red-50">Clear chat</button>
+                )}
+                {app.phone && (
+                  <a href={`https://wa.me/${String(app.phone).replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Hello ${String(app.fullName || '').split(' ')[0]}, `)}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 rounded-xl bg-[#25D366] px-2.5 py-1.5 text-xs font-bold text-white">
+                    <SocialIcon name="whatsapp" className="h-3.5 w-3.5" /> WhatsApp
+                  </a>
+                )}
+              </span>
+            }
+            className="p-0 overflow-hidden"
+          >
             <div ref={chatRef} className="h-[420px] space-y-3 overflow-y-auto bg-gray-50 p-5 thin-scroll">
               {app.messages.length === 0 && <p className="py-12 text-center text-sm text-gray-400">No messages yet.</p>}
               {app.messages.map((m: any) => (
@@ -217,51 +190,8 @@ export default function ApplicationAdmin({ id, isAdmin }: { id: string; isAdmin:
               </label>
             </form>
           </Card>
-          <Card title="Client details" className="p-0">
-            <div className="border-b border-gray-50 p-5 text-sm">
-              <p className="font-bold">{app.user?.name}</p>
-              <p className="text-gray-500">{app.user?.email}</p>
-              <div className="mt-4 flex flex-wrap gap-2">
-                {app.phone && (
-                  <a href={`https://wa.me/${String(app.phone).replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-lg bg-[#25D366] px-3 py-1.5 text-xs font-bold text-white">
-                    <SocialIcon name="whatsapp" className="h-3.5 w-3.5" /> WhatsApp
-                  </a>
-                )}
-                {app.phone && (
-                  <a href={`tel:${app.phone}`} className="inline-flex items-center gap-1.5 rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-bold text-gray-700">
-                    <Phone className="h-3.5 w-3.5" /> Call
-                  </a>
-                )}
-                {app.email && (
-                  <a href={`mailto:${app.email}`} className="inline-flex items-center gap-1.5 rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-bold text-gray-700">
-                    <Mail className="h-3.5 w-3.5" /> Email
-                  </a>
-                )}
-              </div>
-            </div>
-            <dl className="divide-y divide-gray-50 px-5 py-2 text-sm">
-              {[
-                ['Service', app.service],
-                ['Submitted', formatDate(app.createdAt)],
-                ['Phone', app.phone],
-                ['Email', app.email],
-                ['Nationality', app.nationality],
-                ['Passport no.', app.passportNo],
-                ['Date of birth', app.dateOfBirth],
-                ['Property value', app.propertyValue],
-                ['Family members', String(app.familyMembers)],
-                ['Notes', app.notes],
-              ]
-                .filter(([, v]) => v)
-                .map(([k, v]) => (
-                  <div key={k} className="flex justify-between gap-4 py-2.5">
-                    <dt className="text-gray-400">{k}</dt>
-                    <dd className="text-right font-semibold whitespace-pre-line">{v}</dd>
-                  </div>
-                ))}
-            </dl>
-          </Card>
-          <PortalAccess app={app} reload={load} />
+          <ClientDetails key={app.id} app={app} reload={load} />
+          <PortalAccess app={app} reload={load} isAdmin={isAdmin} />
           <Card title="Note for the client (shown at the top of their file)" className="p-0">
             <div className="space-y-3 p-5">
               <textarea className="admin-input min-h-[70px]" value={form.adminNote} onChange={(e) => setForm({ ...form, adminNote: e.target.value })} placeholder="e.g. Please upload a clear copy of your passport and title deed." />

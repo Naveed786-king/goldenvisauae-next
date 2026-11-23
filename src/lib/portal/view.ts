@@ -13,7 +13,7 @@ export async function stepView(a: Pick<Application, 'service' | 'stageId' | 'sta
   const dates = stageDatesOf(a);
   return steps.map((s, i) => {
     const state = stepState(i, cur, s.id, over, steps.length);
-    return { id: s.id, name: s.name, group: s.group, next: s.next, state, stateLabel: STEP_STATE_LABEL[state], date: dates[s.id] || null, current: i === cur };
+    return { id: s.id, name: s.name, group: s.group, next: s.next, state, stateLabel: STEP_STATE_LABEL[state], date: dates[s.id] || null, current: i === cur, manual: !!over[s.id], autoState: stepState(i, cur, s.id, {}, steps.length) };
   });
 }
 

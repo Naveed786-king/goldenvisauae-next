@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { prisma } from '@/lib/db';
 import { getSession } from '@/lib/auth';
-import { currentStageId, decisionOf, quoteOf, quoteTotal, stepsFor } from '@/lib/portal/files';
+import { currentStageId, decisionOf, metaOf, quoteOf, quoteTotal, stepsFor } from '@/lib/portal/files';
 import { formatDate } from '@/lib/utils';
 import { DeleteFileButton } from '@/components/admin/DeleteFileButton';
 
@@ -47,7 +47,7 @@ export default async function ApplicationsPage({ searchParams }: { searchParams:
         step: steps[idx]?.name || 'Application received',
         pct: steps.length ? Math.round(((idx + 1) / steps.length) * 100) : 10,
         decision: d.result || 'awaiting',
-        archived: ARCHIVED.has(a.status) || d.result === 'withdrawn',
+        archived: ARCHIVED.has(a.status) || d.result === 'withdrawn' || metaOf(a).archived,
         pay,
       };
     }),

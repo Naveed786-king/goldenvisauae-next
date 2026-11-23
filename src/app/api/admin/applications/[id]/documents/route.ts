@@ -14,11 +14,12 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   // private: kept for the team only (not shown to the client)
   const shared = fd.get('private') !== '1';
   const files = fd.getAll('files').filter((f): f is File => typeof f === 'object' && 'arrayBuffer' in f);
+  const label = String(fd.get('label') || '').trim().slice(0, 120);
   const out = [];
   for (const f of files) {
     try {
       const saved = await savePrivateFile(f, id);
-      out.push(await prisma.document.create({ data: { applicationId: id, name: f.name, path: saved.path, mime: saved.mime, size: saved.size, uploadedBy: 'admin', shared } }));
+      out.push(await prisma.document.create({ data: { applicationId: id, name: label && files.length === 1 ? `${label}${/\.[a-z0-9]{1,5}$/i.test(label) ? '' : (f.name.match(/\.[a-z0-9]{1,5}$/i)?.[0] || '')}` : f.name, path: saved.path, mime: saved.mime, size: saved.size, uploadedBy: 'admin', shared } }));
     } catch (e) {
       return fail((e as Error).message);
     }

@@ -3,7 +3,7 @@ import { ok, fail } from '@/lib/api';
 import { requireStaff } from '@/lib/auth';
 import { APPLICATION_STATUSES } from '@/lib/defaults';
 import { sendMail, escapeHtml } from '@/lib/mail';
-import { decisionOf, ensureToken, fileLink, quoteGov, quoteOf, quoteTotal, quoteVat, tokenLinks } from '@/lib/portal/files';
+import { decisionOf, DEFAULT_REQUESTS, ensureToken, fileLink, metaOf, quoteGov, quoteOf, quoteTotal, quoteVat, tokenLinks } from '@/lib/portal/files';
 import { stepView } from '@/lib/portal/view';
 
 export const dynamic = 'force-dynamic';
@@ -34,6 +34,8 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
       steps: await stepView(app),
       quoteData: { ...q, gov: quoteGov(q), vat: quoteVat(q), total: quoteTotal(q) },
       decisionData: decisionOf(app),
+      metaData: { ...metaOf(app), defaultRequests: DEFAULT_REQUESTS },
+      services: (await prisma.service.findMany({ where: { active: true }, select: { title: true, price: true }, orderBy: [{ category: 'asc' }, { order: 'asc' }] })).map((x) => ({ label: x.title, price: x.price || '' })),
       team: await prisma.user.findMany({ where: { role: { not: 'CUSTOMER' }, active: true }, select: { email: true, name: true }, orderBy: { name: 'asc' } }),
       links: { file: await fileLink(app), quotePdf: links.quotePdf, receipt: Object.fromEntries(app.payments.filter((p) => p.status === 'paid').map((p) => [p.id, links.receiptPdf(p.id)])), pay: Object.fromEntries(app.payments.map((p) => [p.id, links.pay(p.id)])) },
       log,

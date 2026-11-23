@@ -92,6 +92,14 @@ export type WhatsAppSettings = {
   autos: Record<NotifyEvent, boolean>;
   /** company numbers that get the team alerts (one per line) */
   teamNumbers: string;
+  /** own WhatsApp text per message (empty: the text of Emails & PDFs > Emails is used) */
+  waTexts?: Partial<Record<NotifyEvent, string>>;
+  /** the team numbers also get every update sent to a client */
+  copyTeam?: boolean;
+  /** Google review request when a file reaches its last step */
+  reviewLink?: string;
+  reviewAsk?: boolean;
+  reviewText?: string;
 };
 
 export const NOTIFY_EVENTS: { key: NotifyEvent; label: string; to: 'client' | 'team'; vars: string[] }[] = [
@@ -219,7 +227,23 @@ export const OTHER_STEPS: StepDef[] = [
   { id: 'completed', group: S3, name: 'Completed', next: 'Your service is complete. Thank you for choosing us.' },
 ];
 
-export type StepSettings = { golden: StepDef[]; other: StepDef[] };
+/** golden: Golden Visa steps; other: the standard list for every other service; groups: own lists per service group */
+export type StepSettings = { golden: StepDef[]; other: StepDef[]; groups?: Record<string, StepDef[]> };
+
+/** Service groups that can have their own step list (Admin > Application steps), as on the Abu Dhabi site */
+export const STEP_SERVICES = ['Golden Visa', 'Family & residency', 'Visas', 'Employment', 'Property & documents', 'Visa services', 'Other services'] as const;
+
+/** Which step list a service follows, from its name. */
+export function stepGroupFor(service?: string | null): string {
+  const t = String(service || '').toLowerCase();
+  if (!t || /golden/.test(t)) return 'Golden Visa';
+  if (/family|dependant|dependent|spouse|wife|husband|child|newborn|parent|residen|retire/.test(t)) return 'Family & residency';
+  if (/employ|work permit|labour|labor|job|maid|nanny|domestic/.test(t)) return 'Employment';
+  if (/emirates id|medical|renew|cancel|status change|change of status|typing|stamp/.test(t)) return 'Visa services';
+  if (/property|title deed|attest|poa|power of attorney|legal|document|translation|notar/.test(t)) return 'Property & documents';
+  if (/visa|visit|tourist|investor|freelance|partner/.test(t)) return 'Visas';
+  return 'Other services';
+}
 export const defaultSteps: StepSettings = { golden: GOLDEN_STEPS, other: OTHER_STEPS };
 
 export type PortalSettings = {

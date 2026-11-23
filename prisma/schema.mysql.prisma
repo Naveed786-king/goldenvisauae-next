@@ -186,6 +186,8 @@ model Application {
   advisorName   String?
   advisorPhone  String?
   assignee      String?
+  /// JSON: contact, location (in|out), adults, kids, requests, archived, reviewAskedAt, privateNotes
+  meta          String? @db.Text
   language      String     @default("en")
 
   @@index([token])

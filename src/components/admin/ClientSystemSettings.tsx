@@ -1,8 +1,9 @@
 'use client';
 // Admin → Client system: dashboard address & advisor, payments, WhatsApp, client messages, PDFs, steps.
 import { useEffect, useRef, useState } from 'react';
-import { Save, Send, Plus } from 'lucide-react';
-import { GOLDEN_STEPS, OTHER_STEPS } from '@/lib/portal/config';
+import { Save, Send, Plus, Eye, EyeOff } from 'lucide-react';
+import { GOLDEN_STEPS, OTHER_STEPS, STEP_SERVICES } from '@/lib/portal/config';
+import { SERVICE_STEPS0 } from '@/adgv/lib/stage-defs';
 import { Btn, Card, PageTitle, Spinner, api, toast, Toggle } from './ui';
 import { useSetting } from './SettingsEditors';
 import { cn } from '@/lib/utils';
@@ -276,7 +277,14 @@ function WhatsAppTab({ part = 'all' }: { part?: 'all' | 'setup' | 'auto' | 'test
   const show = (p: string) => part === 'all' || part === p;
   const [to, setTo] = useState('');
   const [testing, setTesting] = useState(false);
+  const [showTok, setShowTok] = useState(false);
+  const { value: mail } = useSetting<any>('clientMail');
   if (!v) return <Spinner />;
+  // a WhatsApp text that is the same as the email text is not stored: it then follows the email text
+  const saveWa = () => {
+    const texts = Object.fromEntries(Object.entries(v.waTexts || {}).filter(([k, t]) => String(t || '').trim() && String(t).trim() !== String(mail?.events?.[k]?.body || '').trim()));
+    save({ ...v, waTexts: texts });
+  };
   const set = (k: string, x: any) => setValue({ ...v, [k]: x });
   const inp = (k: string, ph = '', secret = false) => <input className="admin-input" type={secret ? 'password' : 'text'} autoComplete="off" value={v[k] ?? ''} onChange={(e) => set(k, e.target.value)} onFocus={(e) => secret && e.target.select()} placeholder={ph} />;
   async function test() {
@@ -292,53 +300,84 @@ function WhatsAppTab({ part = 'all' }: { part?: 'all' | 'setup' | 'auto' | 'test
   }
   return (
     <div className="space-y-6">
-      {part === 'setup' && <WaChecklist v={v} />}
+      {part === 'setup' && <WaChecklist v={v} reload={async () => { try { const r = await api<any>('/api/admin/settings/whatsapp'); if (r?.value) setValue(r.value); } catch {} }} />}
       {show('setup') && (
       <Card title="Connection" className="p-0">
         <div className="grid gap-4 p-5 md:grid-cols-2">
           <div className="md:col-span-2">
-            <Toggle checked={v.mode === 'cloud'} onChange={(x) => set('mode', x ? 'cloud' : 'off')} label="Send automatic WhatsApp messages (Cloud API)" />
+            <Field label="Mode">
+              <select className="admin-input" value={v.mode} onChange={(e) => set('mode', e.target.value)}>
+                <option value="cloud">Cloud API: send automatic messages</option>
+                <option value="off">Off: only “Chat on WhatsApp” buttons</option>
+              </select>
+            </Field>
           </div>
-          <Field label="Phone number ID" hint="Meta → WhatsApp → API setup">{inp('phoneNumberId')}</Field>
+          <Field label="Phone number ID" hint="Meta Business → WhatsApp → API setup">{inp('phoneNumberId')}</Field>
           <Field label="WhatsApp Business account ID">{inp('businessId')}</Field>
-          <Field label="Permanent access token" hint="System user token from Meta Business Settings (does not expire).">{inp('accessToken', '', true)}</Field>
-          <Field label="App secret" hint="Meta app → Settings → Basic. Needed to accept client replies.">{inp('appSecret', '', true)}</Field>
-          <Field label="Webhook verify word" hint="Any word you choose; type the same in Meta.">{inp('verifyToken', 'e.g. gvu-2026')}</Field>
-          <Field label="Template language code">{inp('templateLang', 'en')}</Field>
-          <div className="md:col-span-2 rounded-xl bg-gray-50 p-4 text-xs text-gray-600">
-            Webhook (callback URL) for Meta: <b className="select-all">{site()}/api/whatsapp/webhook</b> — subscribe to <b>messages</b>. Client replies then appear in their file.
-          </div>
           <div className="md:col-span-2">
-            <Field label="Team WhatsApp numbers (one per line)" hint="They get the team alerts: new application, payment, client message, transfer slip.">
+            <Field label="Permanent access token" hint={v.accessToken ? 'Saved. Leave it as it is to keep it, or paste a new token.' : 'System user token from Meta Business Settings (does not expire).'}>
+              <div className="relative">
+                <input className="admin-input pr-11" type={showTok ? 'text' : 'password'} autoComplete="off" value={v.accessToken ?? ''} onChange={(e) => set('accessToken', e.target.value)} />
+                <button type="button" onClick={() => setShowTok(!showTok)} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#b8862f]" aria-label={showTok ? 'Hide token' : 'Show token'}>{showTok ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button>
+              </div>
+            </Field>
+          </div>
+          <Field label="Webhook verify token (any text you choose)" hint="Use exactly this word in Meta.">{inp('verifyToken', 'e.g. gvu-2026')}</Field>
+          <Field label="Webhook URL (paste in Meta)" hint="Subscribe to “messages”. Client replies then appear in their application.">
+            <code className="block select-all break-all rounded-xl bg-[#fbf4df] px-3 py-2.5 text-[13px]">{site()}/api/whatsapp/webhook</code>
+          </Field>
+          <Field label="App secret" hint="Meta app → Settings → Basic. Checks that incoming messages really come from Meta.">{inp('appSecret', '', true)}</Field>
+          <div className="md:col-span-2">
+            <Field label="Company numbers for alerts (enquiries, applications, payments)" hint="One per line, with country code">
               <textarea className="admin-input min-h-[60px]" value={v.teamNumbers} onChange={(e) => set('teamNumbers', e.target.value)} placeholder="+9715…" />
             </Field>
           </div>
+          <label className="flex cursor-pointer items-start gap-3 rounded-2xl p-4 ring-1 ring-[#f0e7d2] md:col-span-2">
+            <input type="checkbox" className="mt-1 h-4 w-4 accent-[#b8862f]" checked={!!v.copyTeam} onChange={(e) => set('copyTeam', e.target.checked)} />
+            <span><b className="block text-sm text-gray-900">Copy client messages to team numbers</b><span className="text-xs text-gray-500">The team numbers above also receive every update sent to a client (welcome, status, quote, payment), exactly as the client sees it.</span></span>
+          </label>
+          <fieldset className="space-y-3 rounded-2xl p-4 ring-1 ring-[#f0e7d2] md:col-span-2">
+            <legend className="px-1 text-xs font-extrabold uppercase tracking-[0.12em] text-[#8a6a14]">☆ Google review request</legend>
+            <Field label="Your Google review link" hint="Google Business Profile → Ask for reviews → copy the link.">{inp('reviewLink', 'https://g.page/r/…/review')}</Field>
+            <Field label="Review message" hint="The link is added at the end.">
+              <textarea className="admin-input min-h-[60px]" value={v.reviewText ?? ''} onChange={(e) => set('reviewText', e.target.value)} placeholder="Thank you for choosing us! Your file is complete. Could you spare a minute to leave us a Google review?" />
+            </Field>
+            <label className="flex cursor-pointer items-start gap-3 rounded-xl p-3 ring-1 ring-[#f0e7d2]">
+              <input type="checkbox" className="mt-1 h-4 w-4 accent-[#b8862f]" checked={!!v.reviewAsk} onChange={(e) => set('reviewAsk', e.target.checked)} />
+              <span><b className="block text-sm text-gray-900">Ask for a review when a file reaches its last step</b><span className="text-xs text-gray-500">Sent once per file on WhatsApp and email. The team can also send it from the file page.</span></span>
+            </label>
+          </fieldset>
+          <Field label="Template language code" hint="For approved templates, e.g. en, ar">{inp('templateLang', 'en')}</Field>
         </div>
       </Card>
       )}
       {show('auto') && (
-      <Card title="Automatic messages and approved templates" className="p-0">
-        <div className="p-5">
-          <p className="mb-4 text-xs text-gray-500">
-            Inside 24 hours after a client wrote to you, the full text from the Messages tab is sent. Outside that window Meta only delivers approved templates: write the template name for each message
-            (its body values are the words shown on the right, in that order, without the link). A template name ending in <b>_file</b> or with <b>_pdf_</b> in it also carries the PDF (quote or receipt); names ending in <b>_btn_v1</b> have an “Open my file” button. Use “Create all templates in Meta” below to get them all.
-          </p>
-          <div className="space-y-2">
-            {EVENTS.map((e) => (
-              <div key={e.key} className="grid items-center gap-2 rounded-xl bg-gray-50 px-3 py-2 md:grid-cols-[auto_1fr_220px]">
-                <Toggle checked={v.autos?.[e.key] !== false} onChange={(x) => set('autos', { ...v.autos, [e.key]: x })} />
-                <span className="text-sm">
-                  {e.label} <span className="text-xs text-gray-400">{e.vars.replace(' {link}', '')}</span>
-                </span>
-                <input className="admin-input !py-1.5 text-xs" placeholder="template name" value={v.templates?.[e.key] || ''} onChange={(x) => set('templates', { ...v.templates, [e.key]: x.target.value.trim() })} />
+      <div className="space-y-3">
+        <p className="text-xs text-gray-500">
+          Each message below goes out automatically. Inside 24 hours after a client wrote to you, this text is sent. Outside that window Meta only delivers approved templates: the template name is filled in by “Create all templates in Meta” on the Setup tab. Names ending in <b>_file</b> or with <b>_pdf_</b> carry the PDF (quote or receipt); names ending in <b>_btn_v1</b> have an “Open my file” button.
+        </p>
+        {EVENTS.map((e) => (
+          <Card key={e.key} className="p-0">
+            <div className="space-y-3 p-4">
+              <label className="flex cursor-pointer items-start gap-3 rounded-xl p-3 ring-1 ring-[#f0e7d2]">
+                <input type="checkbox" className="mt-1 h-4 w-4 accent-[#b8862f]" checked={v.autos?.[e.key] !== false} onChange={(x) => set('autos', { ...v.autos, [e.key]: x.target.checked })} />
+                <span><b className="block text-sm text-gray-900">{e.label}</b><span className="text-xs text-gray-500">Variables: {e.vars}</span></span>
+              </label>
+              <Field label="Message text">
+                <WaBox value={v.waTexts?.[e.key] ?? mail?.events?.[e.key]?.body ?? ''} onChange={(x) => set('waTexts', { ...(v.waTexts || {}), [e.key]: x })} preview />
+              </Field>
+              <p className="text-xs text-gray-400">Bold, italic, lists and emojis show on WhatsApp. A new line starts a new line. WhatsApp has no colours.</p>
+              <div className="max-w-md">
+                <Field label="Approved template name (optional)">
+                  <input className="admin-input" placeholder="template name" value={v.templates?.[e.key] || ''} onChange={(x) => set('templates', { ...v.templates, [e.key]: x.target.value.trim() })} />
+                </Field>
               </div>
-            ))}
-          </div>
-        </div>
-      </Card>
+            </div>
+          </Card>
+        ))}
+      </div>
       )}
-      {(show('setup') || show('auto')) && <SaveBar save={() => save()} saving={saving} />}
-      {show('setup') && <MetaTemplatesCard reload={async () => { try { const r = await api<any>('/api/admin/settings/whatsapp'); if (r?.value) setValue(r.value); } catch {} }} />}
+      {(show('setup') || show('auto')) && <SaveBar save={saveWa} saving={saving} />}
       {show('test') && (
       <Card title="Send a test" className="p-0">
         <div className="flex flex-wrap items-end gap-3 p-5">
@@ -356,53 +395,6 @@ function WhatsAppTab({ part = 'all' }: { part?: 'all' | 'setup' | 'auto' | 'test
   );
 }
 
-/** The same WhatsApp templates as the Abu Dhabi Golden Visa site: sent to Meta for approval in one click,
- *  then the approved names are filled in above ("Check approval"). */
-function MetaTemplatesCard({ reload }: { reload: () => void }) {
-  const [busy, setBusy] = useState('');
-  const [msg, setMsg] = useState('');
-  const [rows, setRows] = useState<{ name: string; status: string }[]>([]);
-  async function run(action: 'create' | 'sync') {
-    setBusy(action);
-    try {
-      const r = await api<{ result: { ok: boolean; msg: string; rows?: { name: string; status: string }[] } }>('/api/admin/client-system/templates', 'POST', { action });
-      setMsg(r.result.msg);
-      if (r.result.rows) setRows(r.result.rows);
-      toast(r.result.ok ? 'Done' : 'See the message below', r.result.ok ? 'success' : 'error');
-      if (action === 'sync') reload();
-    } catch (e: any) {
-      toast(e.message, 'error');
-    } finally {
-      setBusy('');
-    }
-  }
-  return (
-    <Card title="Approved message templates (Meta)" className="p-0">
-      <div className="space-y-3 p-5">
-        <p className="text-xs text-gray-500">
-          One click sends every message template to Meta for approval: file opened, status update, quote with PDF, order confirmed, payment request, payment received with the receipt PDF, new message, new
-          document, decision, and the team alerts. Each has an “Open my file” button. Approval usually takes a few minutes; then press “Check approval” and the approved names are filled in above.
-        </p>
-        <div className="flex flex-wrap gap-2">
-          <Btn loading={busy === 'create'} onClick={() => run('create')}>Create all templates in Meta</Btn>
-          <Btn variant="dark" loading={busy === 'sync'} onClick={() => run('sync')}>Check approval</Btn>
-          <a className="rounded-xl bg-white px-4 py-2 text-sm font-bold ring-1 ring-gray-200" href="https://business.facebook.com/wa/manage/message-templates/" target="_blank" rel="noopener noreferrer">Open templates in Meta ↗</a>
-        </div>
-        {msg && <p className="rounded-xl bg-gray-50 p-3 text-xs text-gray-700">{msg}</p>}
-        {rows.length > 0 && (
-          <ul className="grid gap-1 text-xs md:grid-cols-2">
-            {rows.map((r) => (
-              <li key={r.name} className="flex justify-between gap-2 rounded-lg bg-gray-50 px-3 py-1.5">
-                <span className="font-mono">{r.name}</span>
-                <b className={r.status === 'approved' ? 'text-emerald-700' : r.status.startsWith('rejected') ? 'text-red-600' : 'text-amber-700'}>{r.status}</b>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-    </Card>
-  );
-}
 
 const fmtAed = (n: number) => `AED ${Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const fmtWhen = (iso: string) => new Date(iso).toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Dubai' });
@@ -424,29 +416,90 @@ const Pill = ({ on, children }: { on: boolean; children: React.ReactNode }) => (
 );
 
 /** WhatsApp setup checklist (n of 5 done). */
-function WaChecklist({ v }: { v: any }) {
+function WaChecklist({ v, reload }: { v: any; reload: () => void }) {
   const filled = Object.values(v.templates || {}).filter(Boolean).length;
-  const items = [
-    { ok: !!(v.phoneNumberId && v.businessId), label: 'Phone number ID and Business account ID' },
-    { ok: !!v.accessToken, label: 'Permanent access token' },
+  const [pin, setPin] = useState('');
+  const [busy, setBusy] = useState('');
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const hook = `${site()}/api/whatsapp/webhook`;
+  const run = async (action: 'check' | 'register' | 'subscribe' | 'create' | 'sync') => {
+    setBusy(action);
+    try {
+      const r = action === 'create' || action === 'sync'
+        ? await api<{ result: { ok: boolean; msg: string } }>('/api/admin/client-system/templates', 'POST', { action }).then((x) => ({ ok: x.result.ok, msg: x.result.msg }))
+        : await api<{ ok: boolean; msg: string }>('/api/admin/client-system/wa', 'POST', { action, pin });
+      setMsg({ ok: r.ok, text: r.msg });
+      toast(r.ok ? 'Done' : 'See the message below', r.ok ? 'success' : 'error');
+      if (action === 'sync') reload();
+    } catch (e: any) {
+      setMsg({ ok: false, text: e.message });
+      toast(e.message, 'error');
+    } finally {
+      setBusy('');
+    }
+  };
+  const gold = 'rounded-xl bg-gradient-to-b from-[#e8c766] to-[#b8862f] px-3.5 py-2 text-sm font-bold text-white shadow-sm disabled:opacity-60';
+  const plain = 'rounded-xl bg-white px-3.5 py-2 text-sm font-semibold text-gray-800 ring-1 ring-[#eadfc4] hover:bg-[#fbf6ea]';
+  const items: { ok: boolean; label: string; act?: React.ReactNode }[] = [
+    {
+      ok: !!(v.phoneNumberId && v.businessId),
+      label: 'Phone number ID and Business account ID',
+      act: (
+        <>
+          <button type="button" className={gold} disabled={!!busy} onClick={() => run('check')}>{busy === 'check' ? 'Checking…' : 'Check connection'}</button>
+          <span className="inline-flex flex-col gap-1.5">
+            <input className="admin-input !w-[110px]" inputMode="numeric" maxLength={6} value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))} placeholder="6-digit PIN" aria-label="6-digit PIN" />
+            <button type="button" className={plain} disabled={!!busy} onClick={() => run('register')}>Register number</button>
+          </span>
+          <a className={plain} href="https://developers.facebook.com/apps/" target="_blank" rel="noopener noreferrer">Open my Meta apps ↗</a>
+        </>
+      ),
+    },
+    { ok: !!v.accessToken, label: 'Permanent access token', act: <a className={plain} href="https://business.facebook.com/settings/system-users" target="_blank" rel="noopener noreferrer">Open System users ↗</a> },
     { ok: v.mode === 'cloud', label: 'Mode set to “Cloud API”' },
-    { ok: !!(v.appSecret && v.verifyToken), label: 'Webhook connected · incoming messages', hint: `Callback URL in Meta: ${site()}/api/whatsapp/webhook (field “messages”)` },
-    { ok: filled >= EVENTS.length - 1, label: `Approved message templates (${filled} of ${EVENTS.length} filled in)` },
+    {
+      ok: !!(v.appSecret && v.verifyToken),
+      label: `Webhook connected · incoming messages${v.appSecret && v.verifyToken ? ' ✓' : ''}`,
+      act: (
+        <>
+          <button type="button" className={gold} disabled={!!busy} onClick={() => run('subscribe')}>Connect incoming messages</button>
+          <button type="button" className={plain} onClick={() => { navigator.clipboard?.writeText(hook); toast('Webhook URL copied'); }}>Copy webhook URL</button>
+          <a className={plain} href="https://developers.facebook.com/apps/" target="_blank" rel="noopener noreferrer">Open my Meta apps ↗</a>
+        </>
+      ),
+    },
+    {
+      ok: filled >= EVENTS.length - 1,
+      label: `Approved message templates (${filled} of ${EVENTS.length} filled in)`,
+      act: (
+        <>
+          <button type="button" className={gold} disabled={!!busy} onClick={() => run('create')}>{busy === 'create' ? 'Creating…' : 'Create all templates in Meta'}</button>
+          <button type="button" className={plain} disabled={!!busy} onClick={() => run('sync')}>Check approval</button>
+          <a className={plain} href="https://business.facebook.com/wa/manage/message-templates/" target="_blank" rel="noopener noreferrer">Open templates in Meta ↗</a>
+        </>
+      ),
+    },
   ];
   const done = items.filter((x) => x.ok).length;
   return (
     <Card title="Setup checklist" actions={<Pill on={done === items.length}>{done} of {items.length} done</Pill>} className="p-0">
-      <ul className="space-y-2 p-5">
+      <ul className="space-y-4 p-5">
         {items.map((x) => (
           <li key={x.label} className="flex items-start gap-3">
-            <span className={cn('mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full text-[0.7rem] font-bold', x.ok ? 'bg-gradient-to-b from-[#e8c766] to-[#c9a032] text-[#1a1406]' : 'bg-gray-100 text-gray-400')}>{x.ok ? '✓' : ''}</span>
-            <span className="text-sm">
-              <b className="text-gray-900">{x.label}</b>
-              {x.hint && <span className="block text-xs text-gray-500">{x.hint}</span>}
-            </span>
+            <span className={cn('mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full text-xs font-bold', x.ok ? 'bg-gradient-to-b from-[#e8c766] to-[#b8862f] text-white' : 'bg-gray-100 text-gray-400')}>{x.ok ? '✓' : ''}</span>
+            <div className="min-w-0 flex-1">
+              <b className="text-[15px] text-gray-900">{x.label}</b>
+              {x.act && <div className="mt-2 flex flex-wrap items-start gap-2">{x.act}</div>}
+            </div>
           </li>
         ))}
       </ul>
+      {msg && <p className={cn('mx-5 mb-4 rounded-xl p-3 text-sm', msg.ok ? 'bg-emerald-50 text-emerald-800' : 'bg-red-50 text-red-700')}>{msg.text}</p>}
+      <p className="border-t border-gray-100 px-5 py-3 text-xs text-gray-500">
+        When all steps are done, open “Send a test” and send to your own number. Also make sure the number is registered (display name approved) and a payment method is added:{' '}
+        <a className="underline" href="https://business.facebook.com/wa/manage/phone-numbers/" target="_blank" rel="noopener noreferrer">phone numbers ↗</a> ·{' '}
+        <a className="underline" href="https://business.facebook.com/billing_hub/" target="_blank" rel="noopener noreferrer">payment settings ↗</a>
+      </p>
     </Card>
   );
 }
@@ -655,40 +708,66 @@ function PdfTab() {
 }
 
 /** WhatsApp style text box: *bold*, _italic_, ~strike~, emoji, and a preview of the message. */
-function WaBox({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder?: string }) {
+function WaBox({ value, onChange, placeholder, preview }: { value: string; onChange: (v: string) => void; placeholder?: string; preview?: boolean }) {
   const ref = useRef<HTMLTextAreaElement>(null);
-  const wrap = (m: string) => {
+  const [emo, setEmo] = useState(false);
+  const focus = (x: number, y: number) => setTimeout(() => { ref.current?.focus(); ref.current?.setSelectionRange(x, y); }, 0);
+  const wrap = (a: string, z = a) => {
     const t = ref.current;
     if (!t) return;
     const [x, y] = [t.selectionStart, t.selectionEnd];
     const sel = value.slice(x, y) || 'text';
-    onChange(value.slice(0, x) + m + sel + m + value.slice(y));
-    setTimeout(() => { t.focus(); t.setSelectionRange(x + m.length, x + m.length + sel.length); }, 0);
+    onChange(value.slice(0, x) + a + sel + z + value.slice(y));
+    focus(x + a.length, x + a.length + sel.length);
+  };
+  const lead = (p: string) => {
+    const t = ref.current;
+    const x = t ? t.selectionStart : value.length;
+    const start = value.lastIndexOf('\n', x - 1) + 1;
+    onChange(value.slice(0, start) + p + value.slice(start));
+    focus(x + p.length, x + p.length);
   };
   const put = (e: string) => {
     const t = ref.current;
     const x = t ? t.selectionStart : value.length;
     onChange(value.slice(0, x) + e + value.slice(x));
+    focus(x + e.length, x + e.length);
   };
-  const html = value
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  const esc = (t: string) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const html = esc(value)
+    .replace(/```([\s\S]+?)```/g, '<code>$1</code>')
     .replace(/(^|[\s(])\*([^*\n]+)\*/g, '$1<b>$2</b>').replace(/(^|[\s(])_([^_\n]+)_/g, '$1<i>$2</i>').replace(/(^|[\s(])~([^~\n]+)~/g, '$1<s>$2</s>')
+    .replace(/^&gt; ?(.*)$/gm, '<span style="display:block;border-left:3px solid #d1d5db;padding-left:8px;color:#4b5563">$1</span>')
+    .replace(/\{(\w+)\}/g, '<span style="background:#fbecc0;border-radius:4px;padding:0 4px">{$1}</span>')
+    .replace(/&lt;br&gt;/g, '<br>')
     .replace(/\n/g, '<br>');
+  const tb = 'grid h-8 min-w-8 place-items-center rounded-lg bg-white px-2 text-sm ring-1 ring-gray-200 hover:bg-[#fbf6ea]';
   return (
-    <div className="overflow-hidden rounded-xl ring-1 ring-gray-200 focus-within:ring-[#c9a032]">
-      <div className="flex flex-wrap items-center gap-1 border-b border-gray-100 bg-gray-50 px-2 py-1">
-        <button type="button" onClick={() => wrap('*')} className="rounded px-2 py-0.5 text-sm font-extrabold hover:bg-white" title="Bold">B</button>
-        <button type="button" onClick={() => wrap('_')} className="rounded px-2 py-0.5 text-sm italic hover:bg-white" title="Italic">I</button>
-        <button type="button" onClick={() => wrap('~')} className="rounded px-2 py-0.5 text-sm line-through hover:bg-white" title="Strike">S</button>
-        <span className="mx-1 h-4 w-px bg-gray-200" />
-        {['✅', '📄', '💳', '📅', '🎉', '⏳', '📎', '🙏'].map((e) => (
-          <button key={e} type="button" onClick={() => put(e)} className="rounded px-1 py-0.5 hover:bg-white">{e}</button>
-        ))}
+    <div className="space-y-2">
+      <div className="flex flex-wrap items-center gap-1.5">
+        <button type="button" onClick={() => wrap('*')} className={cn(tb, 'font-extrabold')} title="Bold">B</button>
+        <button type="button" onClick={() => wrap('_')} className={cn(tb, 'italic')} title="Italic">I</button>
+        <button type="button" onClick={() => wrap('~')} className={cn(tb, 'line-through')} title="Strike">S</button>
+        <button type="button" onClick={() => wrap('```')} className={cn(tb, 'font-mono text-xs')} title="Monospace">{'</>'}</button>
+        <button type="button" onClick={() => lead('> ')} className={tb} title="Quote">❝</button>
+        <button type="button" onClick={() => lead('• ')} className={tb} title="List">•</button>
+        <button type="button" onClick={() => put('\n')} className={tb} title="New line">↵</button>
+        <span className="relative">
+          <button type="button" onClick={() => setEmo(!emo)} className={tb} title="Emoji">🙂</button>
+          {emo && (
+            <span className="absolute left-0 top-9 z-10 grid w-56 grid-cols-8 gap-1 rounded-xl bg-white p-2 shadow-lg ring-1 ring-gray-200">
+              {['✅', '📄', '💳', '📅', '🎉', '⏳', '📎', '🙏', '👋', '⭐', '📌', '🔔', '🏛️', '🇦🇪', '💬', '📞'].map((e) => (
+                <button key={e} type="button" onClick={() => { put(e); setEmo(false); }} className="rounded p-0.5 hover:bg-gray-100">{e}</button>
+              ))}
+            </span>
+          )}
+        </span>
       </div>
-      <textarea ref={ref} rows={3} className="block w-full resize-y border-0 bg-white px-3 py-2 text-sm outline-none" value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} />
-      {value.trim() && (
-        <div className="border-t border-gray-100 bg-[#efeae2] px-3 py-2">
-          <div className="max-w-[90%] rounded-lg rounded-tl-none bg-white px-3 py-2 text-[13px] leading-snug text-gray-800 shadow-sm" dangerouslySetInnerHTML={{ __html: html }} />
+      <textarea ref={ref} rows={4} className="admin-input resize-y" value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} />
+      {(preview || value.trim()) && (
+        <div className="rounded-xl bg-[#ece5dd] p-3">
+          <p className="mb-2 text-[0.65rem] font-extrabold uppercase tracking-[0.14em] text-gray-500">WhatsApp preview</p>
+          <div className="max-w-[90%] rounded-lg rounded-tl-none bg-white px-3 py-2 text-[13px] leading-snug text-gray-800 shadow-sm" dangerouslySetInnerHTML={{ __html: html || '&nbsp;' }} />
         </div>
       )}
     </div>
@@ -699,13 +778,15 @@ function WaBox({ value, onChange, placeholder }: { value: string; onChange: (v: 
  *  the WhatsApp message of each step, how many open files are on it, move / add / remove, restore. */
 function StepsTab() {
   const { value: v, setValue, save, saving } = useSetting<any>('steps');
-  const [which, setWhich] = useState<'golden' | 'other'>('golden');
+  const [which, setWhich] = useState<string>('Golden Visa');
   const [counts, setCounts] = useState<any>(null);
   useEffect(() => { api<any>('/api/admin/client-system/step-counts').then(setCounts).catch(() => null); }, []);
   if (!v) return <Spinner />;
-  const list: any[] = v[which] || [];
+  const own = v.groups?.[which];
+  const list: any[] = (which === 'Golden Visa' ? v.golden : Array.isArray(own) && own.length ? own : v.other) || [];
+  const shared = which !== 'Golden Visa' && !(Array.isArray(own) && own.length);
   const per: Record<string, number> = counts?.[which]?.perStep || {};
-  const setList = (l: any[]) => setValue({ ...v, [which]: l });
+  const setList = (l: any[]) => setValue(which === 'Golden Visa' ? { ...v, golden: l } : { ...v, groups: { ...(v.groups || {}), [which]: l } });
   const upd = (i: number, p: any) => setList(list.map((x, k) => (k === i ? { ...x, ...p } : x)));
   const move = (i: number, d: number) => {
     const l = [...list];
@@ -728,16 +809,16 @@ function StepsTab() {
     setList(list.filter((_, k) => k !== i));
   };
   const groups = Array.from(new Set(list.map((x) => x.group).filter(Boolean)));
-  const label = which === 'golden' ? 'Golden Visa' : 'Other services';
+  const label = which;
   const KEEP = ['quote-sent', 'quote-ok', 'pay-wait', 'paid', 'approved'];
   return (
     <div className="space-y-5">
       <h2 className="font-display text-2xl font-semibold text-gray-900">The steps your clients <span className="text-[#b8862f]">see and follow.</span></h2>
       <nav className="flex flex-wrap gap-2" aria-label="Service">
-        {(['golden', 'other'] as const).map((k) => (
-          <button key={k} type="button" onClick={() => setWhich(k)} className={cn('inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold ring-1', which === k ? 'bg-gradient-to-b from-[#e8c766] to-[#c9a032] text-[#1a1406] ring-transparent' : 'bg-white text-gray-700 ring-gray-200')}>
-            {k === 'golden' ? 'Golden Visa' : 'Other services'}
-            {counts?.[k]?.files ? <em className="rounded-full bg-gray-900 px-2 py-0.5 text-[0.65rem] not-italic text-[#f2d27a]">{counts[k].files}</em> : null}
+        {STEP_SERVICES.map((k) => (
+          <button key={k} type="button" onClick={() => setWhich(k)} className={cn('inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-bold ring-1', which === k ? 'bg-[#1a1406] text-[#f2d27a] ring-transparent' : 'bg-white text-gray-800 ring-[#eadfc4] hover:bg-[#fbf6ea]')}>
+            {k}
+            {counts?.[k]?.files ? <em className="grid h-5 min-w-5 place-items-center rounded-full bg-[#e8c766] px-1.5 text-[0.65rem] not-italic text-[#1a1406]">{counts[k].files}</em> : null}
           </button>
         ))}
       </nav>
@@ -745,6 +826,7 @@ function StepsTab() {
         <div className="space-y-4 p-5">
           <div>
             <h3 className="text-lg font-bold text-gray-900">{label} <small className="font-normal text-gray-400">· {list.length} steps</small></h3>
+            {shared && <p className="mt-1 rounded-lg bg-[#fdf8ea] px-3 py-2 text-xs text-[#6b5a35]">This service group uses the standard list for other services. Change anything and press Save to give {label} its own steps, or restore its standard steps below.</p>}
             <p className="mt-1 text-xs text-gray-500">
               Each list has its own steps; a file follows the steps of its service. Rename a step, change the message the client gets, move it up or down, add or remove steps. Untick “Send this message on
               WhatsApp &amp; email” for steps the client does not need to hear about. Keep the steps quote-sent, quote-ok, pay-wait, paid and approved: quotes, payments and decisions move files to them
@@ -806,7 +888,7 @@ function StepsTab() {
                 variant="dark"
                 onClick={() => {
                   if (!window.confirm(`Replace the ${label} steps with the standard ones? Press Save afterwards.`)) return;
-                  setList((which === 'golden' ? GOLDEN_STEPS : OTHER_STEPS).map((x) => ({ ...x })));
+                  setList((which === 'Golden Visa' ? GOLDEN_STEPS : (SERVICE_STEPS0 as Record<string, any[]>)[which] || OTHER_STEPS).map((x: any) => ({ ...x })));
                 }}
               >
                 Restore the standard steps

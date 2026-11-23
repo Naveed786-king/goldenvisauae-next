@@ -91,7 +91,12 @@ export async function notifyClient(
         )
       );
     }
-    if (app.phone && text) jobs.push(sendWhatsApp({ to: app.phone, event, text: waText(text), vars: v, file: opts.file, applicationId: app.id, force: opts.force }));
+    const w = await getSetting('whatsapp');
+    const own = fillTpl(w.waTexts?.[event] || '', v).replace(/\n{3,}/g, '\n\n').trim();
+    const wa = own || waText(text);
+    if (app.phone && text) jobs.push(sendWhatsApp({ to: app.phone, event, text: wa, vars: v, file: opts.file, applicationId: app.id, force: opts.force }));
+    // the team numbers get a copy of every client update when switched on (Admin > WhatsApp)
+    if (w.copyTeam && text) for (const n of teamNumbers(w)) if (!app.phone || n.replace(/\D/g, '').slice(-9) !== app.phone.replace(/\D/g, '').slice(-9)) jobs.push(sendWhatsApp({ to: n, event, text: wa, vars: v, file: opts.file, applicationId: app.id }));
     await Promise.allSettled(jobs);
   } catch (e) {
     console.error('[notify] client message failed:', (e as Error).message);
@@ -111,7 +116,8 @@ export async function notifyTeam(event: TeamEvent, vars: Vars, appId?: string, o
       if (to.length) jobs.push(sendMail({ to, subject: fillTpl(tpl.subject, v), html: emailHtml(text, '', 'Open in admin') }));
     }
     const w = await getSetting('whatsapp');
-    for (const n of teamNumbers(w)) jobs.push(sendWhatsApp({ to: n, event, text: waText(text), vars: v, applicationId: appId }));
+    const own = fillTpl(w.waTexts?.[event] || '', v).trim();
+    for (const n of teamNumbers(w)) jobs.push(sendWhatsApp({ to: n, event, text: own || waText(text), vars: v, applicationId: appId }));
     await Promise.allSettled(jobs);
   } catch (e) {
     console.error('[notify] team message failed:', (e as Error).message);

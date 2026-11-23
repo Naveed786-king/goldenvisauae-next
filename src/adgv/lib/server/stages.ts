@@ -11,7 +11,13 @@ export async function stepsFor(a: Pick<Application, 'route'>): Promise<StageDef[
 /** Step names of both lists (Admin > Client system > Application steps). */
 export async function allStepNames(): Promise<Record<string, string[]>> {
   const s = await getSetting();
-  return { 'Golden Visa': s.golden.map((x) => x.name), 'Other services': s.other.map((x) => x.name) };
+  const { STEP_SERVICES } = await import('@/lib/portal/config');
+  const out: Record<string, string[]> = {};
+  for (const g of STEP_SERVICES) {
+    const own = s.groups?.[g];
+    out[g] = (g === 'Golden Visa' ? s.golden : Array.isArray(own) && own.length ? own : s.other).map((x) => x.name);
+  }
+  return out;
 }
 async function getSetting() {
   const { getSetting: g } = await import('@/lib/settings');
