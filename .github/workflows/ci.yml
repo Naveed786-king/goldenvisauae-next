@@ -148,7 +148,7 @@ jobs:
               console.log('Client system flow OK: quote, accept, payment, receipt',pp.receiptNo,'decision');
             })().catch(e=>die(e.message))"
           # payment pages on the dashboard address, in the clean card design (no website header/footer)
-          read PT PP < paytest.txt
+          read PT PP < paytest.txt || true; echo "payment test: $PT $PP"
           curl -s -H "Host: app.goldenvisauae.ai" "http://localhost:3000/t/$PT/pay/$PP/return" > payret.html
           grep -q 'class="paywrap"' payret.html || { echo "::error title=Check failed::payment confirmation page on the dashboard address"; exit 1; }
           grep -q 'Payment received' payret.html || { echo "::error title=Check failed::paid payment shows Payment received"; exit 1; }
