@@ -270,7 +270,15 @@ function AiTab({ cfg, patch, providers, act }: { cfg: any; patch: (fn: (c: any) 
                 <div>
                   <label className="admin-label">Model</label>
                   <input className="admin-input font-mono" value={cfg.providers[p.id]?.model || ''} onChange={(e) => patch((c) => ((c.providers[p.id].model = e.target.value), c))} />
+                  {p.id === 'kingmaker' && <p className="mt-1 text-xs text-gray-500">e.g. qwen2.5:7b (any model on your King Maker server)</p>}
                 </div>
+                {p.id === 'kingmaker' && (
+                  <div className="sm:col-span-2">
+                    <label className="admin-label">Base URL</label>
+                    <input className="admin-input font-mono" placeholder="https://…/api/v1" value={cfg.providers.kingmaker?.baseUrl || ''} onChange={(e) => patch((c) => ((c.providers.kingmaker = { ...(c.providers.kingmaker || {}), baseUrl: e.target.value }), c))} />
+                    <p className="mt-1 text-xs text-gray-500">OpenAI-compatible address from the King Maker Control Center → King Maker API.</p>
+                  </div>
+                )}
               </div>
               {result[p.id] && <p className={cn('break-words rounded-lg p-3 text-xs', result[p.id].ok ? 'bg-emerald-50 text-emerald-800' : 'bg-red-50 text-red-700')}>{result[p.id].text}</p>}
             </div>

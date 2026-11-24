@@ -2,7 +2,7 @@
 // Every call has a timeout, counts against the daily budget, and never logs keys.
 // AUTOPUBLISHER_FAKE_AI=1 returns fixed sample JSON (no network, no cost) for dry runs.
 import { getSetting } from '@/lib/settings';
-import { AutoConfig, getAutoConfig, ProviderId } from './config';
+import { AutoConfig, getAutoConfig, KING_MAKER_BASE, ProviderId } from './config';
 import { aiCallsToday, autoLog, countAiCall, setBackoff } from './log';
 import { outputBudget, parseJsonLoose, scrubSecrets } from './pure';
 export { outputBudget, thinkingModel } from './pure';
@@ -34,7 +34,7 @@ export const isFakeAi = () => process.env.AUTOPUBLISHER_FAKE_AI === '1';
 export async function providerKey(cfg: AutoConfig, id: ProviderId): Promise<string> {
   const own = cfg.providers[id]?.key?.trim();
   if (own) return own;
-  const env = { gemini: process.env.GEMINI_API_KEY, claude: process.env.ANTHROPIC_API_KEY, openai: process.env.OPENAI_API_KEY, openrouter: process.env.OPENROUTER_API_KEY }[id];
+  const env = { gemini: process.env.GEMINI_API_KEY, claude: process.env.ANTHROPIC_API_KEY, openai: process.env.OPENAI_API_KEY, openrouter: process.env.OPENROUTER_API_KEY, kingmaker: process.env.KING_MAKER_API_KEY }[id];
   if (env) return env.trim();
   if (id === 'gemini' && cfg.useTranslationGeminiKey) {
     const t: any = await getSetting('translation');
@@ -89,7 +89,7 @@ export async function complete(opts: CompleteOpts): Promise<string> {
 
 /** Another provider with a key and a model (Gemini first), for when the chosen one's key is wrong */
 async function workingBackup(cfg: AutoConfig, failed: ProviderId): Promise<ProviderId | null> {
-  for (const pid of ['gemini', 'claude', 'openrouter', 'openai'] as ProviderId[]) {
+  for (const pid of ['gemini', 'claude', 'openrouter', 'openai', 'kingmaker'] as ProviderId[]) {
     if (pid === failed || !cfg.providers[pid]?.model?.trim()) continue;
     if (await providerKey(cfg, pid)) return pid;
   }
@@ -241,8 +241,9 @@ async function callClaude(key: string, model: string, o: CompleteOpts, temperatu
 
 async function callOpenAiCompatible(id: ProviderId, key: string, model: string, o: CompleteOpts, temperature: number, maxTokens: number, timeoutMs: number) {
   const isOpenAi = id === 'openai';
+  const isKing = id === 'kingmaker';
   maxTokens = outputBudget(model, maxTokens);
-  const url = isOpenAi ? 'https://api.openai.com/v1/chat/completions' : 'https://openrouter.ai/api/v1/chat/completions';
+  const url = isOpenAi ? 'https://api.openai.com/v1/chat/completions' : isKing ? `${await kingMakerBase()}/chat/completions` : 'https://openrouter.ai/api/v1/chat/completions';
   // reasoning models (o-series, gpt-5) only accept the default temperature
   const reasoning = /^(o\d|gpt-5)/i.test(model.replace(/^openai\//, ''));
   const body: any = {
@@ -257,11 +258,11 @@ async function callOpenAiCompatible(id: ProviderId, key: string, model: string, 
     ...(o.json ? { response_format: { type: 'json_object' } } : {}),
   };
   const headers: Record<string, string> = { Authorization: `Bearer ${key}`, 'content-type': 'application/json' };
-  if (!isOpenAi) {
+  if (!isOpenAi && !isKing) {
     headers['HTTP-Referer'] = 'https://goldenvisauae.ai';
     headers['X-Title'] = 'Golden Visa UAE Auto Publisher';
   }
-  const who = isOpenAi ? 'OpenAI' : 'OpenRouter';
+  const who = isOpenAi ? 'OpenAI' : isKing ? 'King Maker' : 'OpenRouter';
   const j = await http(url, { method: 'POST', headers, body: JSON.stringify(body) }, timeoutMs, who);
   const out = String(j?.choices?.[0]?.message?.content || '').trim();
   if (!out) throw new AiError('bad_output', `${who} returned no text (${j?.choices?.[0]?.finish_reason || 'empty'})`);
@@ -330,3 +331,15 @@ export const FAKE_ARTICLE = {
   quality: 92,
   ok: true,
 };
+
+/** King Maker server address: Auto Publisher setting, then KING_MAKER_BASE_URL, then the default (no trailing slash) */
+async function kingMakerBase(): Promise<string> {
+  let v = '';
+  try {
+    v = (await getAutoConfig()).providers.kingmaker?.baseUrl?.trim() || '';
+  } catch {
+    /* settings not readable: use the default */
+  }
+  v = v || process.env.KING_MAKER_BASE_URL?.trim() || KING_MAKER_BASE;
+  return /^https:\/\//i.test(v) ? v.replace(/\/+$/, '').replace(/\/chat\/completions$/, '') : KING_MAKER_BASE;
+}

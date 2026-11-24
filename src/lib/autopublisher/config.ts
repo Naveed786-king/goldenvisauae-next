@@ -3,12 +3,14 @@
 import { prisma } from '@/lib/db';
 import { deepMerge, maskSecrets, unmaskSecrets } from './pure';
 
-export type ProviderId = 'gemini' | 'claude' | 'openai' | 'openrouter';
+export type ProviderId = 'gemini' | 'claude' | 'openai' | 'openrouter' | 'kingmaker';
+export const KING_MAKER_BASE = 'https://ollama-lrok.srv2184834.hstgr.cloud/api/v1';
 export const PROVIDERS: { id: ProviderId; name: string; keyHint: string; keyUrl: string }[] = [
   { id: 'gemini', name: 'Google Gemini', keyHint: 'AIza…', keyUrl: 'https://aistudio.google.com/apikey' },
   { id: 'claude', name: 'Claude (Anthropic)', keyHint: 'sk-ant-…', keyUrl: 'https://console.anthropic.com/settings/keys' },
   { id: 'openai', name: 'ChatGPT (OpenAI)', keyHint: 'sk-…', keyUrl: 'https://platform.openai.com/api-keys' },
   { id: 'openrouter', name: 'OpenRouter', keyHint: 'sk-or-…', keyUrl: 'https://openrouter.ai/keys' },
+  { id: 'kingmaker', name: 'King Maker (own AI server)', keyHint: 'King Maker API key', keyUrl: 'https://ollama-lrok.srv2184834.hstgr.cloud/' },
 ];
 
 export const DEFAULT_BANNED = [
@@ -24,7 +26,7 @@ export type AutoConfig = {
   pausedUntil: string; // ISO date; publisher idles until then
   writer: ProviderId;
   editor: ProviderId | ''; // '' = same as writer
-  providers: Record<ProviderId, { key: string; model: string }>;
+  providers: Record<ProviderId, { key: string; model: string; baseUrl?: string }>;
   useTranslationGeminiKey: boolean; // reuse the Gemini key from Languages when none is set here
   images: {
     provider: 'openai' | 'gemini';
@@ -75,6 +77,7 @@ export const DEFAULT_CONFIG: AutoConfig = {
     claude: { key: '', model: 'claude-sonnet-5-5' },
     openai: { key: '', model: 'gpt-4.1' },
     openrouter: { key: '', model: 'anthropic/claude-sonnet-5.5' },
+    kingmaker: { key: '', model: 'qwen2.5:7b', baseUrl: KING_MAKER_BASE },
   },
   useTranslationGeminiKey: true,
   images: { provider: 'openai', openaiModel: 'gpt-image-2', geminiModel: 'gemini-2.5-flash-image', quality: 'medium', inline: 2, saveCredit: true, coverOpenAiOnly: true, houseStyle: '', onFail: 'skip', minSharpness: 60, minRealism: 7, coverStyle: 'banner', showLogo: true, ribbonText: '', officialSymbols: false, visaCard: 'auto' },
