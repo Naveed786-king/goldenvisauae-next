@@ -39,7 +39,7 @@ export async function clientView(a: Application & { payments: Payment[] }) {
       paidAt: p.paidAt,
       createdAt: p.createdAt,
       slip: !!p.slipPath,
-      pay: p.status === 'due' ? `/pay/${links.token}/${p.id}` : '',
+      pay: p.status === 'due' ? `/api/portal/${links.token}/pay/${p.id}` : '',
       receipt: p.status === 'paid' ? links.receiptPdf(p.id) : '',
     })),
     decision: d.result ? { ...d, label: DECISION_LABEL[d.result] } : null,

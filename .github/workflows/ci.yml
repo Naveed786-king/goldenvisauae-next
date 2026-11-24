@@ -132,7 +132,8 @@ jobs:
               g=await A('/api/admin/applications/'+ap.id); const p=g.j.application.payments[0]; if(!p||p.status!=='due') die('payment due',g.j.application.payments);
               const quotePdf=g.j.application.links.quotePdf.replace(/^https?:\/\/[^/]+/,'');
               let pr=await fetch(B+quotePdf); if(pr.status!==200||!(pr.headers.get('content-type')||'').includes('pdf')) die('quote pdf '+pr.status);
-              const payPage=await fetch(B+'/pay/'+quotePdf.split('/')[3]+'/'+p.id); if(payPage.status!==200) die('pay page '+payPage.status);
+              const payPage=await fetch(B+'/pay/'+quotePdf.split('/')[3]+'/'+p.id,{redirect:'manual'}); if(![303,307,308].includes(payPage.status)||!/\/t\/[a-f0-9]+\/pay\/[a-z0-9]+\/card/.test(payPage.headers.get('location')||'')) die('old pay page must send to the dashboard card page: '+payPage.status+' '+payPage.headers.get('location'));
+              require('fs').writeFileSync('paytest.txt',quotePdf.split('/')[3]+' '+p.id);
               x=await A('/api/admin/applications/'+ap.id+'/file',{method:'POST',body:JSON.stringify({action:'markPaid',pid:p.id})}); if(x.s!==200) die('mark paid',x.j);
               x=await A('/api/admin/applications/'+ap.id+'/file',{method:'POST',body:JSON.stringify({action:'markPaid',pid:p.id})}); if(x.s===200) die('paid twice');
               g=await A('/api/admin/applications/'+ap.id); const pp=g.j.application.payments[0]; if(pp.status!=='paid'||!pp.receiptNo) die('paid',pp);
@@ -146,6 +147,13 @@ jobs:
               for (const k of ['payments','whatsapp','clientMail','pdf','steps','portal']) { const r=await A('/api/admin/settings/'+k); if(r.s!==200) die('settings '+k,r.j); }
               console.log('Client system flow OK: quote, accept, payment, receipt',pp.receiptNo,'decision');
             })().catch(e=>die(e.message))"
+          # payment pages on the dashboard address, in the clean card design (no website header/footer)
+          read PT PP < paytest.txt
+          curl -s -H "Host: app.goldenvisauae.ai" "http://localhost:3000/t/$PT/pay/$PP/return" > payret.html
+          grep -q 'class="paywrap"' payret.html || { echo "::error title=Check failed::payment confirmation page on the dashboard address"; exit 1; }
+          grep -q 'Payment received' payret.html || { echo "::error title=Check failed::paid payment shows Payment received"; exit 1; }
+          grep -q '<header' payret.html && { echo "::error title=Check failed::payment page must not show the website header"; exit 1; } || true
+          code=$(curl -s -o /dev/null -w "%{http_code}" -H "Host: app.goldenvisauae.ai" "http://localhost:3000/t/$PT/pay/$PP/card"); echo "card page of a paid payment -> $code"; [ "$code" = "307" ]
           code=$(curl -s -o /dev/null -w "%{http_code}" -H "Host: app.goldenvisauae.ai" http://localhost:3000/); echo "portal host / -> $code"; [ "$code" = "307" ] || [ "$code" = "200" ]
           curl -s -H "Host: app.goldenvisauae.ai" http://localhost:3000/login | grep -q 'class="auth' || { echo "::error title=Check failed::portal host shows the client dashboard sign-in"; exit 1; }
           code=$(curl -s -o /dev/null -w "%{http_code}" -H "Host: app.goldenvisauae.ai" http://localhost:3000/apply); echo "portal host /apply -> $code"; [ "$code" = "200" ]

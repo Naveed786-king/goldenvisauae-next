@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
 import { getSetting } from '@/lib/settings';
-import { byToken, fileLink, siteUrl } from '@/lib/portal/files';
+import { byToken, fileLink } from '@/lib/portal/files';
 import { cardFee, orderPayment, payOnline, startCheckout, type CardKind } from '@/lib/portal/payments';
 import { rateLimit, clientIp } from '@/lib/api';
 
@@ -27,8 +27,10 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ toke
   }
   let p = await prisma.payment.findFirst({ where: { id: pid, applicationId: a.id } });
   if (!p) return NextResponse.redirect(file, 303);
-  const page = `${siteUrl()}/pay/${token}/${p.id}`;
-  if (p.status === 'paid') return NextResponse.redirect(`${page}/return?ok=1`, 303);
+  // the payment pages live on the client dashboard address, in its own clean design (no website header/footer)
+  const page = `${file}/pay/${p.id}/card`;
+  const back = `${file}/pay/${p.id}/return`;
+  if (p.status === 'paid') return NextResponse.redirect(`${back}?ok=1`, 303);
   if (!payOnline(cfg)) {
     // no online provider: the team's own payment link, or the page with the bank details
     if (p.link && /^https:\/\//.test(p.link)) return NextResponse.redirect(p.link, 303);
@@ -41,7 +43,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ toke
     p = await prisma.payment.update({ where: { id: p.id }, data: { fee: cardFee(cfg, p.amount, card as CardKind), card } });
   } else if (p.fee) p = await prisma.payment.update({ where: { id: p.id }, data: { fee: 0, card: null } });
   try {
-    const r = await startCheckout(a, p, `${page}/return?x=1`, `${file}?cancelled=1`);
+    const r = await startCheckout(a, p, `${back}?x=1`, `${file}?cancelled=1`);
     if (!r.url) throw new Error('No payment page returned');
     await prisma.payment.update({ where: { id: p.id }, data: { provider: r.provider, providerId: r.providerId, providerRef: r.providerRef, startedAt: new Date(), tries: { increment: 1 } } });
     return NextResponse.redirect(r.url, 303);
