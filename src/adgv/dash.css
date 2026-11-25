@@ -476,7 +476,7 @@ body:has(.admin) { background: #f7f6f2; }
 .ohero.st-conf { background: radial-gradient(120% 140% at 0% 0%, #0f5b3c, #0b3b28 60%); }
 .ohero.st-done { background: radial-gradient(120% 140% at 0% 0%, #6b4d0c, #2a1e05 60%); }
 .oh-k { margin: 0; font: 700 11px var(--body); letter-spacing: .14em; text-transform: uppercase; color: rgba(255, 255, 255, .7); }
-.oh-ref { margin: 4px 0 10px; font: 700 clamp(24px, 3.4vw, 34px)/1.1 var(--body); color: #fff; letter-spacing: .01em; }
+.oh-ref { margin: 4px 0 10px; font: 700 clamp(24px, 3.4vw, 34px)/1.1 var(--body); color: #fff; letter-spacing: .01em; overflow-wrap: anywhere; }
 .oh-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .oh-chips .chip { padding: 5px 11px; border-radius: 99px; background: rgba(255, 255, 255, .12); font-size: 12.5px; font-weight: 600; }
 .oh-chips .chip.st { background: rgba(242, 210, 122, .22); color: #f6dc8c; }

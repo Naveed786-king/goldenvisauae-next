@@ -67,11 +67,9 @@ export function stripHtml(html: string) {
   return (html || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
 }
 
+/** Short file reference: GV-UAE-48271 (5 digits; the callers check it is not used yet) */
 export function makeRef() {
-  const d = new Date();
-  const y = d.getFullYear().toString().slice(2);
-  const rnd = Math.random().toString(36).slice(2, 7).toUpperCase();
-  return `RGV-${y}${String(d.getMonth() + 1).padStart(2, '0')}-${rnd}`;
+  return `GV-UAE-${10000 + Math.floor(Math.random() * 90000)}`;
 }
 
 export function isExternal(href?: string) {
