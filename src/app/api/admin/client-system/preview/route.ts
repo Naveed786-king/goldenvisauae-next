@@ -3,6 +3,7 @@ import { requireStaff } from '@/lib/auth';
 import { getSetting } from '@/lib/settings';
 import { makePdf } from '@/lib/portal/pdf';
 import { emailHtml, fillTpl } from '@/lib/portal/notify';
+import { emailPage } from '@/lib/mail';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,7 +15,7 @@ export async function GET(req: Request) {
     const cfg = await getSetting('clientMail');
     const v = { name: 'Sara', ref: 'GV-0001', service: 'UAE Golden Visa', total: 'AED 12,500.00', link: '#' };
     const html = emailHtml(fillTpl(cfg.events.quote.body, v), cfg.signOff, 'View my quotation');
-    return new Response(`<p style="font:13px system-ui;color:#666;margin:12px">Subject: <b>${fillTpl(cfg.events.quote.subject, v)}</b></p>${html}`, { headers: { 'Content-Type': 'text/html; charset=utf-8' } });
+    return new Response(`<p style="font:13px system-ui;color:#666;margin:12px">Subject: <b>${fillTpl(cfg.events.quote.subject, v)}</b></p>${emailPage(html, (await getSetting('site')).name || 'Golden Visa')}`, { headers: { 'Content-Type': 'text/html; charset=utf-8' } });
   }
   const quote = kind !== 'receipt';
   const pdf = await makePdf(

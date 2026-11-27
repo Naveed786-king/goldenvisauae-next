@@ -19,8 +19,8 @@ export function emailHtml(text: string, signOff: string, buttonLabel: string) {
   const flush = () => {
     if (!rows.length) return;
     out.push(
-      `<table cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;margin:10px 0 14px;background:#faf7f0;border-radius:10px">${rows
-        .map(([k, v]) => `<tr><td style="padding:8px 14px;color:#8a7a55;font-size:13px;width:38%">${escapeHtml(k)}</td><td style="padding:8px 14px;font-weight:bold;font-size:14px">${escapeHtml(v)}</td></tr>`)
+      `<table cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;margin:12px 0 16px;background:#faf8f3;border:1px solid #ece6d8;border-radius:12px">${rows
+        .map(([k, v]) => `<tr><td style="padding:9px 14px;color:#6e6e73;font-size:13px;width:38%">${escapeHtml(k)}</td><td style="padding:9px 14px;font-weight:bold;font-size:14px;color:#0b0b0c">${escapeHtml(v)}</td></tr>`)
         .join('')}</table>`
     );
     rows = [];
@@ -34,7 +34,7 @@ export function emailHtml(text: string, signOff: string, buttonLabel: string) {
     }
     flush();
     if (/^https?:\/\/\S+$/.test(line)) {
-      out.push(`<p style="margin:18px 0"><a href="${escapeHtml(line)}" style="display:inline-block;background:#b8901f;color:#fff;text-decoration:none;font-weight:bold;padding:12px 22px;border-radius:999px">${escapeHtml(buttonLabel)}</a></p>`);
+      out.push(`<p style="margin:18px 0"><a href="${escapeHtml(line)}" style="display:inline-block;background:#0b0b0c;background-image:linear-gradient(135deg,#2b261d,#0b0b0c);color:#ffffff;text-decoration:none;font-weight:bold;padding:13px 26px;border-radius:999px;border-bottom:2px solid #c9a24a">${escapeHtml(buttonLabel)}</a></p>`);
     } else if (line) out.push(`<p style="margin:0 0 10px">${escapeHtml(line)}</p>`);
   }
   flush();

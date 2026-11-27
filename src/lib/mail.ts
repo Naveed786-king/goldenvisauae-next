@@ -81,25 +81,43 @@ export async function notifyAdmin(subject: string, html: string, replyTo?: strin
 }
 
 function wrap(body: string, brand: string) {
-  return `<!doctype html><html><body style="margin:0;background:#f5f1e8;font-family:Arial,Helvetica,sans-serif;color:#1d2433">
-  <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:32px 12px">
-  <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;background:#ffffff;border-radius:16px;overflow:hidden">
-  <tr><td style="background:#0a1222;padding:22px 28px;color:#e9d5a6;font-size:20px;font-weight:bold;letter-spacing:1px">${brand}</td></tr>
-  <tr><td style="padding:28px;font-size:15px;line-height:1.6">${body}</td></tr>
-  <tr><td style="padding:16px 28px;background:#faf7f0;font-size:12px;color:#777">This is an automated message from ${brand}.</td></tr>
+  // site look: dark band with the gold seal, gold line, white card
+  const site = (process.env.NEXT_PUBLIC_SITE_URL || 'https://goldenvisauae.ai').replace(/\/+$/, '');
+  const host = site.replace(/^https?:\/\//, '').toUpperCase();
+  const name = escapeHtml(brand);
+  return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"></head>
+  <body style="margin:0;padding:0;background:#f3efe6;font-family:'Segoe UI',Helvetica,Arial,sans-serif;color:#1d1d1f;-webkit-text-size-adjust:100%">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3efe6"><tr><td align="center" style="padding:28px 12px">
+  <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:100%;max-width:600px;background:#ffffff;border-radius:18px;overflow:hidden;border:1px solid #e9e2d2;box-shadow:0 14px 40px rgba(0,0,0,.12)">
+  <tr><td style="background:#0b0b0c;background-image:linear-gradient(135deg,#000000 0%,#0b0b0c 55%,#2b261d 100%);padding:22px 28px">
+    <table role="presentation" cellpadding="0" cellspacing="0"><tr>
+      <td style="padding-right:14px;vertical-align:middle"><img src="${site}/brand/coin-64.png" width="48" height="48" alt="${name}" style="display:block;border:0;border-radius:50%"></td>
+      <td style="vertical-align:middle"><div style="color:#ffffff;font-size:19px;font-weight:700;letter-spacing:.2px;line-height:1.2">${name}</div>
+      <div style="font-size:10.5px;font-weight:700;letter-spacing:2.6px;margin-top:3px"><a href="${site}" style="color:#ecd9a3;text-decoration:none">${escapeHtml(host)}</a></div></td>
+    </tr></table>
+  </td></tr>
+  <tr><td style="height:3px;line-height:3px;font-size:0;background:#c9a24a;background-image:linear-gradient(90deg,#ecd9a3,#c9a24a,#a8832f)">&nbsp;</td></tr>
+  <tr><td style="padding:30px 28px 26px;font-size:15px;line-height:1.65;color:#1d1d1f">${body}</td></tr>
+  <tr><td style="padding:18px 28px;background:#faf8f3;border-top:1px solid #ece6d8;font-size:12px;line-height:1.6;color:#6e6e73">
+    <a href="${site}" style="color:#0b0b0c;font-weight:700;text-decoration:none">${escapeHtml(host.toLowerCase())}</a> &nbsp;·&nbsp; UAE Golden Visa service<br>
+    This is an automated message from ${name}. Please do not share your links or codes with anyone.
+  </td></tr>
   </table></td></tr></table></body></html>`;
 }
+
+/** A whole email as it is sent (header with the seal, body, footer), e.g. for the admin preview */
+export const emailPage = (body: string, brand: string) => wrap(body, brand);
 
 export function escapeHtml(s: string) {
   return (s || '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
 }
 
 export function rowsTable(rows: [string, string | null | undefined][]) {
-  return `<table cellpadding="6" style="border-collapse:collapse;width:100%">${rows
+  return `<table cellpadding="0" cellspacing="0" style="border-collapse:collapse;width:100%;background:#faf8f3;border:1px solid #ece6d8;border-radius:12px">${rows
     .filter(([, v]) => v)
     .map(
       ([k, v]) =>
-        `<tr><td style="border-bottom:1px solid #eee;color:#888;width:35%">${escapeHtml(k)}</td><td style="border-bottom:1px solid #eee">${escapeHtml(String(v))}</td></tr>`
+        `<tr><td style="padding:9px 14px;border-bottom:1px solid #ece6d8;color:#6e6e73;font-size:13px;width:35%;vertical-align:top">${escapeHtml(k)}</td><td style="padding:9px 14px;border-bottom:1px solid #ece6d8;font-weight:600;color:#0b0b0c;white-space:pre-line">${escapeHtml(String(v))}</td></tr>`
     )
     .join('')}</table>`;
 }
